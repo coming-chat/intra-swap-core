@@ -1,0 +1,3 @@
+[submodule "contracts/omni_swap/repo"]
+	path = contracts/omni_swap/repo
+	url = https://github.com/OmniBTC/OmniSwap
