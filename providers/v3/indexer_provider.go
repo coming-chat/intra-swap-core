@@ -114,7 +114,7 @@ func (g *GeckoTerminalProvider) GetPools(tokenIn *entities.Token, tokenOut *enti
 			Token0:  struct{ Id string }{Id: common.HexToAddress(strings.TrimPrefix(poolData.Relationships.BaseToken.Data.Id, "base_")).String()},
 			Token1:  struct{ Id string }{Id: common.HexToAddress(strings.TrimPrefix(poolData.Relationships.QuoteToken.Data.Id, "base_")).String()},
 			TvlUSD:  reserve,
-			FeeTier: constants.FeeAmount(feeAmount),
+			FeeTier: constants.FeeAmount(feeAmount * 10000),
 		})
 	}
 	return
