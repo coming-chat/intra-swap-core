@@ -153,20 +153,13 @@ func (b *BaseQuoteProvider) getQuotesManyData(
 			BlockNumber: originalBlockNumber + b.BlockNumberConfig.BaseBlockOffset,
 		}
 	}
-	var exactOutput bool
-	switch functionName {
-	case QuoteExactOutput:
-		exactOutput = true
-	case QuoteExactInput:
-		exactOutput = false
-	}
 	var multiCallParams []rpc.MultiCallSingleParam
 	quoterContract, err := omni_swap.IQuoterV2MetaData.GetAbi()
 	if err != nil {
 		return nil, 0, err
 	}
 	for _, r := range routes {
-		encodedRoute, err := periphery.EncodeRouteToPath(r, exactOutput)
+		encodedRoute, err := periphery.EncodeRouteToPath(r, functionName == QuoteExactOutput)
 		if err != nil {
 			return nil, 0, err
 		}
