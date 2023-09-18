@@ -28,6 +28,17 @@ type ISlot0 struct {
 	Unlocked                   bool
 }
 
+type Tick struct {
+	LiquidityGross                 *big.Int
+	LiquidityNet                   *big.Int
+	FeeGrowthOutside0X128          *big.Int
+	FeeGrowthOutside1X128          *big.Int
+	TickCumulativeOutside          *big.Int
+	SecondsPerLiquidityOutsideX128 *big.Int
+	SecondsOutside                 uint32
+	Initialized                    bool
+}
+
 type TokenPairs struct {
 	Token0      *entities.Token
 	Token1      *entities.Token
@@ -42,7 +53,7 @@ type PoolProvider interface {
 	GetPoolAddress(
 		tokenA,
 		tokenB *entities.Token,
-		//factoryAddress common.Address,
+	//factoryAddress common.Address,
 		feeAmount constants.FeeAmount,
 	) (poolAddress string, token0, token1 *entities.Token, err error)
 }
@@ -51,7 +62,7 @@ type PoolAccessor interface {
 	GetPool(
 		tokenA,
 		tokenB *entities.Token,
-		//factoryAddress common.Address,
+	//factoryAddress common.Address,
 		feeAmount constants.FeeAmount,
 	) (*base_entities.V3Pool, error)
 	GetPoolByAddress(address string) *base_entities.V3Pool
@@ -62,14 +73,14 @@ type BasePoolAccessor struct {
 	poolAddressToPool map[string]*base_entities.V3Pool
 	pools             []*base_entities.V3Pool
 	getPoolAddress    func(tokenA, tokenB *entities.Token,
-		//factoryAddress common.Address,
+	//factoryAddress common.Address,
 		feeAmount constants.FeeAmount,
 	) (poolAddress string, token0, token1 *entities.Token, err error)
 }
 
 func (b BasePoolAccessor) GetPool(
 	tokenA, tokenB *entities.Token,
-	//factoryAddress common.Address,
+//factoryAddress common.Address,
 	feeAmount constants.FeeAmount,
 ) (*base_entities.V3Pool, error) {
 	address, _, _, err := b.getPoolAddress(tokenA, tokenB, feeAmount)
@@ -130,8 +141,8 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 			Token0    *entities.Token
 			Token1    *entities.Token
 		}
-		sortedPoolAddresses []string
-		slot0s, liquiditys  []rpc.MultiCallSingleParam
+		sortedPoolAddresses       []string
+		slot0s, liquiditys, ticks []rpc.MultiCallSingleParam
 	)
 
 	poolContract, err := uniswap_v3.PoolMetaData.GetAbi()
@@ -174,15 +185,24 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 			ContractAddress: common.HexToAddress(pair.PairAddress),
 			Contract:        poolContract,
 		})
+		ticks = append(ticks, rpc.MultiCallSingleParam{
+			FunctionName:    "ticks",
+			ContractAddress: common.HexToAddress(pair.PairAddress),
+			Contract:        poolContract,
+			FunctionParams: []any{
+				big.NewInt(0),
+			},
+		})
 	}
 	var (
-		syncGroup              = sync.WaitGroup{}
-		slot0Results           rpc.MultiCallResultWithInfo[ISlot0]
-		liquidityResults       rpc.MultiCallResultWithInfo[*big.Int]
-		errSlot0, errLiquidity error
+		syncGroup                        = sync.WaitGroup{}
+		slot0Results                     rpc.MultiCallResultWithInfo[ISlot0]
+		liquidityResults                 rpc.MultiCallResultWithInfo[*big.Int]
+		ticksResults                     rpc.MultiCallResultWithInfo[Tick]
+		errSlot0, errLiquidity, errTicks error
 	)
 
-	syncGroup.Add(2)
+	syncGroup.Add(3)
 
 	go func() {
 		defer syncGroup.Done()
@@ -211,6 +231,20 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 			break
 		}
 	}()
+
+	go func() {
+		defer syncGroup.Done()
+		for i := 0; i < b.RetryOptions.Retries; i++ {
+			ticksResults, errTicks = rpc.NewUniswapMultiCallProvider[Tick](b.MultiCallProvider).MultiCall(
+				ticks,
+				providerConfig,
+			)
+			if errTicks != nil {
+				continue
+			}
+			break
+		}
+	}()
 	syncGroup.Wait()
 
 	if errSlot0 != nil {
@@ -229,17 +263,36 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 	for i, address := range sortedPoolAddresses {
 		if !slot0Results.ReturnData[i].Success ||
 			!liquidityResults.ReturnData[i].Success ||
-			slot0Results.ReturnData[i].ReturnData.SqrtPriceX96.Cmp(big.NewInt(0)) == 0 {
+			slot0Results.ReturnData[i].Data.SqrtPriceX96.Cmp(big.NewInt(0)) == 0 {
 			continue
+		}
+
+		// create tick data provider
+		p, err := entitiesV3.NewTickListDataProvider([]entitiesV3.Tick{
+			{
+				Index: entitiesV3.NearestUsableTick(utils.MinTick,
+					constants.TickSpacings[sortedPool[i].FeeAmount]),
+				LiquidityNet:   ticksResults.ReturnData[i].Data.LiquidityNet,
+				LiquidityGross: ticksResults.ReturnData[i].Data.LiquidityGross,
+			},
+			{
+				Index: entitiesV3.NearestUsableTick(utils.MaxTick,
+					constants.TickSpacings[sortedPool[i].FeeAmount]),
+				LiquidityNet:   ticksResults.ReturnData[i].Data.LiquidityNet,
+				LiquidityGross: ticksResults.ReturnData[i].Data.LiquidityGross,
+			},
+		}, constants.TickSpacings[])
+		if err != nil {
+			return nil, err
 		}
 		v3pool, err := entitiesV3.NewPool(
 			sortedPool[i].Token0,
 			sortedPool[i].Token1,
 			sortedPool[i].FeeAmount,
-			slot0Results.ReturnData[i].ReturnData.SqrtPriceX96,
-			liquidityResults.ReturnData[i].ReturnData,
-			int(slot0Results.ReturnData[i].ReturnData.Tick.Int64()),
-			nil,
+			slot0Results.ReturnData[i].Data.SqrtPriceX96,
+			liquidityResults.ReturnData[i].Data,
+			int(slot0Results.ReturnData[i].Data.Tick.Int64()),
+			p,
 		)
 		if err != nil {
 			return nil, err
@@ -256,7 +309,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 
 func (b *BasePoolProvider) GetPoolAddress(
 	tokenA, tokenB *entities.Token,
-	//factoryAddress common.Address,
+//factoryAddress common.Address,
 	feeAmount constants.FeeAmount,
 ) (string, *entities.Token, *entities.Token, error) {
 	before, err := tokenA.SortsBefore(tokenB)
@@ -293,7 +346,7 @@ func (b *BasePoolProvider) GetPoolAddress(
 	if err != nil {
 		return "", nil, nil, err
 	}
-	//if len(result.ReturnData) == 0 || !result.ReturnData[0].Success {
+	//if len(result.Data) == 0 || !result.Data[0].Success {
 	//	return "", nil, nil, errors.New("not found the pair")
 	//}
 	b.PoolAddressCache[key] = poolAddress.String()
