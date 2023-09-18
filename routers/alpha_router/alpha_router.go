@@ -6,7 +6,6 @@ import (
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/providers"
 	"github.com/coming-chat/intra-swap-core/providers/gas_price"
-	"github.com/coming-chat/intra-swap-core/providers/provider"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	v2 "github.com/coming-chat/intra-swap-core/providers/v2"
 	v3 "github.com/coming-chat/intra-swap-core/providers/v3"
@@ -538,14 +537,8 @@ func (a *AlphaRouter) getV3Quotes(
 
 	var (
 		routesWithQuotes []v3.RouteWithQuotes
-		providerConfig   *provider.Config
 	)
 
-	if routingConfig.BlockNumber != 0 {
-		providerConfig = &provider.Config{
-			BlockNumber: routingConfig.BlockNumber,
-		}
-	}
 	// For all our routes, and all the fractional amounts, fetch quotes on-chain.
 	if swapType == entities.ExactInput {
 		routesWithQuotes, err = a.V3QuoteProvider.GetQuotesManyExactIn(amounts, routes)
