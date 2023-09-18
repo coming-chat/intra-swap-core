@@ -140,28 +140,40 @@ func (b *BaseQuoteProvider) getQuotesManyData(
 	for _, route := range routes {
 		var amountQuotes []AmountQuote
 		for _, amount := range amounts {
-			cycleAmount := amount.Wrapped()
+			var (
+				cycleAmount                 = amount.Wrapped()
+				afterPool                   *entitiesV3.Pool
+				initializedTicksCrossedList []uint32
+				sqrtPriceX96AfterList       []*big.Int
+			)
 			switch tradeType {
 			case entities.ExactInput:
 				for _, pool := range route.Pools {
-					cycleAmount, _, err = pool.GetOutputAmount(cycleAmount, nil)
+					cycleAmount, afterPool, err = pool.GetOutputAmount(cycleAmount, nil)
 					if err != nil {
 						return nil, err
 					}
+					initializedTicksCrossedList = append(initializedTicksCrossedList, uint32(afterPool.TickCurrent))
+					sqrtPriceX96AfterList = append(sqrtPriceX96AfterList, afterPool.SqrtRatioX96)
 				}
 			case entities.ExactOutput:
 				for i := len(route.Pools) - 1; i >= 0; i-- {
-					cycleAmount, _, err = route.Pools[i].GetInputAmount(cycleAmount, nil)
+					cycleAmount, afterPool, err = route.Pools[i].GetInputAmount(cycleAmount, nil)
 					if err != nil {
 						return nil, err
 					}
+					initializedTicksCrossedList = append(initializedTicksCrossedList, uint32(afterPool.TickCurrent))
+					sqrtPriceX96AfterList = append(sqrtPriceX96AfterList, afterPool.SqrtRatioX96)
 				}
 			default:
 				return nil, fmt.Errorf("unsupported tradeTyep[%#v]", tradeType)
 			}
 			amountQuotes = append(amountQuotes, AmountQuote{
-				Amount: amount,
-				Quote:  cycleAmount.Quotient(),
+				Amount:                      amount,
+				Quote:                       cycleAmount.Quotient(),
+				InitializedTicksCrossedList: initializedTicksCrossedList,
+				SqrtPriceX96AfterList:       sqrtPriceX96AfterList,
+				GasEstimate:                 big.NewInt(1), //Fake data temporarily not use
 			})
 		}
 		routesQuotes = append(routesQuotes, RouteWithQuotes{

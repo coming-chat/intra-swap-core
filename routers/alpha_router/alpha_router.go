@@ -3,6 +3,7 @@ package alpha_router
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/providers"
 	"github.com/coming-chat/intra-swap-core/providers/gas_price"
@@ -207,6 +208,7 @@ func (a *AlphaRouter) Route(
 			defer syncGroup.Done()
 			routes, err := a.getV3Quotes(tokenIn, tokenOut, amounts, percents, quoteToken, gasModel, tradeType, routingConfig)
 			if err != nil {
+				fmt.Printf("getV3Quotes err: %v", err)
 				return
 			}
 			lock.Lock()
@@ -218,6 +220,7 @@ func (a *AlphaRouter) Route(
 			defer syncGroup.Done()
 			routes, err := a.getV2Quotes(tokenIn, tokenOut, amounts, percents, quoteToken, gasPrice.GasPriceWei, tradeType, routingConfig)
 			if err != nil {
+				fmt.Printf("getV2Quotes err: %v", err)
 				return
 			}
 			lock.Lock()
@@ -231,6 +234,7 @@ func (a *AlphaRouter) Route(
 				defer syncGroup.Done()
 				routes, err := a.getV3Quotes(tokenIn, tokenOut, amounts, percents, quoteToken, gasModel, tradeType, routingConfig)
 				if err != nil {
+					fmt.Printf("getV3Quotes err: %v", err)
 					return
 				}
 				lock.Lock()
@@ -244,6 +248,7 @@ func (a *AlphaRouter) Route(
 				defer syncGroup.Done()
 				routes, err := a.getV2Quotes(tokenIn, tokenOut, amounts, percents, quoteToken, gasPrice.GasPriceWei, tradeType, routingConfig)
 				if err != nil {
+					fmt.Printf("getV2Quotes err: %v", err)
 					return
 				}
 				lock.Lock()
