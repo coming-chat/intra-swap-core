@@ -2,16 +2,19 @@ PACKAGE=
 NAME=
 OUT=
 
-OmniSwapAbi:
+Init:
+	make submodule_init
+
+gen_abi:
 	abigen -abi - -pkg $(PACKAGE) -type $(NAME) -out $(OUT)
 
-Submodule_Init:
+submodule_init:
 	git submodule init
 	git submodule update
 
 MODULES_PATH = $(shell find ./contracts/omni_swap/repo/ethereum/export/abi -type f)
 CONTRACT_PATH = "./contracts/omni_swap/"
-AbiGenAll:
+gen_omni_swap:
 	@for i in $(MODULES_PATH); \
 	do \
 	  filename=$$(basename $$i); \
@@ -22,3 +25,5 @@ AbiGenAll:
 	  fi; \
 	  echo $$abi_content | make OmniSwapAbi PACKAGE=omni_swap NAME=$${filename_no_ext} OUT=${CONTRACT_PATH}$${filename_no_ext}.go; \
 	done
+
+gen_other_abi:
