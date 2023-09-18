@@ -108,11 +108,11 @@ func (o *BaseTokenProvider) GetTokens(addresses []string, providerConfig *provid
 		addressToToken[address] = entities.NewToken(
 			o.ChainId,
 			common.HexToAddress(address),
-			uint(decimalsResults.ReturnData[i].ReturnData),
-			symbolsResults.ReturnData[i].ReturnData,
-			symbolsResults.ReturnData[i].ReturnData,
+			uint(decimalsResults.ReturnData[i].Data),
+			symbolsResults.ReturnData[i].Data,
+			symbolsResults.ReturnData[i].Data,
 		)
-		symbolToToken[symbolsResults.ReturnData[i].ReturnData] = addressToToken[address]
+		symbolToToken[symbolsResults.ReturnData[i].Data] = addressToToken[address]
 		tokens = append(tokens, addressToToken[address])
 	}
 

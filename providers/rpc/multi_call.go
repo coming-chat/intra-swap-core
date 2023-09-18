@@ -30,9 +30,9 @@ type MultiCallSingleParam struct {
 }
 
 type MultiCallResult[T any] struct {
-	Success    bool
-	ReturnData T
-	Err        error
+	Success bool
+	Data    T
+	Err     error
 }
 
 type MultiCallResultWithInfo[T any] struct {
@@ -95,7 +95,7 @@ func (b *BaseMultiCallProvider[T]) MultiCall(multiCallData []MultiCallSinglePara
 		output := MultiCallResult[T]{}
 		if data.Success {
 			decodeErr := multiCallData[i].Contract.UnpackIntoInterface(
-				&output.ReturnData,
+				&output.Data,
 				multiCallData[i].FunctionName,
 				data.ReturnData,
 			)

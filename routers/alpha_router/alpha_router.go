@@ -548,9 +548,9 @@ func (a *AlphaRouter) getV3Quotes(
 	}
 	// For all our routes, and all the fractional amounts, fetch quotes on-chain.
 	if swapType == entities.ExactInput {
-		routesWithQuotes, _, err = a.V3QuoteProvider.GetQuotesManyExactIn(amounts, routes, providerConfig)
+		routesWithQuotes, err = a.V3QuoteProvider.GetQuotesManyExactIn(amounts, routes)
 	} else {
-		routesWithQuotes, _, err = a.V3QuoteProvider.GetQuotesManyExactOut(amounts, routes, providerConfig)
+		routesWithQuotes, err = a.V3QuoteProvider.GetQuotesManyExactOut(amounts, routes)
 	}
 	if err != nil {
 		return nil, err

@@ -175,8 +175,8 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 		}
 		poolAddress := common.HexToAddress(sortedPoolAddresses[i])
 		pair, err := entitiesV2.NewPair(
-			entities.FromRawAmount(sortedTokenPairs[i].Token0, result.ReturnData.Reserve0),
-			entities.FromRawAmount(sortedTokenPairs[i].Token1, result.ReturnData.Reserve1),
+			entities.FromRawAmount(sortedTokenPairs[i].Token0, result.Data.Reserve0),
+			entities.FromRawAmount(sortedTokenPairs[i].Token1, result.Data.Reserve1),
 			&entitiesV2.PairOptions{
 				Address: &poolAddress,
 			})
@@ -232,7 +232,7 @@ func (b *BasePoolProvider) GetPoolAddress(
 	if err != nil {
 		return "", nil, nil, err
 	}
-	//if len(result.ReturnData) == 0 || !result.ReturnData[0].Success {
+	//if len(result.Data) == 0 || !result.Data[0].Success {
 	//	return "", nil, nil, errors.New("not found the pair")
 	//}
 	//b.PoolAddressCache[key] = address.String()

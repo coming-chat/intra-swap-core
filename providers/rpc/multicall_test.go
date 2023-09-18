@@ -37,7 +37,7 @@ func TestMulticall(t *testing.T) {
 	}
 
 	t.Log(result.ReturnData[0].Success)
-	t.Log(result.ReturnData[0].ReturnData)
+	t.Log(result.ReturnData[0].Data)
 	t.Log(result.BlockNumber)
 
 	//abi, err := contracts.Multicall3MetaData.GetAbi()
