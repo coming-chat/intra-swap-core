@@ -53,7 +53,7 @@ type PoolProvider interface {
 	GetPoolAddress(
 		tokenA,
 		tokenB *entities.Token,
-	//factoryAddress common.Address,
+		//factoryAddress common.Address,
 		feeAmount constants.FeeAmount,
 	) (poolAddress string, token0, token1 *entities.Token, err error)
 }
@@ -62,7 +62,7 @@ type PoolAccessor interface {
 	GetPool(
 		tokenA,
 		tokenB *entities.Token,
-	//factoryAddress common.Address,
+		//factoryAddress common.Address,
 		feeAmount constants.FeeAmount,
 	) (*base_entities.V3Pool, error)
 	GetPoolByAddress(address string) *base_entities.V3Pool
@@ -73,14 +73,14 @@ type BasePoolAccessor struct {
 	poolAddressToPool map[string]*base_entities.V3Pool
 	pools             []*base_entities.V3Pool
 	getPoolAddress    func(tokenA, tokenB *entities.Token,
-	//factoryAddress common.Address,
+		//factoryAddress common.Address,
 		feeAmount constants.FeeAmount,
 	) (poolAddress string, token0, token1 *entities.Token, err error)
 }
 
 func (b BasePoolAccessor) GetPool(
 	tokenA, tokenB *entities.Token,
-//factoryAddress common.Address,
+	//factoryAddress common.Address,
 	feeAmount constants.FeeAmount,
 ) (*base_entities.V3Pool, error) {
 	address, _, _, err := b.getPoolAddress(tokenA, tokenB, feeAmount)
@@ -281,7 +281,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 				LiquidityNet:   ticksResults.ReturnData[i].Data.LiquidityNet,
 				LiquidityGross: ticksResults.ReturnData[i].Data.LiquidityGross,
 			},
-		}, constants.TickSpacings[])
+		}, constants.TickSpacings[sortedPool[i].FeeAmount])
 		if err != nil {
 			return nil, err
 		}
@@ -309,7 +309,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 
 func (b *BasePoolProvider) GetPoolAddress(
 	tokenA, tokenB *entities.Token,
-//factoryAddress common.Address,
+	//factoryAddress common.Address,
 	feeAmount constants.FeeAmount,
 ) (string, *entities.Token, *entities.Token, error) {
 	before, err := tokenA.SortsBefore(tokenB)
