@@ -148,8 +148,8 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 			Token0    *entities.Token
 			Token1    *entities.Token
 		}
-		sortedPoolAddresses       []string
-		slot0s, liquiditys, ticks []rpc.MultiCallSingleParam
+		sortedPoolAddresses []string
+		slot0s, liquiditys  []rpc.MultiCallSingleParam
 	)
 
 	poolContract, err := uniswap_v3.PoolMetaData.GetAbi()
@@ -192,24 +192,15 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 			ContractAddress: common.HexToAddress(pair.PairAddress),
 			Contract:        poolContract,
 		})
-		ticks = append(ticks, rpc.MultiCallSingleParam{
-			FunctionName:    "ticks",
-			ContractAddress: common.HexToAddress(pair.PairAddress),
-			Contract:        poolContract,
-			FunctionParams: []any{
-				big.NewInt(0),
-			},
-		})
 	}
 	var (
-		syncGroup                        = sync.WaitGroup{}
-		slot0Results                     rpc.MultiCallResultWithInfo[ISlot0]
-		liquidityResults                 rpc.MultiCallResultWithInfo[*big.Int]
-		ticksResults                     rpc.MultiCallResultWithInfo[Tick]
-		errSlot0, errLiquidity, errTicks error
+		syncGroup              = sync.WaitGroup{}
+		slot0Results           rpc.MultiCallResultWithInfo[ISlot0]
+		liquidityResults       rpc.MultiCallResultWithInfo[*big.Int]
+		errSlot0, errLiquidity error
 	)
 
-	syncGroup.Add(3)
+	syncGroup.Add(2)
 	bef := time.Now()
 	go func() {
 		defer syncGroup.Done()
@@ -239,22 +230,8 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 		}
 	}()
 
-	go func() {
-		defer syncGroup.Done()
-		for i := 0; i < b.RetryOptions.Retries; i++ {
-			ticksResults, errTicks = rpc.NewUniswapMultiCallProvider[Tick](b.MultiCallProvider).MultiCall(
-				ticks,
-				providerConfig,
-			)
-			if errTicks != nil {
-				continue
-			}
-			break
-		}
-	}()
 	syncGroup.Wait()
-	aft := time.Now()
-	fmt.Print(aft.Sub(bef).Seconds())
+
 	if errSlot0 != nil {
 		return nil, errSlot0
 	}
@@ -269,6 +246,11 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 		getPoolAddress:    b.GetPoolAddress,
 	}
 
+	var (
+		tickInfoParams []rpc.MultiCallSingleParam
+		ticks          [][]entitiesV3.Tick
+	)
+
 	for i, address := range sortedPoolAddresses {
 		if !slot0Results.ReturnData[i].Success ||
 			!liquidityResults.ReturnData[i].Success ||
@@ -276,21 +258,42 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 			continue
 		}
 
+		ticks = append(ticks, []entitiesV3.Tick{
+			{
+				Index: entitiesV3.NearestUsableTick(utils.MinTick, constants.TickSpacings[sortedPool[i].FeeAmount]),
+			},
+			{
+				Index: entitiesV3.NearestUsableTick(utils.MinTick, constants.TickSpacings[sortedPool[i].FeeAmount]),
+			},
+		})
+
+		tickInfoParams = append(tickInfoParams, rpc.MultiCallSingleParam{
+			FunctionName:    "ticks",
+			ContractAddress: common.HexToAddress(address),
+			Contract:        poolContract,
+			FunctionParams: []any{
+				slot0Results.ReturnData[i].Data.Tick,
+			},
+		})
+	}
+
+	tickInfoResult, err := rpc.NewUniswapMultiCallProvider[Tick](b.MultiCallProvider).MultiCall(
+		tickInfoParams,
+		providerConfig,
+	)
+	if err != nil {
+		return nil, err
+	}
+	aft := time.Now()
+	fmt.Print(aft.Sub(bef).Seconds())
+
+	for i, address := range sortedPoolAddresses {
 		// create tick data provider
-		p, err := entitiesV3.NewTickListDataProvider([]entitiesV3.Tick{
-			{
-				Index: entitiesV3.NearestUsableTick(utils.MinTick,
-					constants.TickSpacings[sortedPool[i].FeeAmount]),
-				LiquidityNet:   ticksResults.ReturnData[i].Data.LiquidityNet,
-				LiquidityGross: ticksResults.ReturnData[i].Data.LiquidityGross,
-			},
-			{
-				Index: entitiesV3.NearestUsableTick(utils.MaxTick,
-					constants.TickSpacings[sortedPool[i].FeeAmount]),
-				LiquidityNet:   ticksResults.ReturnData[i].Data.LiquidityNet,
-				LiquidityGross: ticksResults.ReturnData[i].Data.LiquidityGross,
-			},
-		}, constants.TickSpacings[sortedPool[i].FeeAmount])
+		ticks[i][0].LiquidityNet = tickInfoResult.ReturnData[i].Data.LiquidityNet
+		ticks[i][1].LiquidityNet = new(big.Int).Neg(tickInfoResult.ReturnData[i].Data.LiquidityNet)
+		ticks[i][0].LiquidityGross = tickInfoResult.ReturnData[i].Data.LiquidityGross
+		ticks[i][1].LiquidityGross = tickInfoResult.ReturnData[i].Data.LiquidityGross
+		p, err := entitiesV3.NewTickListDataProvider(ticks[i], constants.TickSpacings[sortedPool[i].FeeAmount])
 		if err != nil {
 			return nil, err
 		}
