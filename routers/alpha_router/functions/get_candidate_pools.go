@@ -16,7 +16,7 @@ import (
 type PoolId string
 
 type CandidatePoolsBySelectionCriteria struct {
-	Protocol   config.Protocol
+	Protocol   base_entities.Protocol
 	Selections struct {
 		TopByBaseWithTokenIn            []PoolId
 		TopByBaseWithTokenOut           []PoolId
@@ -117,11 +117,11 @@ func GetV3CandidatePools(params V3GetCandidatePoolsParams) (
 		sort.Slice(baseWithTokenOutPools, func(i, j int) bool {
 			return baseWithTokenOutPools[i].TvlUSD.LessThan(baseWithTokenOutPools[j].TvlUSD)
 		})
-		if len(baseWithTokenInPools) > params.RoutingConfig.V3PoolSelection.TopNWithEachBaseToken {
-			baseWithTokenInPools = baseWithTokenInPools[:params.RoutingConfig.V3PoolSelection.TopNWithEachBaseToken]
+		if len(baseWithTokenInPools) > params.Routingbase_entities.V3PoolSelection.TopNWithEachBaseToken {
+			baseWithTokenInPools = baseWithTokenInPools[:params.Routingbase_entities.V3PoolSelection.TopNWithEachBaseToken]
 		}
-		if len(baseWithTokenOutPools) > params.RoutingConfig.V3PoolSelection.TopNWithEachBaseToken {
-			baseWithTokenOutPools = baseWithTokenOutPools[:params.RoutingConfig.V3PoolSelection.TopNWithEachBaseToken]
+		if len(baseWithTokenOutPools) > params.Routingbase_entities.V3PoolSelection.TopNWithEachBaseToken {
+			baseWithTokenOutPools = baseWithTokenOutPools[:params.Routingbase_entities.V3PoolSelection.TopNWithEachBaseToken]
 		}
 		topByBaseWithTokenIn = append(topByBaseWithTokenIn, baseWithTokenInPools...)
 		topByBaseWithTokenOut = append(topByBaseWithTokenOut, baseWithTokenOutPools...)
@@ -132,11 +132,11 @@ func GetV3CandidatePools(params V3GetCandidatePoolsParams) (
 	sort.Slice(topByBaseWithTokenOut, func(i, j int) bool {
 		return topByBaseWithTokenOut[i].TvlUSD.LessThan(topByBaseWithTokenOut[j].TvlUSD)
 	})
-	if len(topByBaseWithTokenIn) > params.RoutingConfig.V3PoolSelection.TopNWithBaseToken {
-		topByBaseWithTokenIn = topByBaseWithTokenIn[:params.RoutingConfig.V3PoolSelection.TopNWithBaseToken]
+	if len(topByBaseWithTokenIn) > params.Routingbase_entities.V3PoolSelection.TopNWithBaseToken {
+		topByBaseWithTokenIn = topByBaseWithTokenIn[:params.Routingbase_entities.V3PoolSelection.TopNWithBaseToken]
 	}
-	if len(topByBaseWithTokenOut) > params.RoutingConfig.V3PoolSelection.TopNWithBaseToken {
-		topByBaseWithTokenOut = topByBaseWithTokenOut[:params.RoutingConfig.V3PoolSelection.TopNWithBaseToken]
+	if len(topByBaseWithTokenOut) > params.Routingbase_entities.V3PoolSelection.TopNWithBaseToken {
+		topByBaseWithTokenOut = topByBaseWithTokenOut[:params.Routingbase_entities.V3PoolSelection.TopNWithBaseToken]
 	}
 
 	var top2DirectSwapPool []v3.IndexerPool
@@ -147,10 +147,10 @@ func GetV3CandidatePools(params V3GetCandidatePoolsParams) (
 			top2DirectSwapPool = append(top2DirectSwapPool, pool)
 		}
 	}
-	if len(top2DirectSwapPool) > params.RoutingConfig.V3PoolSelection.TopNDirectSwaps {
-		top2DirectSwapPool = top2DirectSwapPool[:params.RoutingConfig.V3PoolSelection.TopNDirectSwaps]
+	if len(top2DirectSwapPool) > params.Routingbase_entities.V3PoolSelection.TopNDirectSwaps {
+		top2DirectSwapPool = top2DirectSwapPool[:params.Routingbase_entities.V3PoolSelection.TopNDirectSwaps]
 	}
-	if len(top2DirectSwapPool) == 0 && params.RoutingConfig.V3PoolSelection.TopNDirectSwaps > 0 {
+	if len(top2DirectSwapPool) == 0 && params.Routingbase_entities.V3PoolSelection.TopNDirectSwaps > 0 {
 		feeAmounts := []constants.FeeAmount{
 			constants.FeeHigh, constants.FeeMedium, constants.FeeLow, constants.FeeLowest,
 		}
@@ -209,8 +209,8 @@ func GetV3CandidatePools(params V3GetCandidatePoolsParams) (
 			topByTVL = append(topByTVL, pool)
 		}
 	}
-	if len(topByTVL) > params.RoutingConfig.V3PoolSelection.TopN {
-		topByTVL = topByTVL[:params.RoutingConfig.V3PoolSelection.TopN]
+	if len(topByTVL) > params.Routingbase_entities.V3PoolSelection.TopN {
+		topByTVL = topByTVL[:params.Routingbase_entities.V3PoolSelection.TopN]
 	}
 	addToAddressSet(topByTVL)
 
@@ -221,8 +221,8 @@ func GetV3CandidatePools(params V3GetCandidatePoolsParams) (
 			topByTVLUsingTokenIn = append(topByTVLUsingTokenIn, pool)
 		}
 	}
-	if len(topByTVLUsingTokenIn) > params.RoutingConfig.V3PoolSelection.TopNTokenInOut {
-		topByTVLUsingTokenIn = topByTVLUsingTokenIn[:params.RoutingConfig.V3PoolSelection.TopNTokenInOut]
+	if len(topByTVLUsingTokenIn) > params.Routingbase_entities.V3PoolSelection.TopNTokenInOut {
+		topByTVLUsingTokenIn = topByTVLUsingTokenIn[:params.Routingbase_entities.V3PoolSelection.TopNTokenInOut]
 	}
 	addToAddressSet(topByTVLUsingTokenIn)
 
@@ -233,8 +233,8 @@ func GetV3CandidatePools(params V3GetCandidatePoolsParams) (
 			topByTVLUsingTokenOut = append(topByTVLUsingTokenOut, pool)
 		}
 	}
-	if len(topByTVLUsingTokenOut) > params.RoutingConfig.V3PoolSelection.TopNTokenInOut {
-		topByTVLUsingTokenOut = topByTVLUsingTokenOut[:params.RoutingConfig.V3PoolSelection.TopNTokenInOut]
+	if len(topByTVLUsingTokenOut) > params.Routingbase_entities.V3PoolSelection.TopNTokenInOut {
+		topByTVLUsingTokenOut = topByTVLUsingTokenOut[:params.Routingbase_entities.V3PoolSelection.TopNTokenInOut]
 	}
 	addToAddressSet(topByTVLUsingTokenOut)
 
@@ -257,8 +257,8 @@ func GetV3CandidatePools(params V3GetCandidatePoolsParams) (
 				secondHopPools = append(secondHopPools, filterPool)
 			}
 		}
-		if len(secondHopPools) > params.RoutingConfig.V3PoolSelection.TopNSecondHop {
-			secondHopPools = secondHopPools[:params.RoutingConfig.V3PoolSelection.TopNSecondHop]
+		if len(secondHopPools) > params.Routingbase_entities.V3PoolSelection.TopNSecondHop {
+			secondHopPools = secondHopPools[:params.Routingbase_entities.V3PoolSelection.TopNSecondHop]
 		}
 		for _, v := range secondHopPools {
 			if _, has := topByTVLUsingTokenInSecondHopsMap[v.Id]; has {
@@ -271,8 +271,8 @@ func GetV3CandidatePools(params V3GetCandidatePoolsParams) (
 	sort.Slice(topByTVLUsingTokenInSecondHops, func(i, j int) bool {
 		return topByTVLUsingTokenInSecondHops[i].TvlUSD.LessThan(topByTVLUsingTokenInSecondHops[j].TvlUSD)
 	})
-	if len(topByTVLUsingTokenInSecondHops) > params.RoutingConfig.V3PoolSelection.TopNSecondHop {
-		topByTVLUsingTokenInSecondHops = topByTVLUsingTokenInSecondHops[:params.RoutingConfig.V3PoolSelection.TopNSecondHop]
+	if len(topByTVLUsingTokenInSecondHops) > params.Routingbase_entities.V3PoolSelection.TopNSecondHop {
+		topByTVLUsingTokenInSecondHops = topByTVLUsingTokenInSecondHops[:params.Routingbase_entities.V3PoolSelection.TopNSecondHop]
 	}
 	addToAddressSet(topByTVLUsingTokenInSecondHops)
 
@@ -295,8 +295,8 @@ func GetV3CandidatePools(params V3GetCandidatePoolsParams) (
 				secondHopPools = append(secondHopPools, filterPool)
 			}
 		}
-		if len(secondHopPools) > params.RoutingConfig.V3PoolSelection.TopNSecondHop {
-			secondHopPools = secondHopPools[:params.RoutingConfig.V3PoolSelection.TopNSecondHop]
+		if len(secondHopPools) > params.Routingbase_entities.V3PoolSelection.TopNSecondHop {
+			secondHopPools = secondHopPools[:params.Routingbase_entities.V3PoolSelection.TopNSecondHop]
 		}
 		for _, v := range secondHopPools {
 			if _, has := topByTVLUsingTokenOutSecondHopsMap[v.Id]; has {
@@ -309,8 +309,8 @@ func GetV3CandidatePools(params V3GetCandidatePoolsParams) (
 	sort.Slice(topByTVLUsingTokenOutSecondHops, func(i, j int) bool {
 		return topByTVLUsingTokenOutSecondHops[i].TvlUSD.LessThan(topByTVLUsingTokenOutSecondHops[j].TvlUSD)
 	})
-	if len(topByTVLUsingTokenOutSecondHops) > params.RoutingConfig.V3PoolSelection.TopNSecondHop {
-		topByTVLUsingTokenOutSecondHops = topByTVLUsingTokenOutSecondHops[:params.RoutingConfig.V3PoolSelection.TopNSecondHop]
+	if len(topByTVLUsingTokenOutSecondHops) > params.Routingbase_entities.V3PoolSelection.TopNSecondHop {
+		topByTVLUsingTokenOutSecondHops = topByTVLUsingTokenOutSecondHops[:params.Routingbase_entities.V3PoolSelection.TopNSecondHop]
 	}
 	addToAddressSet(topByTVLUsingTokenOutSecondHops)
 
@@ -434,11 +434,11 @@ func GetV2CandidatePools(params V2GetCandidatePoolsParams) (
 		sort.Slice(baseWithTokenOutPools, func(i, j int) bool {
 			return baseWithTokenOutPools[i].Reserve.LessThan(baseWithTokenOutPools[j].Reserve)
 		})
-		if len(baseWithTokenInPools) > params.RoutingConfig.V3PoolSelection.TopNWithEachBaseToken {
-			baseWithTokenInPools = baseWithTokenInPools[:params.RoutingConfig.V3PoolSelection.TopNWithEachBaseToken]
+		if len(baseWithTokenInPools) > params.Routingbase_entities.V3PoolSelection.TopNWithEachBaseToken {
+			baseWithTokenInPools = baseWithTokenInPools[:params.Routingbase_entities.V3PoolSelection.TopNWithEachBaseToken]
 		}
-		if len(baseWithTokenOutPools) > params.RoutingConfig.V3PoolSelection.TopNWithEachBaseToken {
-			baseWithTokenOutPools = baseWithTokenOutPools[:params.RoutingConfig.V3PoolSelection.TopNWithEachBaseToken]
+		if len(baseWithTokenOutPools) > params.Routingbase_entities.V3PoolSelection.TopNWithEachBaseToken {
+			baseWithTokenOutPools = baseWithTokenOutPools[:params.Routingbase_entities.V3PoolSelection.TopNWithEachBaseToken]
 		}
 		topByBaseWithTokenIn = append(topByBaseWithTokenIn, baseWithTokenInPools...)
 		topByBaseWithTokenOut = append(topByBaseWithTokenOut, baseWithTokenOutPools...)
@@ -449,15 +449,15 @@ func GetV2CandidatePools(params V2GetCandidatePoolsParams) (
 	sort.Slice(topByBaseWithTokenOut, func(i, j int) bool {
 		return topByBaseWithTokenOut[i].Reserve.LessThan(topByBaseWithTokenOut[j].Reserve)
 	})
-	if len(topByBaseWithTokenIn) > params.RoutingConfig.V3PoolSelection.TopNWithBaseToken {
-		topByBaseWithTokenIn = topByBaseWithTokenIn[:params.RoutingConfig.V3PoolSelection.TopNWithBaseToken]
+	if len(topByBaseWithTokenIn) > params.Routingbase_entities.V3PoolSelection.TopNWithBaseToken {
+		topByBaseWithTokenIn = topByBaseWithTokenIn[:params.Routingbase_entities.V3PoolSelection.TopNWithBaseToken]
 	}
-	if len(topByBaseWithTokenOut) > params.RoutingConfig.V3PoolSelection.TopNWithBaseToken {
-		topByBaseWithTokenOut = topByBaseWithTokenOut[:params.RoutingConfig.V3PoolSelection.TopNWithBaseToken]
+	if len(topByBaseWithTokenOut) > params.Routingbase_entities.V3PoolSelection.TopNWithBaseToken {
+		topByBaseWithTokenOut = topByBaseWithTokenOut[:params.Routingbase_entities.V3PoolSelection.TopNWithBaseToken]
 	}
 
 	var topByDirectSwapPool []v2.IndexerPool
-	if params.RoutingConfig.V2PoolSelection.TopNDirectSwaps != 0 {
+	if params.Routingbase_entities.V2PoolSelection.TopNDirectSwaps != 0 {
 		address, token0, token1, err := params.PoolProvider.GetPoolAddress(params.TokenIn, params.TokenOut)
 		if err != nil {
 			return nil, candidatePools, err
@@ -511,8 +511,8 @@ func GetV2CandidatePools(params V2GetCandidatePoolsParams) (
 			topByTVL = append(topByTVL, pool)
 		}
 	}
-	if len(topByTVL) > params.RoutingConfig.V3PoolSelection.TopN {
-		topByTVL = topByTVL[:params.RoutingConfig.V3PoolSelection.TopN]
+	if len(topByTVL) > params.Routingbase_entities.V3PoolSelection.TopN {
+		topByTVL = topByTVL[:params.Routingbase_entities.V3PoolSelection.TopN]
 	}
 	addToAddressSet(topByTVL)
 
@@ -523,8 +523,8 @@ func GetV2CandidatePools(params V2GetCandidatePoolsParams) (
 			topByTVLUsingTokenIn = append(topByTVLUsingTokenIn, pool)
 		}
 	}
-	if len(topByTVLUsingTokenIn) > params.RoutingConfig.V3PoolSelection.TopNTokenInOut {
-		topByTVLUsingTokenIn = topByTVLUsingTokenIn[:params.RoutingConfig.V3PoolSelection.TopNTokenInOut]
+	if len(topByTVLUsingTokenIn) > params.Routingbase_entities.V3PoolSelection.TopNTokenInOut {
+		topByTVLUsingTokenIn = topByTVLUsingTokenIn[:params.Routingbase_entities.V3PoolSelection.TopNTokenInOut]
 	}
 	addToAddressSet(topByTVLUsingTokenIn)
 
@@ -535,8 +535,8 @@ func GetV2CandidatePools(params V2GetCandidatePoolsParams) (
 			topByTVLUsingTokenOut = append(topByTVLUsingTokenOut, pool)
 		}
 	}
-	if len(topByTVLUsingTokenOut) > params.RoutingConfig.V3PoolSelection.TopNTokenInOut {
-		topByTVLUsingTokenOut = topByTVLUsingTokenOut[:params.RoutingConfig.V3PoolSelection.TopNTokenInOut]
+	if len(topByTVLUsingTokenOut) > params.Routingbase_entities.V3PoolSelection.TopNTokenInOut {
+		topByTVLUsingTokenOut = topByTVLUsingTokenOut[:params.Routingbase_entities.V3PoolSelection.TopNTokenInOut]
 	}
 	addToAddressSet(topByTVLUsingTokenOut)
 
@@ -559,8 +559,8 @@ func GetV2CandidatePools(params V2GetCandidatePoolsParams) (
 				secondHopPools = append(secondHopPools, filterPool)
 			}
 		}
-		if len(secondHopPools) > params.RoutingConfig.V3PoolSelection.TopNSecondHop {
-			secondHopPools = secondHopPools[:params.RoutingConfig.V3PoolSelection.TopNSecondHop]
+		if len(secondHopPools) > params.Routingbase_entities.V3PoolSelection.TopNSecondHop {
+			secondHopPools = secondHopPools[:params.Routingbase_entities.V3PoolSelection.TopNSecondHop]
 		}
 		for _, v := range secondHopPools {
 			if _, has := topByTVLUsingTokenInSecondHopsMap[v.Id]; has {
@@ -573,8 +573,8 @@ func GetV2CandidatePools(params V2GetCandidatePoolsParams) (
 	sort.Slice(topByTVLUsingTokenInSecondHops, func(i, j int) bool {
 		return topByTVLUsingTokenInSecondHops[i].Reserve.LessThan(topByTVLUsingTokenInSecondHops[j].Reserve)
 	})
-	if len(topByTVLUsingTokenInSecondHops) > params.RoutingConfig.V3PoolSelection.TopNSecondHop {
-		topByTVLUsingTokenInSecondHops = topByTVLUsingTokenInSecondHops[:params.RoutingConfig.V3PoolSelection.TopNSecondHop]
+	if len(topByTVLUsingTokenInSecondHops) > params.Routingbase_entities.V3PoolSelection.TopNSecondHop {
+		topByTVLUsingTokenInSecondHops = topByTVLUsingTokenInSecondHops[:params.Routingbase_entities.V3PoolSelection.TopNSecondHop]
 	}
 	addToAddressSet(topByTVLUsingTokenInSecondHops)
 
@@ -597,8 +597,8 @@ func GetV2CandidatePools(params V2GetCandidatePoolsParams) (
 				secondHopPools = append(secondHopPools, filterPool)
 			}
 		}
-		if len(secondHopPools) > params.RoutingConfig.V3PoolSelection.TopNSecondHop {
-			secondHopPools = secondHopPools[:params.RoutingConfig.V3PoolSelection.TopNSecondHop]
+		if len(secondHopPools) > params.Routingbase_entities.V3PoolSelection.TopNSecondHop {
+			secondHopPools = secondHopPools[:params.Routingbase_entities.V3PoolSelection.TopNSecondHop]
 		}
 		for _, v := range secondHopPools {
 			if _, has := topByTVLUsingTokenOutSecondHopsMap[v.Id]; has {
@@ -611,8 +611,8 @@ func GetV2CandidatePools(params V2GetCandidatePoolsParams) (
 	sort.Slice(topByTVLUsingTokenOutSecondHops, func(i, j int) bool {
 		return topByTVLUsingTokenOutSecondHops[i].Reserve.LessThan(topByTVLUsingTokenOutSecondHops[j].Reserve)
 	})
-	if len(topByTVLUsingTokenOutSecondHops) > params.RoutingConfig.V3PoolSelection.TopNSecondHop {
-		topByTVLUsingTokenOutSecondHops = topByTVLUsingTokenOutSecondHops[:params.RoutingConfig.V3PoolSelection.TopNSecondHop]
+	if len(topByTVLUsingTokenOutSecondHops) > params.Routingbase_entities.V3PoolSelection.TopNSecondHop {
+		topByTVLUsingTokenOutSecondHops = topByTVLUsingTokenOutSecondHops[:params.Routingbase_entities.V3PoolSelection.TopNSecondHop]
 	}
 	addToAddressSet(topByTVLUsingTokenOutSecondHops)
 

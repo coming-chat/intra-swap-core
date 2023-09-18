@@ -218,7 +218,7 @@ func getBestSwapRouteBy(
 					if _, hasL1Fee := base_entities.HasL1Fee[chainId]; hasL1Fee {
 						var curRoutesNewV3 []providers.V3RouteWithValidQuote
 						for _, cr := range curRoutesNew {
-							if cr.Protocol() == config.V2 {
+							if cr.Protocol() == base_entities.V2 {
 								break
 							}
 							curRoutesNewV3 = append(curRoutesNewV3, cr.(providers.V3RouteWithValidQuote))
@@ -311,7 +311,7 @@ func getBestSwapRouteBy(
 		// ensure the gasModel exists and that the swap route is a v3 only route
 		var bsV3 []providers.V3RouteWithValidQuote
 		for _, bs := range bestSwap {
-			if bs.Protocol() == config.V2 {
+			if bs.Protocol() == base_entities.V2 {
 				break
 			}
 			bsV3 = append(bsV3, bs.(providers.V3RouteWithValidQuote))
@@ -390,7 +390,7 @@ func findFirstRouteNotUsingUsedPools(
 ) (providers.RouteWithValidQuote, error) {
 	var (
 		poolAddressSet = make(map[string]struct{})
-		protocolsSet   = make(map[config.Protocol]struct{})
+		protocolsSet   = make(map[base_entities.Protocol]struct{})
 	)
 	for _, v := range usedRoutes {
 		for _, pa := range v.GetBaseRouteWithValidQuote().PoolAddresses {

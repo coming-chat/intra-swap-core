@@ -11,6 +11,13 @@ type (
 	V2Route = entitiesV2.Route
 )
 
+type Protocol int
+
+const (
+	V2 Protocol = iota
+	V3
+)
+
 type Route interface {
 	*V3Route | *V2Route
 }

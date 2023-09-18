@@ -4,7 +4,6 @@ import (
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	v2 "github.com/coming-chat/intra-swap-core/providers/v2"
 	v3 "github.com/coming-chat/intra-swap-core/providers/v3"
-	"github.com/coming-chat/intra-swap-core/routers/alpha_router/config"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"math/big"
 )
@@ -39,7 +38,7 @@ func (g GasModel[T]) CalculateL1GasFees(routes []T) (*L1ToL2GasCosts, error) {
 }
 
 type RouteWithValidQuote interface {
-	Protocol() config.Protocol
+	Protocol() base_entities.Protocol
 	GetBaseRouteWithValidQuote() *BaseRouteWithValidQuote
 }
 
@@ -66,8 +65,8 @@ type V2RouteWithValidQuote struct {
 	GasModel GasModel[V2RouteWithValidQuote]
 }
 
-func (v V2RouteWithValidQuote) Protocol() config.Protocol {
-	return config.V2
+func (v V2RouteWithValidQuote) Protocol() base_entities.Protocol {
+	return base_entities.V2
 }
 
 func (v V2RouteWithValidQuote) GetBaseRouteWithValidQuote() *BaseRouteWithValidQuote {
@@ -132,8 +131,8 @@ type V3RouteWithValidQuote struct {
 	GasModel                    GasModel[V3RouteWithValidQuote]
 }
 
-func (v V3RouteWithValidQuote) Protocol() config.Protocol {
-	return config.V3
+func (v V3RouteWithValidQuote) Protocol() base_entities.Protocol {
+	return base_entities.V3
 }
 
 func (v V3RouteWithValidQuote) GetBaseRouteWithValidQuote() *BaseRouteWithValidQuote {

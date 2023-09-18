@@ -181,7 +181,7 @@ func (a *AlphaRouter) Route(
 	percents, amounts := a.getAmountDistribution(amount, routingConfig)
 	gasPrice := a.GasPriceProvider.GetGasPrice()
 	quoteToken := quoteCurrency.Wrapped()
-	protocolsSet := make(map[config.Protocol]struct{})
+	protocolsSet := make(map[base_entities.Protocol]struct{})
 	for _, v := range routingConfig.Protocols {
 		protocolsSet[v] = struct{}{}
 	}
@@ -196,8 +196,8 @@ func (a *AlphaRouter) Route(
 		return nil, err
 	}
 
-	_, hasV2 := protocolsSet[config.V2]
-	_, hasV3 := protocolsSet[config.V3]
+	_, hasV2 := protocolsSet[base_entities.V2]
+	_, hasV3 := protocolsSet[base_entities.V3]
 	_, v2Supported := base_entities.V2Supported[a.ChainId]
 	syncGroup := sync.WaitGroup{}
 	lock := sync.Mutex{}
@@ -376,7 +376,7 @@ func (a *AlphaRouter) RouteToRatio(
 
 		var targetPoolPriceUpdate *big.Int
 		for _, route := range swap.Route {
-			if route.Protocol() != config.V3 {
+			if route.Protocol() != base_entities.V3 {
 				continue
 			}
 			v3Route := route.(providers.V3RouteWithValidQuote)

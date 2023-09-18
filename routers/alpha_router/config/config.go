@@ -6,13 +6,6 @@ import (
 	"github.com/daoleno/uniswapv3-sdk/periphery"
 )
 
-type Protocol int
-
-const (
-	V2 Protocol = iota
-	V3
-)
-
 type SwapOptions struct {
 	Recipient         string
 	SlippageTolerance *entities.Percent
@@ -44,7 +37,7 @@ type AlphaRouterConfig struct {
 	 * The protocols to consider when finding the optimal swap. If not provided all protocols
 	 * will be used.
 	 */
-	Protocols []Protocol
+	Protocols []base_entities.Protocol
 	/**
 	 * Config for selecting which pools to consider routing via on V2.
 	 */
@@ -176,9 +169,9 @@ func DefaultRoutingConfigByChain(chainId base_entities.ChainId) AlphaRouterConfi
 		}
 	default:
 		return AlphaRouterConfig{
-			Protocols: []Protocol{
-				V2,
-				V3,
+			Protocols: []base_entities.Protocol{
+				base_entities.V2,
+				base_entities.V3,
 			},
 			V2PoolSelection: ProtocolPoolSelection{
 				TopN:                  3,
