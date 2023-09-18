@@ -1,6 +1,7 @@
 package v2
 
 import (
+	"fmt"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"math/big"
@@ -44,33 +45,29 @@ func (b *BaseQuoteProvider) getQuotes(
 	for _, route := range routes {
 		var amountQuotes []AmountQuote
 		for _, amount := range amounts {
-			if tradeType == entities.ExactInput {
-				outputAmount := amount.Wrapped()
+			cycleAmount := amount.Wrapped()
+			switch tradeType {
+			case entities.ExactInput:
 				for _, pair := range route.Pairs {
-					outputAmount, _, err = pair.GetOutputAmount(outputAmount)
+					cycleAmount, _, err = pair.GetOutputAmount(cycleAmount)
 					if err != nil {
 						return nil, err
 					}
 				}
-
-				amountQuotes = append(amountQuotes, AmountQuote{
-					Amount: amount,
-					Quote:  outputAmount.Quotient(),
-				})
-			} else {
-				inputAmount := amount.Wrapped()
+			case entities.ExactOutput:
 				for i := len(route.Pairs) - 1; i >= 0; i-- {
-					inputAmount, _, err = route.Pairs[i].GetInputAmount(inputAmount)
+					cycleAmount, _, err = route.Pairs[i].GetInputAmount(cycleAmount)
 					if err != nil {
 						return nil, err
 					}
 				}
-
-				amountQuotes = append(amountQuotes, AmountQuote{
-					Amount: amount,
-					Quote:  inputAmount.Quotient(),
-				})
+			default:
+				return nil, fmt.Errorf("unsupported tradeType: %#v", tradeType)
 			}
+			amountQuotes = append(amountQuotes, AmountQuote{
+				Amount: amount,
+				Quote:  cycleAmount.Quotient(),
+			})
 		}
 		routesWithQuotes = append(routesWithQuotes, RouteWithQuotes{
 			Route:        route,
