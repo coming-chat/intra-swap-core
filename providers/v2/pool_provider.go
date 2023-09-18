@@ -48,15 +48,21 @@ type PoolAccessor interface {
 	) (*base_entities.V2Pool, error)
 	GetPoolByAddress(address string) *base_entities.V2Pool
 	GetAllPools() []*base_entities.V2Pool
+	GetBasePool(subPool *entitiesV2.Pair) *base_entities.V2Pool
 }
 
 type BasePoolAccessor struct {
 	poolAddressToPool map[string]*base_entities.V2Pool
 	pools             []*base_entities.V2Pool
+	subPoolMap        map[*entitiesV2.Pair]*base_entities.V2Pool
 	getPool           func(
 		tokenA, tokenB *entities.Token,
 		//factoryAddress common.Address,
 	) (poolAddress string, token0, token1 *entities.Token, err error)
+}
+
+func (b *BasePoolAccessor) GetBasePool(subPool *entitiesV2.Pair) *base_entities.V2Pool {
+	return b.subPoolMap[subPool]
 }
 
 func (b *BasePoolAccessor) GetPool(
@@ -167,6 +173,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 	}
 	poolAccessor := &BasePoolAccessor{
 		poolAddressToPool: make(map[string]*base_entities.V2Pool),
+		subPoolMap:        make(map[*entitiesV2.Pair]*base_entities.V2Pool),
 		getPool:           b.GetPoolAddress,
 	}
 	for i, result := range reservesResults.ReturnData {
@@ -187,6 +194,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 			Pair: pair,
 		}
 		poolAccessor.poolAddressToPool[poolAddress.String()] = pool
+		poolAccessor.subPoolMap[pool.Pair] = pool
 		b.PoolAddressCache[fmt.Sprintf(cacheKeyFormat, b.ChainId, sortedTokenPairs[i].Token0.Address.String(), sortedTokenPairs[i].Token1.Address.String())] = poolAddress.String()
 		poolAccessor.pools = append(poolAccessor.pools, pool)
 	}

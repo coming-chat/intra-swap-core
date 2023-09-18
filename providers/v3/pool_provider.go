@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 	"sync"
+	"time"
 )
 
 const cacheKeyFormat = "%d:%s-%s/%d"
@@ -67,15 +68,21 @@ type PoolAccessor interface {
 	) (*base_entities.V3Pool, error)
 	GetPoolByAddress(address string) *base_entities.V3Pool
 	GetAllPools() []*base_entities.V3Pool
+	GetBasePool(subPool *entitiesV3.Pool) *base_entities.V3Pool
 }
 
 type BasePoolAccessor struct {
 	poolAddressToPool map[string]*base_entities.V3Pool
 	pools             []*base_entities.V3Pool
+	subPoolMap        map[*entitiesV3.Pool]*base_entities.V3Pool
 	getPoolAddress    func(tokenA, tokenB *entities.Token,
 		//factoryAddress common.Address,
 		feeAmount constants.FeeAmount,
 	) (poolAddress string, token0, token1 *entities.Token, err error)
+}
+
+func (b BasePoolAccessor) GetBasePool(subPool *entitiesV3.Pool) *base_entities.V3Pool {
+	return b.subPoolMap[subPool]
 }
 
 func (b BasePoolAccessor) GetPool(
@@ -203,7 +210,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 	)
 
 	syncGroup.Add(3)
-
+	bef := time.Now()
 	go func() {
 		defer syncGroup.Done()
 		for i := 0; i < b.RetryOptions.Retries; i++ {
@@ -246,7 +253,8 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 		}
 	}()
 	syncGroup.Wait()
-
+	aft := time.Now()
+	fmt.Print(aft.Sub(bef).Seconds())
 	if errSlot0 != nil {
 		return nil, errSlot0
 	}
@@ -257,6 +265,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 
 	poolAccessor := BasePoolAccessor{
 		poolAddressToPool: make(map[string]*base_entities.V3Pool),
+		subPoolMap:        make(map[*entitiesV3.Pool]*base_entities.V3Pool),
 		getPoolAddress:    b.GetPoolAddress,
 	}
 
@@ -301,6 +310,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 			Pool: v3pool,
 		}
 		poolAccessor.poolAddressToPool[common.HexToAddress(address).String()] = pool
+		poolAccessor.subPoolMap[pool.Pool] = pool
 		b.PoolAddressCache[fmt.Sprintf(cacheKeyFormat, b.ChainId, sortedPool[i].Token0.Address.String(), sortedPool[i].Token1.Address.String(), sortedPool[i].FeeAmount)] = common.HexToAddress(address).String()
 		poolAccessor.pools = append(poolAccessor.pools, pool)
 	}

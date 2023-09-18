@@ -575,7 +575,7 @@ func (a *AlphaRouter) getV3Quotes(
 				GasModel:                    gasModel,
 				QuoteToken:                  quoteToken,
 				TradeType:                   swapType,
-				V3PoolProvider:              a.V3PoolProvider,
+				PoolAccessor:                poolAccessor,
 			})
 			if err != nil {
 				return nil, err
@@ -688,14 +688,14 @@ func (a *AlphaRouter) getV2Quotes(
 				continue
 			}
 			routeWithValidQuote, err := providers.NewV2RouteWithValidQuote(providers.V2RouteWithValidQuoteParams{
-				Route:          routeWithQuote.Route,
-				RawQuote:       amountQuote.Quote,
-				Amount:         amountQuote.Amount,
-				Percent:        percent,
-				GasModel:       gasModel,
-				QuoteToken:     quoteToken,
-				TradeType:      swapType,
-				V2PoolProvider: a.V2PoolProvider,
+				Route:        routeWithQuote.Route,
+				RawQuote:     amountQuote.Quote,
+				Amount:       amountQuote.Amount,
+				Percent:      percent,
+				GasModel:     gasModel,
+				QuoteToken:   quoteToken,
+				TradeType:    swapType,
+				PoolAccessor: poolAccessor,
 			})
 			if err != nil {
 				return nil, err
