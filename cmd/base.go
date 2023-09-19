@@ -4,13 +4,13 @@ import (
 	"context"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/providers"
-	"github.com/coming-chat/intra-swap-core/providers/gas_price"
+	"github.com/coming-chat/intra-swap-core/providers/gas"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	v2 "github.com/coming-chat/intra-swap-core/providers/v2"
 	v3 "github.com/coming-chat/intra-swap-core/providers/v3"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router"
-	gasModelsV2 "github.com/coming-chat/intra-swap-core/routers/alpha_router/gas_models/v2"
-	gasModelsV3 "github.com/coming-chat/intra-swap-core/routers/alpha_router/gas_models/v3"
+	gasModelsV2 "github.com/coming-chat/intra-swap-core/routers/alpha_router/models/v2"
+	gasModelsV3 "github.com/coming-chat/intra-swap-core/routers/alpha_router/models/v3"
 	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
@@ -38,7 +38,7 @@ func Ready(chainId base_entities.ChainId) (*alpha_router.AlphaRouter, error) {
 		V2PoolProvider:           v2.NewBasePoolProvider(chainId, map[string]string{}, uniswapMultiCallCore, nil),
 		V2QuoteProvider:          v2.NewBaseQuoteProvider(),
 		TokenProvider:            providers.NewBaseTokenProvider(chainId, uniswapMultiCallCore),
-		GasPriceProvider:         &gas_price.BaseGasPriceProvider{},
+		GasPriceProvider:         &gas.BaseGasPriceProvider{},
 		V3GasModelFactory:        gasModelsV3.NewHeuristicGasModelFactory(rpcBaseProvider, uniswapMultiCallCore, ""),
 		V2GasModelFactory:        &gasModelsV2.HeuristicGasModelFactory{},
 		BlockedTokenListProvider: nil,

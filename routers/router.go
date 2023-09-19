@@ -2,7 +2,6 @@ package routers
 
 import (
 	"github.com/coming-chat/intra-swap-core/base_entities"
-	"github.com/coming-chat/intra-swap-core/providers"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/config"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	entitiesV3 "github.com/daoleno/uniswapv3-sdk/entities"
@@ -21,7 +20,7 @@ type SwapRoute struct {
 	EstimatedGasUsedUSD        *entities.CurrencyAmount
 	GasPriceWei                *big.Int
 	Trade                      base_entities.Trade
-	Route                      []providers.RouteWithValidQuote
+	Route                      []RouteWithValidQuote
 	BlockNumber                uint64
 	MethodParameters           *utils.MethodParameters
 }
@@ -50,4 +49,26 @@ type SwapToRatio interface {
 		swapAndAddOptions config.SwapAndAddOptions,
 		routingConfig config.AlphaRouterConfig,
 	) (*SwapToRatioRoute, error)
+}
+
+type RouteWithValidQuote interface {
+	Protocol() base_entities.Protocol
+	GetBaseRouteWithValidQuote() *BaseRouteWithValidQuote
+}
+
+type BaseRouteWithValidQuote struct {
+	Amount  *entities.CurrencyAmount
+	Percent int
+	// If exact in, v3rwvq is (quote - gasCostInToken). If exact out, v3rwvq is (quote + gasCostInToken).
+	QuoteAdjustedForGas *entities.CurrencyAmount
+	Quote               *entities.CurrencyAmount
+	GasEstimate         *big.Int
+	// The gas cost in terms of the quote token.
+	GasCostInToken *entities.CurrencyAmount
+	GasCostInUSD   *entities.CurrencyAmount
+	TradeType      entities.TradeType
+	PoolAddresses  []string
+	TokenPath      []*entities.Token
+	QuoteToken     *entities.Token
+	RawQuote       *big.Int
 }
