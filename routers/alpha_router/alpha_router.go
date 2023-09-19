@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/providers"
-	"github.com/coming-chat/intra-swap-core/providers/gas_price"
+	"github.com/coming-chat/intra-swap-core/providers/gas"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	v2 "github.com/coming-chat/intra-swap-core/providers/v2"
 	v3 "github.com/coming-chat/intra-swap-core/providers/v3"
 	"github.com/coming-chat/intra-swap-core/routers"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/config"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/functions"
-	"github.com/coming-chat/intra-swap-core/routers/alpha_router/gas_models"
+	"github.com/coming-chat/intra-swap-core/routers/alpha_router/models"
 	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	entitiesV3 "github.com/daoleno/uniswapv3-sdk/entities"
@@ -75,17 +75,17 @@ type AlphaRouterParams struct {
 	 * The provider for getting the current gas price to use when account for gas in the
 	 * algorithm.
 	 */
-	GasPriceProvider gas_price.GasPriceProvider
+	GasPriceProvider gas.GasPriceProvider
 	/**
 	 * A factory for generating a gas model that is used when estimating the gas used by
 	 * V3 routes.
 	 */
-	V3GasModelFactory gas_models.V3GasModelFactory
+	V3GasModelFactory models.V3GasModelFactory
 	/**
 	 * A factory for generating a gas model that is used when estimating the gas used by
 	 * V2 routes.
 	 */
-	V2GasModelFactory gas_models.V2GasModelFactory
+	V2GasModelFactory models.V2GasModelFactory
 	/**
 	 * A token list that specifies Token that should be blocked from routing through.
 	 * Defaults to Uniswap's unsupported token list.
@@ -146,10 +146,10 @@ type AlphaRouter struct {
 	V2PoolProvider            v2.PoolProvider
 	V2QuoteProvider           v2.QuoteProvider
 	TokenProvider             providers.TokenProvider
-	GasPriceProvider          gas_price.GasPriceProvider
+	GasPriceProvider          gas.GasPriceProvider
 	//SwapRouterProvider providers.SwapRouterProvider
-	V3GasModelFactory gas_models.V3GasModelFactory
-	V2GasModelFactory gas_models.V2GasModelFactory
+	V3GasModelFactory models.V3GasModelFactory
+	V2GasModelFactory models.V2GasModelFactory
 	//TokenValidatorProvider   TokenValidatorProvider
 	BlockedTokenListProvider *providers.TokenListProvider
 	Ctx                      context.Context
@@ -259,7 +259,7 @@ func (a *AlphaRouter) Route(
 	}
 	syncGroup.Wait()
 	var (
-		allRoutesWithValidQuotes []providers.RouteWithValidQuote
+		allRoutesWithValidQuotes []routers.RouteWithValidQuote
 		allCandidatePools        []functions.CandidatePoolsBySelectionCriteria
 	)
 	for _, r := range routesWithValidQuotesAndPools {
@@ -383,7 +383,7 @@ func (a *AlphaRouter) RouteToRatio(
 			if route.Protocol() != base_entities.V3 {
 				continue
 			}
-			v3Route := route.(providers.V3RouteWithValidQuote)
+			v3Route := route.(models.V3RouteWithValidQuote)
 			for i, v3Pool := range v3Route.Route.Pools {
 				if v3Pool.Token0.Equal(position.Pool.Token0) && v3Pool.Token1.Equal(position.Pool.Token1) && v3Pool.Fee == position.Pool.Fee {
 					targetPoolPriceUpdate = v3Route.SqrtPriceX96AfterList[i]
@@ -500,7 +500,7 @@ func (a *AlphaRouter) getV3Quotes(
 	amounts []*entities.CurrencyAmount,
 	percents []int,
 	quoteToken *entities.Token,
-	gasModel providers.GasModel[providers.V3RouteWithValidQuote],
+	gasModel models.GasModel[models.V3RouteWithValidQuote],
 	swapType entities.TradeType,
 	routingConfig config.AlphaRouterConfig,
 ) (
@@ -554,7 +554,7 @@ func (a *AlphaRouter) getV3Quotes(
 		return nil, err
 	}
 
-	var routesWithValidQuotes []providers.RouteWithValidQuote
+	var routesWithValidQuotes []routers.RouteWithValidQuote
 	for _, routeWithQuote := range routesWithQuotes {
 		for i := 0; i < len(routeWithQuote.AmountQuote); i++ {
 			percent := percents[i]
@@ -564,7 +564,7 @@ func (a *AlphaRouter) getV3Quotes(
 				continue
 			}
 
-			routeWithValidQuote, err := providers.NewV3RouteWithValidQuote(providers.V3RouteWithValidQuoteParams{
+			routeWithValidQuote, err := models.NewV3RouteWithValidQuote(models.V3RouteWithValidQuoteParams{
 				Route:                       routeWithQuote.Route,
 				RawQuote:                    amountQuote.Quote,
 				Amount:                      amountQuote.Amount,
@@ -596,7 +596,7 @@ func (a *AlphaRouter) getV3Quotes(
 //}
 
 type routesWithValidQuotesAndPool struct {
-	RoutesWithValidQuotes []providers.RouteWithValidQuote
+	RoutesWithValidQuotes []routers.RouteWithValidQuote
 	CandidatePools        functions.CandidatePoolsBySelectionCriteria
 }
 
@@ -679,7 +679,7 @@ func (a *AlphaRouter) getV2Quotes(
 		return nil, err
 	}
 
-	var routesWithValidQuotes []providers.RouteWithValidQuote
+	var routesWithValidQuotes []routers.RouteWithValidQuote
 	for _, routeWithQuote := range routesWithQuotes {
 		for i := 0; i < len(routeWithQuote.AmountQuotes); i++ {
 			percent := percents[i]
@@ -687,7 +687,7 @@ func (a *AlphaRouter) getV2Quotes(
 			if amountQuote.Quote == nil {
 				continue
 			}
-			routeWithValidQuote, err := providers.NewV2RouteWithValidQuote(providers.V2RouteWithValidQuoteParams{
+			routeWithValidQuote, err := models.NewV2RouteWithValidQuote(models.V2RouteWithValidQuoteParams{
 				Route:        routeWithQuote.Route,
 				RawQuote:     amountQuote.Quote,
 				Amount:       amountQuote.Amount,

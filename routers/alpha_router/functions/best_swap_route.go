@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/coming-chat/intra-swap-core/base_entities"
-	"github.com/coming-chat/intra-swap-core/providers"
+	"github.com/coming-chat/intra-swap-core/routers"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/config"
-	"github.com/coming-chat/intra-swap-core/routers/alpha_router/gas_models"
+	"github.com/coming-chat/intra-swap-core/routers/alpha_router/models"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"math/big"
 	"sort"
@@ -18,19 +18,19 @@ type BestRouteResult struct {
 	EstimatedGasUsed           *big.Int
 	EstimatedGasUsedUSD        *entities.CurrencyAmount
 	EstimatedGasUsedQuoteToken *entities.CurrencyAmount
-	Routes                     []providers.RouteWithValidQuote
+	Routes                     []routers.RouteWithValidQuote
 }
 
 func GetBestSwapRoute(
 	amount *entities.CurrencyAmount,
 	percents []int,
-	routesWithValidQuotes []providers.RouteWithValidQuote,
+	routesWithValidQuotes []routers.RouteWithValidQuote,
 	routeType entities.TradeType,
 	chainId base_entities.ChainId,
 	routingConfig config.AlphaRouterConfig,
-	gasModel *providers.GasModel[providers.V3RouteWithValidQuote],
+	gasModel *models.GasModel[models.V3RouteWithValidQuote],
 ) (*BestRouteResult, error) {
-	percentToQuotes := make(map[int][]providers.RouteWithValidQuote)
+	percentToQuotes := make(map[int][]routers.RouteWithValidQuote)
 	for _, v := range routesWithValidQuotes {
 		percentToQuotes[v.GetBaseRouteWithValidQuote().Percent] = append(percentToQuotes[v.GetBaseRouteWithValidQuote().Percent], v)
 	}
@@ -39,7 +39,7 @@ func GetBestSwapRoute(
 		percentToQuotes,
 		percents,
 		chainId,
-		func(rq providers.RouteWithValidQuote) *entities.CurrencyAmount {
+		func(rq routers.RouteWithValidQuote) *entities.CurrencyAmount {
 			return rq.GetBaseRouteWithValidQuote().QuoteAdjustedForGas
 		},
 		routingConfig,
@@ -63,12 +63,12 @@ func GetBestSwapRoute(
 
 func getBestSwapRouteBy(
 	routeType entities.TradeType,
-	percentToQuotes map[int][]providers.RouteWithValidQuote,
+	percentToQuotes map[int][]routers.RouteWithValidQuote,
 	percents []int,
 	chainId base_entities.ChainId,
-	by func(routeQuote providers.RouteWithValidQuote) *entities.CurrencyAmount,
+	by func(routeQuote routers.RouteWithValidQuote) *entities.CurrencyAmount,
 	routingConfig config.AlphaRouterConfig,
-	gasModel *providers.GasModel[providers.V3RouteWithValidQuote],
+	gasModel *models.GasModel[models.V3RouteWithValidQuote],
 ) (*BestRouteResult, error) {
 	for _, v := range percentToQuotes {
 		sort.Slice(v, func(i, j int) bool {
@@ -104,12 +104,12 @@ func getBestSwapRouteBy(
 
 	var (
 		bestQuote *entities.CurrencyAmount
-		bestSwap  []providers.RouteWithValidQuote
+		bestSwap  []routers.RouteWithValidQuote
 	)
 
 	type swapPer struct {
 		Quote  *entities.CurrencyAmount
-		Routes []providers.RouteWithValidQuote
+		Routes []routers.RouteWithValidQuote
 	}
 	//bestSwapsPerSplit := util.NewReverseHeap[swapPer](3, func(a, b util.Item[swapPer]) bool {
 	//	return quoteCompFn(a.Value.Quote, b.Value.Quote)
@@ -131,7 +131,7 @@ func getBestSwapRouteBy(
 	}
 	type queueItem struct {
 		PercentIndex     int
-		CurRoutes        []providers.RouteWithValidQuote
+		CurRoutes        []routers.RouteWithValidQuote
 		RemainingPercent int
 		Special          bool
 	}
@@ -144,7 +144,7 @@ func getBestSwapRouteBy(
 		}
 		queue = append(queue, queueItem{
 			PercentIndex:     i,
-			CurRoutes:        []providers.RouteWithValidQuote{quotes[0]},
+			CurRoutes:        []routers.RouteWithValidQuote{quotes[0]},
 			RemainingPercent: 100 - percent,
 			Special:          false,
 		})
@@ -154,7 +154,7 @@ func getBestSwapRouteBy(
 		}
 		queue = append(queue, queueItem{
 			PercentIndex:     i,
-			CurRoutes:        []providers.RouteWithValidQuote{quotes[1]},
+			CurRoutes:        []routers.RouteWithValidQuote{quotes[1]},
 			RemainingPercent: 100 - percent,
 			Special:          false,
 		})
@@ -216,12 +216,12 @@ func getBestSwapRouteBy(
 					gasCostL1QuoteToken := entities.FromRawAmount(quoteNew.Currency, big.NewInt(0))
 
 					if _, hasL1Fee := base_entities.HasL1Fee[chainId]; hasL1Fee {
-						var curRoutesNewV3 []providers.V3RouteWithValidQuote
+						var curRoutesNewV3 []models.V3RouteWithValidQuote
 						for _, cr := range curRoutesNew {
 							if cr.Protocol() == base_entities.V2 {
 								break
 							}
-							curRoutesNewV3 = append(curRoutesNewV3, cr.(providers.V3RouteWithValidQuote))
+							curRoutesNewV3 = append(curRoutesNewV3, cr.(models.V3RouteWithValidQuote))
 						}
 
 						if gasModel == nil || len(curRoutesNewV3) != len(curRoutesNew) {
@@ -286,7 +286,7 @@ func getBestSwapRouteBy(
 	// this calculates the base gas used
 	// if on L1, its the estimated gas used based on hops and ticks across all the routes
 	// if on L2, its the gas used on the L2 based on hops and ticks across all the routes
-	token, ok := gas_models.UsdGasTokensByChain[chainId]
+	token, ok := models.UsdGasTokensByChain[chainId]
 	if !ok || len(token) == 0 {
 		// Each route can use a different stablecoin to account its gas costs.
 		// They should all be pegged, and this is just an estimate, so we do a merge
@@ -297,7 +297,7 @@ func getBestSwapRouteBy(
 	usdTokenDecimals := usdToken.Decimals()
 
 	// if on L2, calculate the L1 security fee
-	gasCostsL1ToL2 := &providers.L1ToL2GasCosts{
+	gasCostsL1ToL2 := &models.L1ToL2GasCosts{
 		GasUsedL1:    big.NewInt(0),
 		GasCostL1USD: entities.FromRawAmount(usdToken, big.NewInt(0)),
 		GasCostL1QuoteToken: entities.FromRawAmount(
@@ -309,12 +309,12 @@ func getBestSwapRouteBy(
 	// If swapping on an L2 that includes a L1 security fee, calculate the fee and include it in the gas adjusted quotes
 	if _, hasL1Fee := base_entities.HasL1Fee[chainId]; hasL1Fee {
 		// ensure the gasModel exists and that the swap route is a v3 only route
-		var bsV3 []providers.V3RouteWithValidQuote
+		var bsV3 []models.V3RouteWithValidQuote
 		for _, bs := range bestSwap {
 			if bs.Protocol() == base_entities.V2 {
 				break
 			}
-			bsV3 = append(bsV3, bs.(providers.V3RouteWithValidQuote))
+			bsV3 = append(bsV3, bs.(models.V3RouteWithValidQuote))
 		}
 
 		if gasModel == nil || len(bsV3) != len(bestSwap) {
@@ -384,10 +384,10 @@ func getBestSwapRouteBy(
 }
 
 func findFirstRouteNotUsingUsedPools(
-	usedRoutes []providers.RouteWithValidQuote,
-	candidateRouteQuotes []providers.RouteWithValidQuote,
+	usedRoutes []routers.RouteWithValidQuote,
+	candidateRouteQuotes []routers.RouteWithValidQuote,
 	forceCrossProtocol bool,
-) (providers.RouteWithValidQuote, error) {
+) (routers.RouteWithValidQuote, error) {
 	var (
 		poolAddressSet = make(map[string]struct{})
 		protocolsSet   = make(map[base_entities.Protocol]struct{})
@@ -413,5 +413,5 @@ func findFirstRouteNotUsingUsedPools(
 		return c, nil
 	next:
 	}
-	return providers.V2RouteWithValidQuote{}, errors.New("not found the RouteQuotes")
+	return models.V2RouteWithValidQuote{}, errors.New("not found the RouteQuotes")
 }
