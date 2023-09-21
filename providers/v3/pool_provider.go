@@ -41,11 +41,13 @@ type Tick struct {
 }
 
 type TokenPairs struct {
-	Token0      *entities.Token
-	Token1      *entities.Token
-	FeeAmount   constants.FeeAmount
-	PairAddress string
-	//FactoryAddress common.Address
+	Token0         *entities.Token
+	Token1         *entities.Token
+	FeeAmount      constants.FeeAmount
+	PairAddress    string
+	FactoryAddress string
+	QuoteAddress   string
+	RouterAddress  string
 }
 
 type PoolProvider interface {
@@ -144,9 +146,13 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 	var (
 		poolAddressSet = make(map[string]struct{})
 		sortedPool     []struct {
-			FeeAmount constants.FeeAmount
-			Token0    *entities.Token
-			Token1    *entities.Token
+			FeeAmount      constants.FeeAmount
+			Token0         *entities.Token
+			Token1         *entities.Token
+			PairAddress    string
+			FactoryAddress string
+			QuoteAddress   string
+			RouterAddress  string
 		}
 		sortedPoolAddresses []string
 		slot0s, liquiditys  []rpc.MultiCallSingleParam
@@ -177,10 +183,22 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 		}
 		poolAddressSet[pair.PairAddress] = struct{}{}
 		sortedPool = append(sortedPool, struct {
-			FeeAmount constants.FeeAmount
-			Token0    *entities.Token
-			Token1    *entities.Token
-		}{FeeAmount: pair.FeeAmount, Token0: token0, Token1: token1})
+			FeeAmount      constants.FeeAmount
+			Token0         *entities.Token
+			Token1         *entities.Token
+			PairAddress    string
+			FactoryAddress string
+			QuoteAddress   string
+			RouterAddress  string
+		}{
+			FeeAmount:      pair.FeeAmount,
+			Token0:         token0,
+			Token1:         token1,
+			PairAddress:    pair.PairAddress,
+			QuoteAddress:   pair.QuoteAddress,
+			FactoryAddress: pair.FactoryAddress,
+			RouterAddress:  pair.RouterAddress,
+		})
 		sortedPoolAddresses = append(sortedPoolAddresses, pair.PairAddress)
 		slot0s = append(slot0s, rpc.MultiCallSingleParam{
 			FunctionName:    "slot0",
@@ -287,16 +305,26 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 	aft := time.Now()
 	fmt.Print(aft.Sub(bef).Seconds())
 
+	tickInfoResultIndex := 0
 	for i, address := range sortedPoolAddresses {
-		// create tick data provider
-		ticks[i][0].LiquidityNet = tickInfoResult.ReturnData[i].Data.LiquidityNet
-		ticks[i][1].LiquidityNet = new(big.Int).Neg(tickInfoResult.ReturnData[i].Data.LiquidityNet)
-		ticks[i][0].LiquidityGross = tickInfoResult.ReturnData[i].Data.LiquidityGross
-		ticks[i][1].LiquidityGross = tickInfoResult.ReturnData[i].Data.LiquidityGross
-		p, err := entitiesV3.NewTickListDataProvider(ticks[i], constants.TickSpacings[sortedPool[i].FeeAmount])
-		if err != nil {
-			return nil, err
+		if !slot0Results.ReturnData[i].Success ||
+			!liquidityResults.ReturnData[i].Success ||
+			slot0Results.ReturnData[i].Data.SqrtPriceX96.Cmp(big.NewInt(0)) == 0 ||
+			!tickInfoResult.ReturnData[tickInfoResultIndex].Success {
+			//TODO log err
+			continue
 		}
+		// create tick data provider
+		ticks[tickInfoResultIndex][0].LiquidityNet = tickInfoResult.ReturnData[tickInfoResultIndex].Data.LiquidityNet
+		ticks[tickInfoResultIndex][1].LiquidityNet = new(big.Int).Neg(tickInfoResult.ReturnData[tickInfoResultIndex].Data.LiquidityNet)
+		ticks[tickInfoResultIndex][0].LiquidityGross = tickInfoResult.ReturnData[tickInfoResultIndex].Data.LiquidityGross
+		ticks[tickInfoResultIndex][1].LiquidityGross = tickInfoResult.ReturnData[tickInfoResultIndex].Data.LiquidityGross
+		p, err := entitiesV3.NewTickListDataProvider(ticks[tickInfoResultIndex], constants.TickSpacings[sortedPool[i].FeeAmount])
+		if err != nil {
+			//TODO log err
+			continue
+		}
+
 		v3pool, err := entitiesV3.NewPool(
 			sortedPool[i].Token0,
 			sortedPool[i].Token1,
@@ -307,15 +335,15 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 			p,
 		)
 		if err != nil {
-			return nil, err
+			//TODO log err
+			continue
 		}
-		pool := &base_entities.V3Pool{
-			Pool: v3pool,
-		}
+		pool := base_entities.NewV3Pool(v3pool, sortedPool[i].PairAddress, sortedPool[i].QuoteAddress, sortedPool[i].RouterAddress, sortedPool[i].FactoryAddress)
 		poolAccessor.poolAddressToPool[common.HexToAddress(address).String()] = pool
 		poolAccessor.subPoolMap[pool.Pool] = pool
 		b.PoolAddressCache[fmt.Sprintf(cacheKeyFormat, b.ChainId, sortedPool[i].Token0.Address.String(), sortedPool[i].Token1.Address.String(), sortedPool[i].FeeAmount)] = common.HexToAddress(address).String()
 		poolAccessor.pools = append(poolAccessor.pools, pool)
+		tickInfoResultIndex++
 	}
 	return poolAccessor, nil
 }

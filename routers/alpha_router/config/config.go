@@ -4,12 +4,14 @@ import (
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"github.com/daoleno/uniswapv3-sdk/periphery"
+	"github.com/ethereum/go-ethereum/common"
+	"math/big"
 )
 
 type SwapOptions struct {
-	Recipient         string
+	Recipient         common.Address
 	SlippageTolerance *entities.Percent
-	Deadline          int
+	Deadline          *big.Int
 	InputTokenPermit  *periphery.PermitOptions
 }
 

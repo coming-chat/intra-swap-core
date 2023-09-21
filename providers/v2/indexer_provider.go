@@ -11,8 +11,11 @@ import (
 )
 
 type IndexerPool struct {
-	Id     string
-	Token0 struct {
+	Id             string
+	RouterAddress  string
+	QuoteAddress   string
+	FactoryAddress string
+	Token0         struct {
 		Id string
 	}
 	Token1 struct {
@@ -90,11 +93,14 @@ func (g *GeckoTerminalProvider) GetPools(tokenIn *entities.Token, tokenOut *enti
 			return nil, err
 		}
 		pools = append(pools, IndexerPool{
-			Id:      common.HexToAddress(poolData.Attributes.Address).String(),
-			Token0:  struct{ Id string }{Id: common.HexToAddress(strings.TrimPrefix(poolData.Relationships.BaseToken.Data.Id, "base_")).String()},
-			Token1:  struct{ Id string }{Id: common.HexToAddress(strings.TrimPrefix(poolData.Relationships.QuoteToken.Data.Id, "base_")).String()},
-			Reserve: reserve,
-			Dex:     poolData.Relationships.Dex.Data.Id,
+			Id:             common.HexToAddress(poolData.Attributes.Address).String(),
+			Token0:         struct{ Id string }{Id: common.HexToAddress(strings.TrimPrefix(poolData.Relationships.BaseToken.Data.Id, "base_")).String()},
+			Token1:         struct{ Id string }{Id: common.HexToAddress(strings.TrimPrefix(poolData.Relationships.QuoteToken.Data.Id, "base_")).String()},
+			Reserve:        reserve,
+			Dex:            poolData.Relationships.Dex.Data.Id,
+			RouterAddress:  "0x8c1A3cF8f83074169FE5D7aD50B978e1cD6b37c7",
+			FactoryAddress: "",
+			QuoteAddress:   "0x8c1A3cF8f83074169FE5D7aD50B978e1cD6b37c7",
 		})
 	}
 	return

@@ -33,7 +33,7 @@ func Ready(chainId base_entities.ChainId) (*alpha_router.AlphaRouter, error) {
 		MultiCall2ProviderCore:   uniswapMultiCallCore,
 		V3IndexerProvider:        v3.NewGeckoTerminalProvider(chainId),
 		V3PoolProvider:           v3.NewBasePoolProvider(chainId, map[string]string{}, uniswapMultiCallCore, nil),
-		V3QuoteProvider:          v3.NewBaseQuoteProvider(context.TODO(), util.UniswapV3Quoter, chainId, rpcBaseProvider, uniswapMultiCallCore, nil, nil, nil),
+		V3QuoteProvider:          v3.NewBaseQuoteProvider(context.TODO(), util.UniswapV3Quoter, chainId, rpcBaseProvider, uniswapMultiCallCore, nil, nil),
 		V2IndexerProvider:        v2.NewGeckoTerminalProvider(chainId),
 		V2PoolProvider:           v2.NewBasePoolProvider(chainId, map[string]string{}, uniswapMultiCallCore, nil),
 		V2QuoteProvider:          v2.NewBaseQuoteProvider(),

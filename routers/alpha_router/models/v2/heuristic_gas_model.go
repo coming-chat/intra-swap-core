@@ -149,7 +149,7 @@ func (h *HeuristicGasModelFactory) estimateGas(
 		baseSwapCost,
 		new(big.Int).Mul(
 			costPerExtraHop,
-			big.NewInt(int64(len(routeWithValidQuote.Route.Pairs)-1)),
+			big.NewInt(int64(len(routeWithValidQuote.Route.Pools)-1)),
 		),
 	)
 	totalGasCostWei := new(big.Int).Mul(gasPriceWei, gasUse)
@@ -173,8 +173,9 @@ func (h *HeuristicGasModelFactory) getHighestLiquidityUSDPool(
 	var usdPools []v2.TokenPairs
 	for _, token := range usdTokens {
 		usdPools = append(usdPools, v2.TokenPairs{
-			Token0: token,
-			Token1: base_entities.WRAPPED_NATIVE_CURRENCY[chainId], //Already checked in the above func
+			Token0:      token,
+			Token1:      base_entities.WRAPPED_NATIVE_CURRENCY[chainId], //Already checked in the above func
+			PairAddress: "0xef24722d5dae32dc155d961561cffbc5f347eee7",
 		})
 	}
 	poolAccessor, err := poolProvider.GetPools(usdPools, nil)

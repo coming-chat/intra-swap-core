@@ -2,8 +2,6 @@ package models
 
 import (
 	"github.com/coming-chat/intra-swap-core/base_entities"
-	v2 "github.com/coming-chat/intra-swap-core/providers/v2"
-	v3 "github.com/coming-chat/intra-swap-core/providers/v3"
 	"github.com/coming-chat/intra-swap-core/routers"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"math/big"
@@ -11,9 +9,7 @@ import (
 
 type V2RouteWithValidQuote struct {
 	*routers.BaseRouteWithValidQuote
-	Route        *base_entities.V2Route
-	PoolAccessor v2.PoolAccessor
-	GasModel     GasModel[V2RouteWithValidQuote]
+	GasModel GasModel[V2RouteWithValidQuote]
 }
 
 func (v V2RouteWithValidQuote) Protocol() base_entities.Protocol {
@@ -25,14 +21,14 @@ func (v V2RouteWithValidQuote) GetBaseRouteWithValidQuote() *routers.BaseRouteWi
 }
 
 type V2RouteWithValidQuoteParams struct {
-	Amount       *entities.CurrencyAmount
-	RawQuote     *big.Int
-	Percent      int
-	Route        *base_entities.V2Route
-	GasModel     GasModel[V2RouteWithValidQuote]
-	QuoteToken   *entities.Token
-	TradeType    entities.TradeType
-	PoolAccessor v2.PoolAccessor
+	Amount     *entities.CurrencyAmount
+	RawQuote   *big.Int
+	Percent    int
+	Route      *base_entities.MRoute
+	GasModel   GasModel[V2RouteWithValidQuote]
+	QuoteToken *entities.Token
+	TradeType  entities.TradeType
+	Swap       []*base_entities.Swap
 }
 
 func NewV2RouteWithValidQuote(param V2RouteWithValidQuoteParams) (*V2RouteWithValidQuote, error) {
@@ -44,10 +40,10 @@ func NewV2RouteWithValidQuote(param V2RouteWithValidQuoteParams) (*V2RouteWithVa
 			Percent:    param.Percent,
 			QuoteToken: param.QuoteToken,
 			TradeType:  param.TradeType,
+			Swap:       param.Swap,
+			Route:      param.Route,
 		},
-		Route:        param.Route,
-		GasModel:     param.GasModel,
-		PoolAccessor: param.PoolAccessor,
+		GasModel: param.GasModel,
 	}
 	gasEstimate, gasCostInToken, gasCostInUSD, err := v2rwvq.GasModel.EstimateGasCost(*v2rwvq)
 	if err != nil {
@@ -63,22 +59,15 @@ func NewV2RouteWithValidQuote(param V2RouteWithValidQuoteParams) (*V2RouteWithVa
 		v2rwvq.QuoteAdjustedForGas = v2rwvq.Quote.Add(gasCostInToken)
 	}
 
-	for _, p := range param.Route.Pairs {
-		basePool := param.PoolAccessor.GetBasePool(p)
-		v2rwvq.PoolAddresses = append(v2rwvq.PoolAddresses, basePool.GetAddress().String())
-	}
-	v2rwvq.TokenPath = v2rwvq.Route.Path
 	return v2rwvq, nil
 }
 
 type V3RouteWithValidQuote struct {
 	*routers.BaseRouteWithValidQuote
-	Route                       *base_entities.V3Route
 	SqrtPriceX96AfterList       []*big.Int
 	InitializedTicksCrossedList []uint32
 	QuoterGasEstimate           *big.Int
 	GasModel                    GasModel[V3RouteWithValidQuote]
-	PoolAccessor                v3.PoolAccessor
 }
 
 func (v V3RouteWithValidQuote) Protocol() base_entities.Protocol {
@@ -96,11 +85,11 @@ type V3RouteWithValidQuoteParams struct {
 	InitializedTicksCrossedList []uint32
 	QuoterGasEstimate           *big.Int
 	Percent                     int
-	Route                       *base_entities.V3Route
+	Route                       *base_entities.MRoute
+	Swap                        []*base_entities.Swap
 	GasModel                    GasModel[V3RouteWithValidQuote]
 	QuoteToken                  *entities.Token
 	TradeType                   entities.TradeType
-	PoolAccessor                v3.PoolAccessor
 }
 
 func NewV3RouteWithValidQuote(param V3RouteWithValidQuoteParams) (*V3RouteWithValidQuote, error) {
@@ -112,13 +101,13 @@ func NewV3RouteWithValidQuote(param V3RouteWithValidQuoteParams) (*V3RouteWithVa
 			Percent:    param.Percent,
 			QuoteToken: param.QuoteToken,
 			TradeType:  param.TradeType,
+			Swap:       param.Swap,
+			Route:      param.Route,
 		},
 		SqrtPriceX96AfterList:       param.SqrtPriceX96AfterList,
 		InitializedTicksCrossedList: param.InitializedTicksCrossedList,
 		QuoterGasEstimate:           param.QuoterGasEstimate,
-		Route:                       param.Route,
 		GasModel:                    param.GasModel,
-		PoolAccessor:                param.PoolAccessor,
 	}
 
 	gasEstimate, gasCostInToken, gasCostInUSD, err := v3rwvq.GasModel.EstimateGasCost(*v3rwvq)
@@ -136,11 +125,6 @@ func NewV3RouteWithValidQuote(param V3RouteWithValidQuoteParams) (*V3RouteWithVa
 	} else {
 		v3rwvq.QuoteAdjustedForGas = v3rwvq.Quote.Add(gasCostInToken)
 	}
-	for _, pool := range param.Route.Pools {
-		basePool := param.PoolAccessor.GetBasePool(pool)
-		v3rwvq.PoolAddresses = append(v3rwvq.PoolAddresses, basePool.PoolAddress().String())
-	}
 
-	v3rwvq.TokenPath = v3rwvq.Route.TokenPath
 	return v3rwvq, nil
 }

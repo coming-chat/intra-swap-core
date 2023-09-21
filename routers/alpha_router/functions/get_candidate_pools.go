@@ -361,10 +361,13 @@ func GetV3CandidatePools(params V3GetCandidatePoolsParams) (
 			continue
 		}
 		tokenPairs = append(tokenPairs, v3.TokenPairs{
-			Token0:      token0,
-			Token1:      token1,
-			FeeAmount:   pool.FeeTier,
-			PairAddress: pool.Id,
+			Token0:         token0,
+			Token1:         token1,
+			FeeAmount:      pool.FeeTier,
+			PairAddress:    pool.Id,
+			RouterAddress:  pool.RouterAddress,
+			QuoteAddress:   pool.QuoteAddress,
+			FactoryAddress: pool.FactoryAddress,
 		})
 	}
 	poolAccessor, err = params.PoolProvider.GetPools(tokenPairs, nil)

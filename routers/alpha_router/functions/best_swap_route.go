@@ -73,9 +73,9 @@ func getBestSwapRouteBy(
 	for _, v := range percentToQuotes {
 		sort.Slice(v, func(i, j int) bool {
 			if routeType == entities.ExactInput {
-				return !by(v[i]).GreaterThan(by(v[j]).Fraction)
+				return by(v[i]).GreaterThan(by(v[j]).Fraction)
 			} else {
-				return !by(v[i]).LessThan(by(v[j]).Fraction)
+				return by(v[i]).LessThan(by(v[j]).Fraction)
 			}
 		})
 	}

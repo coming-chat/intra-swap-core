@@ -8,14 +8,27 @@ import (
 )
 
 type Pool interface {
-	*V2Pool | *V3Pool
 	InvolvesToken(token *entities.Token) bool
 	Token0() *entities.Token
 	Token1() *entities.Token
+	Token0Price() *entities.Price
+	Token1Price() *entities.Price
 	QuoterAddress() common.Address
 	RouterAddress() common.Address
 	PoolAddress() common.Address
 	FactoryAddress() common.Address
+	ChainID() uint
+	Protocol() Protocol
+}
+
+func NewV2Pool(pair *entitiesV2.Pair, poolAddr, quoteAddr, routerAddr, factoryAddr string) *V2Pool {
+	return &V2Pool{
+		Pair:           pair,
+		poolAddress:    common.HexToAddress(poolAddr),
+		quoterAddress:  common.HexToAddress(quoteAddr),
+		routerAddress:  common.HexToAddress(routerAddr),
+		factoryAddress: common.HexToAddress(factoryAddr),
+	}
 }
 
 type V2Pool struct {
@@ -24,6 +37,10 @@ type V2Pool struct {
 	quoterAddress  common.Address
 	routerAddress  common.Address
 	factoryAddress common.Address
+}
+
+func (v2 *V2Pool) Protocol() Protocol {
+	return V2
 }
 
 func (v2 *V2Pool) QuoterAddress() common.Address {
@@ -42,12 +59,26 @@ func (v2 *V2Pool) FactoryAddress() common.Address {
 	return v2.factoryAddress
 }
 
+func NewV3Pool(pool *entitiesV3.Pool, poolAddr, quoteAddr, routerAddr, factoryAddr string) *V3Pool {
+	return &V3Pool{
+		Pool:           pool,
+		poolAddress:    common.HexToAddress(poolAddr),
+		quoterAddress:  common.HexToAddress(quoteAddr),
+		routerAddress:  common.HexToAddress(routerAddr),
+		factoryAddress: common.HexToAddress(factoryAddr),
+	}
+}
+
 type V3Pool struct {
 	*entitiesV3.Pool
 	poolAddress    common.Address
 	quoterAddress  common.Address
 	routerAddress  common.Address
 	factoryAddress common.Address
+}
+
+func (v3 *V3Pool) Protocol() Protocol {
+	return V3
 }
 
 func (v3 *V3Pool) QuoterAddress() common.Address {

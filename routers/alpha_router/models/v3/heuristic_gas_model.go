@@ -10,6 +10,7 @@ import (
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/models"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"github.com/daoleno/uniswapv3-sdk/constants"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
 	"math/big"
 	"regexp"
@@ -50,8 +51,8 @@ func (h *HeuristicGasModelFactory) BuildGasModel(
 
 	gasModel.CalculateL1GasFeesFn = func(routes []models.V3RouteWithValidQuote) (*models.L1ToL2GasCosts, error) {
 		swapOptions := config.SwapOptions{
-			Recipient:         "0x0000000000000000000000000000000000000001",
-			Deadline:          100,
+			Recipient:         common.HexToAddress("0x0000000000000000000000000000000000000001"),
+			Deadline:          big.NewInt(100),
 			SlippageTolerance: entities.NewPercent(big.NewInt(5), big.NewInt(10_000)),
 		}
 		var l1Used, l1FeeInWei *big.Int

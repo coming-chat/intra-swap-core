@@ -282,15 +282,18 @@ func (a *AlphaRouter) Route(
 	if err != nil {
 		return nil, err
 	}
-	//trade := utils.BuildTrade(
+	//v2trade, v3trade, err := build.BuildTrade(
 	//	currencyIn,
 	//	currencyOut,
 	//	tradeType,
 	//	swapRouteRaw.Routes,
 	//)
+	//if err != nil {
+	//	return nil, err
+	//}
 	var methodParameters *utils.MethodParameters
 	//if swapConfig != nil {
-	//	methodParameters, err = util.BuildSwapMethodParameters(trade, *swapConfig)
+	//	methodParameters, err = build.BuildSwapMethodParameters(trade, *swapConfig)
 	//	if err != nil {
 	//		return nil, err
 	//	}
@@ -385,7 +388,7 @@ func (a *AlphaRouter) RouteToRatio(
 			}
 			v3Route := route.(models.V3RouteWithValidQuote)
 			for i, v3Pool := range v3Route.Route.Pools {
-				if v3Pool.Token0.Equal(position.Pool.Token0) && v3Pool.Token1.Equal(position.Pool.Token1) && v3Pool.Fee == position.Pool.Fee {
+				if v3Pool.Token0().Equal(position.Pool.Token0) && v3Pool.Token1().Equal(position.Pool.Token1) && v3Pool.(*base_entities.V3Pool).Fee == position.Pool.Fee {
 					targetPoolPriceUpdate = v3Route.SqrtPriceX96AfterList[i]
 					optimalRatio, err = a.calculateOptimalRatio(position, targetPoolPriceUpdate, zeroForOne)
 					if err != nil {
@@ -546,9 +549,9 @@ func (a *AlphaRouter) getV3Quotes(
 
 	// For all our routes, and all the fractional amounts, fetch quotes on-chain.
 	if swapType == entities.ExactInput {
-		routesWithQuotes, err = a.V3QuoteProvider.GetQuotesManyExactIn(amounts, routes)
+		routesWithQuotes, _, err = a.V3QuoteProvider.GetQuotesManyExactIn(amounts, routes, nil)
 	} else {
-		routesWithQuotes, err = a.V3QuoteProvider.GetQuotesManyExactOut(amounts, routes)
+		routesWithQuotes, _, err = a.V3QuoteProvider.GetQuotesManyExactOut(amounts, routes, nil)
 	}
 	if err != nil {
 		return nil, err
@@ -563,7 +566,9 @@ func (a *AlphaRouter) getV3Quotes(
 			if amountQuote.Quote == nil || amountQuote.SqrtPriceX96AfterList == nil || amountQuote.InitializedTicksCrossedList == nil || amountQuote.GasEstimate == nil {
 				continue
 			}
+			//var swap []*base_entities.Swap
 
+			//routeWithQuote.Route.Pools
 			routeWithValidQuote, err := models.NewV3RouteWithValidQuote(models.V3RouteWithValidQuoteParams{
 				Route:                       routeWithQuote.Route,
 				RawQuote:                    amountQuote.Quote,
@@ -575,7 +580,6 @@ func (a *AlphaRouter) getV3Quotes(
 				GasModel:                    gasModel,
 				QuoteToken:                  quoteToken,
 				TradeType:                   swapType,
-				PoolAccessor:                poolAccessor,
 			})
 			if err != nil {
 				return nil, err
@@ -688,14 +692,13 @@ func (a *AlphaRouter) getV2Quotes(
 				continue
 			}
 			routeWithValidQuote, err := models.NewV2RouteWithValidQuote(models.V2RouteWithValidQuoteParams{
-				Route:        routeWithQuote.Route,
-				RawQuote:     amountQuote.Quote,
-				Amount:       amountQuote.Amount,
-				Percent:      percent,
-				GasModel:     gasModel,
-				QuoteToken:   quoteToken,
-				TradeType:    swapType,
-				PoolAccessor: poolAccessor,
+				Route:      routeWithQuote.Route,
+				RawQuote:   amountQuote.Quote,
+				Amount:     amountQuote.Amount,
+				Percent:    percent,
+				GasModel:   gasModel,
+				QuoteToken: quoteToken,
+				TradeType:  swapType,
 			})
 			if err != nil {
 				return nil, err

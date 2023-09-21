@@ -16,10 +16,11 @@ import (
 const cacheKeyFormat = "%d:%s-%s"
 
 type TokenPairs struct {
-	Token0      *entities.Token
-	Token1      *entities.Token
-	PairAddress string
-	//FactoryAddress common.Address
+	Token0         *entities.Token
+	Token1         *entities.Token
+	PairAddress    string
+	FactoryAddress string
+	RouterAddress  string
 }
 
 type IReserves struct {
@@ -44,7 +45,6 @@ type PoolProvider interface {
 type PoolAccessor interface {
 	GetPool(
 		tokenA, tokenB *entities.Token,
-		//factoryAddress common.Address,
 	) (*base_entities.V2Pool, error)
 	GetPoolByAddress(address string) *base_entities.V2Pool
 	GetAllPools() []*base_entities.V2Pool
@@ -190,9 +190,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 		if err != nil {
 			return nil, err
 		}
-		pool := &base_entities.V2Pool{
-			Pair: pair,
-		}
+		pool := base_entities.NewV2Pool(pair, tokenPairs[i].PairAddress, tokenPairs[i].RouterAddress, tokenPairs[i].RouterAddress, tokenPairs[i].FactoryAddress)
 		poolAccessor.poolAddressToPool[poolAddress.String()] = pool
 		poolAccessor.subPoolMap[pool.Pair] = pool
 		b.PoolAddressCache[fmt.Sprintf(cacheKeyFormat, b.ChainId, sortedTokenPairs[i].Token0.Address.String(), sortedTokenPairs[i].Token1.Address.String())] = poolAddress.String()

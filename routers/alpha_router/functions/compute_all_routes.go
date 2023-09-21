@@ -3,8 +3,6 @@ package functions
 import (
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/daoleno/uniswap-sdk-core/entities"
-	entitiesV3 "github.com/daoleno/uniswapv3-sdk/entities"
-	entitiesV2 "github.com/vaulverin/uniswapv2-sdk/entities"
 )
 
 func ComputeAllV3Routes(
@@ -12,18 +10,18 @@ func ComputeAllV3Routes(
 	tokenOut *entities.Token,
 	pools []*base_entities.V3Pool,
 	maxHops int,
-) ([]*base_entities.V3Route, error) {
-	return computeAllRoutes[*base_entities.V3Pool, *base_entities.V3Route](
+) ([]*base_entities.MRoute, error) {
+	var ipool []base_entities.Pool
+	for _, pool := range pools {
+		ipool = append(ipool, pool)
+	}
+	return computeAllRoutes(
 		tokenIn,
 		tokenOut,
-		func(pools []*base_entities.V3Pool, tokenIn *entities.Token, tokenOut *entities.Token) (*base_entities.V3Route, error) {
-			var v3Pools []*entitiesV3.Pool
-			for _, p := range pools {
-				v3Pools = append(v3Pools, p.Pool)
-			}
-			return entitiesV3.NewRoute(v3Pools, tokenIn, tokenOut)
+		func(pools []base_entities.Pool, tokenIn *entities.Token, tokenOut *entities.Token) (*base_entities.MRoute, error) {
+			return base_entities.NewMRoute(pools, tokenIn, tokenOut)
 		},
-		pools,
+		ipool,
 		maxHops,
 	)
 }
@@ -33,36 +31,36 @@ func ComputeAllV2Routes(
 	tokenOut *entities.Token,
 	pools []*base_entities.V2Pool,
 	maxHops int,
-) ([]*base_entities.V2Route, error) {
-	return computeAllRoutes[*base_entities.V2Pool, *base_entities.V2Route](
+) ([]*base_entities.MRoute, error) {
+	var ipool []base_entities.Pool
+	for _, pool := range pools {
+		ipool = append(ipool, pool)
+	}
+	return computeAllRoutes(
 		tokenIn,
 		tokenOut,
-		func(pools []*base_entities.V2Pool, tokenIn *entities.Token, tokenOut *entities.Token) (*entitiesV2.Route, error) {
-			var v2Pools []*entitiesV2.Pair
-			for _, p := range pools {
-				v2Pools = append(v2Pools, p.Pair)
-			}
-			return entitiesV2.NewRoute(v2Pools, tokenIn, tokenOut)
+		func(pools []base_entities.Pool, tokenIn *entities.Token, tokenOut *entities.Token) (*base_entities.MRoute, error) {
+			return base_entities.NewMRoute(pools, tokenIn, tokenOut)
 		},
-		pools,
+		ipool,
 		maxHops,
 	)
 }
 
-func computeAllRoutes[TPool base_entities.Pool, TRoute base_entities.Route](
+func computeAllRoutes(
 	tokenIn *entities.Token,
 	tokenOut *entities.Token,
-	buildRoute func(route []TPool, tokenIn *entities.Token, tokenOut *entities.Token) (TRoute, error),
-	pools []TPool,
+	buildRoute func(route []base_entities.Pool, tokenIn *entities.Token, tokenOut *entities.Token) (*base_entities.MRoute, error),
+	pools []base_entities.Pool,
 	maxHops int,
-) ([]TRoute, error) {
+) ([]*base_entities.MRoute, error) {
 	var (
-		routes        []TRoute
+		routes        []*base_entities.MRoute
 		poolsUsed     = make([]bool, len(pools))
 		computeRoutes func(
 			tokenIn *entities.Token,
 			tokenOut *entities.Token,
-			currentRoute []TPool,
+			currentRoute []base_entities.Pool,
 			poolsUsed []bool,
 			_previousTokenOut *entities.Token,
 		) error
@@ -71,7 +69,7 @@ func computeAllRoutes[TPool base_entities.Pool, TRoute base_entities.Route](
 	computeRoutes = func(
 		tokenIn *entities.Token,
 		tokenOut *entities.Token,
-		currentRoute []TPool,
+		currentRoute []base_entities.Pool,
 		poolsUsed []bool,
 		_previousTokenOut *entities.Token,
 	) error {
@@ -79,7 +77,9 @@ func computeAllRoutes[TPool base_entities.Pool, TRoute base_entities.Route](
 			return nil
 		}
 		if len(currentRoute) > 0 && currentRoute[len(currentRoute)-1].InvolvesToken(tokenOut) {
-			route, err := buildRoute(currentRoute, tokenIn, tokenOut)
+			foundRoute := make([]base_entities.Pool, len(currentRoute))
+			copy(foundRoute, currentRoute)
+			route, err := buildRoute(foundRoute, tokenIn, tokenOut)
 			if err != nil {
 				return err
 			}
@@ -131,7 +131,7 @@ func computeAllRoutes[TPool base_entities.Pool, TRoute base_entities.Route](
 		return nil
 	}
 
-	err := computeRoutes(tokenIn, tokenOut, []TPool{}, poolsUsed, nil)
+	err := computeRoutes(tokenIn, tokenOut, []base_entities.Pool{}, poolsUsed, nil)
 	if err != nil {
 		return nil, err
 	}
