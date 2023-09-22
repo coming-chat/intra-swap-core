@@ -72,5 +72,5 @@ type BaseRouteWithValidQuote struct {
 	QuoteToken     *entities.Token
 	RawQuote       *big.Int
 	Route          *base_entities.MRoute
-	Swap           []*base_entities.Swap
+	SwapStepQuote  []*big.Int
 }
