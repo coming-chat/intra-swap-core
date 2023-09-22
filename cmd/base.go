@@ -16,7 +16,7 @@ import (
 )
 
 func Ready(chainId base_entities.ChainId) (*alpha_router.AlphaRouter, error) {
-	client, err := ethclient.Dial("https://endpoints.omniatech.io/v1/base/mainnet/public")
+	client, err := ethclient.Dial("https://base.meowrpc.com")
 	if err != nil {
 		return nil, err
 	}
