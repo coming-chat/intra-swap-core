@@ -6,6 +6,7 @@ import (
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/providers/provider"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
+	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"github.com/ethereum/go-ethereum/common"
 	"math/big"
@@ -85,7 +86,7 @@ func NewBaseQuoteProvider(
 				MaxTimeout: 250,
 			},
 			BatchParams: rpc.BatchParams{
-				MultiCallChunk:  300,
+				MultiCallChunk:  100,
 				GasLimitPerCall: 1_000_000,
 				MinSuccessRate:  0.2,
 			},
@@ -146,8 +147,11 @@ func (b *BaseQuoteProvider) getQuotesManyData(
 		})
 	}
 
-	syncAmounts := make([]*entities.CurrencyAmount, len(amounts))
-	copy(syncAmounts, amounts)
+	syncAmounts := make([][]*entities.CurrencyAmount, len(routes))
+	for i := range syncAmounts {
+		syncAmounts[i] = make([]*entities.CurrencyAmount, len(amounts))
+		copy(syncAmounts[i], amounts)
+	}
 
 	for i := 0; i < maxHop; i++ {
 		var multiCallParams []rpc.MultiCallSingleParam
@@ -155,8 +159,11 @@ func (b *BaseQuoteProvider) getQuotesManyData(
 			if len(route.Pools) <= i {
 				continue
 			}
-			for _, a := range syncAmounts {
-				call, err := QuoteMultiCall(route.Pools[i], functionName, a)
+			for _, a := range syncAmounts[ri] {
+				if a.EqualTo(util.ZeroFraction) {
+					continue
+				}
+				call, err := QuoteMultiCall(route, i, functionName, a)
 				if err != nil {
 					return nil, 0, err
 				}
@@ -169,26 +176,32 @@ func (b *BaseQuoteProvider) getQuotesManyData(
 				}
 			}
 		}
+		if len(multiCallParams) == 0 {
+			continue
+		}
 		callResult, err := rpc.ConcurrentMultiCall[QuoteData](b.MultiCall2Provider, multiCallParams, b.MultiCallConfig)
 		if err != nil {
 			return nil, 0, err
 		}
-
-		callRouteIndex := 0
+		callDataIndex := 0
 		for ri, route := range routes {
 			if len(route.Pools) <= i {
 				continue
 			}
-			for ra, _ := range syncAmounts {
-				quoteData := callResult.ReturnData[callRouteIndex*len(syncAmounts)+ra]
-				syncAmounts[ra] = entities.FromRawAmount(syncAmounts[ra].Currency, quoteData.Data.AmountOut)
+			for ra, a := range syncAmounts[ri] {
+				if a.EqualTo(util.ZeroFraction) {
+					result[ri].AmountQuote[ra].QuoteList = append(result[ri].AmountQuote[ra].QuoteList, result[ri].AmountQuote[ra].Quote)
+					continue
+				}
+				quoteData := callResult.ReturnData[callDataIndex]
+				syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, quoteData.Data.AmountOut)
 				result[ri].AmountQuote[ra].Quote = quoteData.Data.AmountOut
 				result[ri].AmountQuote[ra].QuoteList = append(result[ri].AmountQuote[ra].QuoteList, quoteData.Data.AmountOut)
 				result[ri].AmountQuote[ra].SqrtPriceX96AfterList = append(result[ri].AmountQuote[ra].SqrtPriceX96AfterList, quoteData.Data.SqrtPriceX96AfterList...)
 				result[ri].AmountQuote[ra].InitializedTicksCrossedList = append(result[ri].AmountQuote[ra].InitializedTicksCrossedList, quoteData.Data.InitializedTicksCrossedList...)
 				result[ri].AmountQuote[ra].GasEstimate.Add(result[ri].AmountQuote[ra].GasEstimate, quoteData.Data.GasEstimate)
+				callDataIndex++
 			}
-			callRouteIndex++
 		}
 	}
 

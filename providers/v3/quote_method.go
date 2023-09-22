@@ -19,21 +19,22 @@ const (
 )
 
 func QuoteMultiCall(
-	pool base_entities.Pool,
+	route *base_entities.MRoute,
+	index int,
 	name functionName,
 	amount *entities.CurrencyAmount,
 ) (rpc.MultiCallSingleParam, error) {
-	switch pool.QuoterAddress() {
+	switch route.Pools[index].QuoterAddress() {
 	case common.HexToAddress("0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a"): //uniswap v3
 		abi, err := omni_swap.IQuoterV2MetaData.GetAbi()
 		if err != nil {
 			panic(err)
 		}
-		route, err := entitiesV3.NewRoute([]*entitiesV3.Pool{pool.(*base_entities.V3Pool).Pool}, pool.Token0(), pool.Token1())
+		stepRoute, err := entitiesV3.NewRoute([]*entitiesV3.Pool{route.Pools[index].(*base_entities.V3Pool).Pool}, route.Path[index], route.Path[index+1])
 		if err != nil {
 			return rpc.MultiCallSingleParam{}, nil
 		}
-		encodedRoute, err := periphery.EncodeRouteToPath(route, name == QuoteExactOutput)
+		encodedRoute, err := periphery.EncodeRouteToPath(stepRoute, name == QuoteExactOutput)
 		if err != nil {
 			return rpc.MultiCallSingleParam{}, nil
 		}
@@ -43,7 +44,7 @@ func QuoteMultiCall(
 				encodedRoute,
 				amount.Quotient(),
 			},
-			ContractAddress: pool.QuoterAddress(),
+			ContractAddress: route.Pools[index].QuoterAddress(),
 			FunctionName:    name,
 		}, nil
 	default:
