@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"sync"
 	"sync/atomic"
@@ -46,6 +47,7 @@ func ConcurrentMultiCall[T any](core MultiCallProviderCore, multiCallParams []Mu
 				}
 				returnData, err := NewUniswapMultiCallProvider[T](core).MultiCall(multiCallParams[index:endIndex], nil)
 				if err != nil {
+					fmt.Printf("%v\n", err)
 					continue
 				}
 				successResult := 0
