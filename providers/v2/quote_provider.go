@@ -76,8 +76,9 @@ func (b *BaseQuoteProvider) getQuotes(
 				return nil, fmt.Errorf("unsupported tradeType: %#v", tradeType)
 			}
 			amountQuotes = append(amountQuotes, AmountQuote{
-				Amount: amount,
-				Quote:  cycleAmount.Quotient(),
+				Amount:    amount,
+				Quote:     cycleAmount.Quotient(),
+				QuoteList: quoteList,
 			})
 		}
 		routesWithQuotes = append(routesWithQuotes, RouteWithQuotes{
