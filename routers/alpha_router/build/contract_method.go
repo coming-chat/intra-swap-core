@@ -14,13 +14,13 @@ import (
 	"time"
 )
 
-type contractMethod func(trade *base_entities.MTrade, swapIndex int, amountIn, amountOut *entities.CurrencyAmount, swapConfig config.SwapOptions) (callData []byte, err error)
+type contractMethod func(trade *base_entities.MTrade, swapIndex int, amountIn, amountOut *big.Int, swapConfig config.SwapOptions) (callData []byte, err error)
 
 func iSwapRouter02(
 	tradeType entities.TradeType,
 	tokenIn, tokenOut *entities.Token,
 	pool *base_entities.V3Pool,
-	amountIn, amountOut *entities.CurrencyAmount,
+	amountIn, amountOut *big.Int,
 	swapConfig config.SwapOptions,
 ) (callData []byte, err error) {
 	// encode permit if necessary
@@ -44,15 +44,15 @@ func iSwapRouter02(
 		callData, err = contracts.ISwapRouter02Abi.Pack("exactInput", omni_swap.ISwapRouter02ExactInputParams{
 			Path:             path,
 			Recipient:        swapConfig.Recipient,
-			AmountIn:         amountIn.Quotient(),
-			AmountOutMinimum: amountOut.Quotient(),
+			AmountIn:         amountIn,
+			AmountOutMinimum: amountOut,
 		})
 	case entities.ExactOutput:
 		callData, err = contracts.ISwapRouter02Abi.Pack("exactOutput", omni_swap.ISwapRouter02ExactOutputParams{
 			Path:            path,
 			Recipient:       swapConfig.Recipient,
-			AmountInMaximum: amountIn.Quotient(),
-			AmountOut:       amountOut.Quotient(),
+			AmountInMaximum: amountIn,
+			AmountOut:       amountOut,
 		})
 	default:
 		return nil, errors.New("unsupported tradeType")
@@ -63,7 +63,7 @@ func iSwapRouter02(
 func iUniswapV2Router02(
 	tradeType entities.TradeType,
 	tokenIn, tokenOut *entities.Token,
-	amountIn, amountOut *entities.CurrencyAmount,
+	amountIn, amountOut *big.Int,
 	swapConfig config.SwapOptions,
 ) (callData []byte, err error) {
 	if tokenIn.IsNative() && tokenOut.IsNative() {

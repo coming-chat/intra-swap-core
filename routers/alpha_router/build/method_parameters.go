@@ -133,8 +133,8 @@ func packedCallData(
 			swap.Route.Path[poolIndex],
 			swap.Route.Path[poolIndex+1],
 			swap.Route.Pools[poolIndex].(*base_entities.V3Pool),
-			amountIn,
-			amountOut,
+			amountIn.Quotient(),
+			amountOut.Quotient(),
 			swapConfig,
 		)
 	case util.AlienbaseV2Router:
@@ -142,8 +142,8 @@ func packedCallData(
 			trade.TradeType,
 			swap.Route.Path[poolIndex],
 			swap.Route.Path[poolIndex+1],
-			amountIn,
-			amountOut,
+			amountIn.Quotient(),
+			amountOut.Quotient(),
 			swapConfig,
 		)
 	default:
