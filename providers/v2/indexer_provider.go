@@ -2,7 +2,7 @@ package v2
 
 import (
 	"github.com/coming-chat/intra-swap-core/base_entities"
-	"github.com/coming-chat/intra-swap-core/providers/provider"
+	"github.com/coming-chat/intra-swap-core/providers/config"
 	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"github.com/ethereum/go-ethereum/common"
@@ -27,7 +27,7 @@ type IndexerPool struct {
 }
 
 type IndexerProvider interface {
-	GetPools(tokenIn *entities.Token, tokenOut *entities.Token, providerConfig *provider.Config) ([]IndexerPool, error)
+	GetPools(tokenIn *entities.Token, tokenOut *entities.Token, providerConfig *config.Config) ([]IndexerPool, error)
 }
 
 func NewGeckoTerminalProvider(chaiId base_entities.ChainId) *GeckoTerminalProvider {
@@ -81,7 +81,7 @@ type GeckoTerminalRespData struct {
 	}
 }
 
-func (g *GeckoTerminalProvider) GetPools(tokenIn *entities.Token, tokenOut *entities.Token, providerConfig *provider.Config) (pools []IndexerPool, err error) {
+func (g *GeckoTerminalProvider) GetPools(tokenIn *entities.Token, tokenOut *entities.Token, providerConfig *config.Config) (pools []IndexerPool, err error) {
 	params := map[string]string{}
 	geckoResp, err := util.GetReq[GeckoTerminalRespData](g.api+g.poolSearch, g.headers, params)
 	if err != nil {

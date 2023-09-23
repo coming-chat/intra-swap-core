@@ -9,9 +9,8 @@ import (
 )
 
 type AmountQuote struct {
-	Amount    *entities.CurrencyAmount
-	Quote     *big.Int
-	QuoteList []*big.Int
+	Amount *entities.CurrencyAmount
+	Quote  *big.Int
 }
 
 type RouteWithQuotes struct {
@@ -39,6 +38,7 @@ func (b *BaseQuoteProvider) GetQuotesManyExactOut(amountOuts []*entities.Currenc
 	return b.getQuotes(amountOuts, routes, entities.ExactOutput)
 }
 
+// TODO support getQuote online use v2Router getAmountsOut
 func (b *BaseQuoteProvider) getQuotes(
 	amounts []*entities.CurrencyAmount,
 	routes []*base_entities.MRoute,
@@ -47,7 +47,6 @@ func (b *BaseQuoteProvider) getQuotes(
 	for _, route := range routes {
 		var amountQuotes []AmountQuote
 		for _, amount := range amounts {
-			var quoteList []*big.Int
 			cycleAmount := amount.Wrapped()
 			switch tradeType {
 			case entities.ExactInput:
@@ -59,7 +58,6 @@ func (b *BaseQuoteProvider) getQuotes(
 					if err != nil {
 						return nil, err
 					}
-					quoteList = append(quoteList, cycleAmount.Quotient())
 				}
 			case entities.ExactOutput:
 				for i := len(route.Pools) - 1; i >= 0; i-- {
@@ -70,15 +68,13 @@ func (b *BaseQuoteProvider) getQuotes(
 					if err != nil {
 						return nil, err
 					}
-					quoteList = append(quoteList, cycleAmount.Quotient())
 				}
 			default:
 				return nil, fmt.Errorf("unsupported tradeType: %#v", tradeType)
 			}
 			amountQuotes = append(amountQuotes, AmountQuote{
-				Amount:    amount,
-				Quote:     cycleAmount.Quotient(),
-				QuoteList: quoteList,
+				Amount: amount,
+				Quote:  cycleAmount.Quotient(),
 			})
 		}
 		routesWithQuotes = append(routesWithQuotes, RouteWithQuotes{

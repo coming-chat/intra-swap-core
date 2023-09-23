@@ -3,7 +3,7 @@ package providers
 import (
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/contracts"
-	"github.com/coming-chat/intra-swap-core/providers/provider"
+	"github.com/coming-chat/intra-swap-core/providers/config"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"github.com/ethereum/go-ethereum/common"
@@ -11,7 +11,7 @@ import (
 )
 
 type TokenProvider interface {
-	GetTokens(addresses []string, providerConfig *provider.Config) (TokenAccessor, error)
+	GetTokens(addresses []string, providerConfig *config.Config) (TokenAccessor, error)
 }
 
 type TokenAccessor interface {
@@ -50,27 +50,23 @@ type BaseTokenProvider struct {
 	MultiCallProviderCore rpc.MultiCallProviderCore
 }
 
-func (o *BaseTokenProvider) GetTokens(addresses []string, providerConfig *provider.Config) (TokenAccessor, error) {
+func (o *BaseTokenProvider) GetTokens(addresses []string, providerConfig *config.Config) (TokenAccessor, error) {
 	addressToToken := make(map[string]*entities.Token)
 	symbolToToken := make(map[string]*entities.Token)
 	var tokens []*entities.Token
 
-	erc20, err := contracts.Erc20MetaData.GetAbi()
-	if err != nil {
-		return nil, err
-	}
 	var (
 		multiCallSymbol   []rpc.MultiCallSingleParam
 		multiCallDecimals []rpc.MultiCallSingleParam
 	)
 	for _, address := range addresses {
 		multiCallSymbol = append(multiCallSymbol, rpc.MultiCallSingleParam{
-			Contract:        erc20,
+			Contract:        contracts.Erc20Abi,
 			FunctionName:    "symbol",
 			ContractAddress: common.HexToAddress(address),
 		})
 		multiCallDecimals = append(multiCallDecimals, rpc.MultiCallSingleParam{
-			Contract:        erc20,
+			Contract:        contracts.Erc20Abi,
 			FunctionName:    "decimals",
 			ContractAddress: common.HexToAddress(address),
 		})

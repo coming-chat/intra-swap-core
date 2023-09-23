@@ -13,6 +13,9 @@ type SwapOptions struct {
 	SlippageTolerance *entities.Percent
 	Deadline          *big.Int
 	InputTokenPermit  *periphery.PermitOptions
+
+	//V3
+	SqrtPriceLimitX96 *big.Int
 }
 
 // Config passed in to determine configurations on acceptable liquidity
@@ -186,7 +189,7 @@ func DefaultRoutingConfigByChain(chainId base_entities.ChainId) AlphaRouterConfi
 			V3PoolSelection: ProtocolPoolSelection{
 				TopN:                  2,
 				TopNDirectSwaps:       2,
-				TopNTokenInOut:        3,
+				TopNTokenInOut:        20,
 				TopNSecondHop:         1,
 				TopNWithEachBaseToken: 3,
 				TopNWithBaseToken:     5,

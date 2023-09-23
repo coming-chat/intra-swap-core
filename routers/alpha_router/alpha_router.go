@@ -11,10 +11,10 @@ import (
 	v2 "github.com/coming-chat/intra-swap-core/providers/v2"
 	v3 "github.com/coming-chat/intra-swap-core/providers/v3"
 	"github.com/coming-chat/intra-swap-core/routers"
+	"github.com/coming-chat/intra-swap-core/routers/alpha_router/build"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/config"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/functions"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/models"
-	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	entitiesV3 "github.com/daoleno/uniswapv3-sdk/entities"
 	"github.com/daoleno/uniswapv3-sdk/utils"
@@ -90,7 +90,7 @@ type AlphaRouterParams struct {
 	 * A token list that specifies Token that should be blocked from routing through.
 	 * Defaults to Uniswap's unsupported token list.
 	 */
-	BlockedTokenListProvider *providers.TokenListProvider
+	BlockedTokenListProvider providers.TokenListProvider
 
 	/**
 	 * Calls lens function on SwapRouter02 to determine ERC20 approval types for
@@ -151,7 +151,7 @@ type AlphaRouter struct {
 	V3GasModelFactory models.V3GasModelFactory
 	V2GasModelFactory models.V2GasModelFactory
 	//TokenValidatorProvider   TokenValidatorProvider
-	BlockedTokenListProvider *providers.TokenListProvider
+	BlockedTokenListProvider providers.TokenListProvider
 	Ctx                      context.Context
 }
 
@@ -202,6 +202,7 @@ func (a *AlphaRouter) Route(
 	syncGroup := sync.WaitGroup{}
 	lock := sync.Mutex{}
 	var routesWithValidQuotesAndPools []routesWithValidQuotesAndPool
+
 	if (len(protocolsSet) == 0 || (hasV2 && hasV3)) && v2Supported {
 		syncGroup.Add(1)
 		go func() {
@@ -282,22 +283,29 @@ func (a *AlphaRouter) Route(
 	if err != nil {
 		return nil, err
 	}
-	//v2trade, v3trade, err := build.BuildTrade(
-	//	currencyIn,
-	//	currencyOut,
-	//	tradeType,
-	//	swapRouteRaw.Routes,
-	//)
-	//if err != nil {
-	//	return nil, err
-	//}
-	var methodParameters *utils.MethodParameters
-	//if swapConfig != nil {
-	//	methodParameters, err = build.BuildSwapMethodParameters(trade, *swapConfig)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//}
+	trade, err := build.BuildTrade(
+		currencyIn,
+		currencyOut,
+		tradeType,
+		swapRouteRaw.Routes,
+	)
+	if err != nil {
+		return nil, err
+	}
+	impact, err := trade.PriceImpact()
+	if err != nil {
+		return nil, err
+	}
+
+	var methodParameters *routers.MethodParameters
+	if swapConfig != nil {
+		methodParameters = &routers.MethodParameters{}
+		methodParameters.SoSoData, methodParameters.LibSwapNormalizedSwapData, err = build.BuildOmniSwapMethodParameters(trade, *swapConfig)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &routers.SwapRoute{
 		Quote:                      swapRouteRaw.Quote,
 		QuoteGasAdjusted:           swapRouteRaw.QuoteGasAdjusted,
@@ -306,143 +314,144 @@ func (a *AlphaRouter) Route(
 		EstimatedGasUsedUSD:        swapRouteRaw.EstimatedGasUsedUSD,
 		GasPriceWei:                gasPrice.GasPriceWei,
 		Route:                      swapRouteRaw.Routes,
-		Trade:                      nil,
+		Trade:                      trade,
+		PriceImpact:                impact,
 		MethodParameters:           methodParameters,
 		BlockNumber:                routingConfig.BlockNumber,
 	}, nil
 }
 
-func (a *AlphaRouter) RouteToRatio(
-	token0Balance *entities.CurrencyAmount,
-	token1Balance *entities.CurrencyAmount,
-	position *entitiesV3.Position,
-	swapAndAddConfig config.SwapAndAddConfig,
-	swapAndAddOptions *config.SwapAndAddOptions,
-	routingConfig config.AlphaRouterConfig,
-) (*routers.SwapToRatioRoute, error) {
-	before, err := token0Balance.Currency.Wrapped().SortsBefore(token1Balance.Currency.Wrapped())
-	if err != nil {
-		return nil, err
-	}
-	if before {
-		token1Balance, token0Balance = token0Balance, token1Balance
-	}
-	preSwapOptimalRatio, err := a.calculateOptimalRatio(position, position.Pool.SqrtRatioX96, true)
-	if err != nil {
-		return nil, err
-	}
-	var zeroForOne bool
-	if position.Pool.TickCurrent > position.TickUpper {
-		zeroForOne = true
-	} else if position.Pool.TickCurrent < position.TickLower {
-		zeroForOne = false
-	} else {
-		zeroForOne = entities.NewFraction(token0Balance.Quotient(), token1Balance.Quotient()).GreaterThan(preSwapOptimalRatio)
-		if !zeroForOne {
-			preSwapOptimalRatio = preSwapOptimalRatio.Invert()
-		}
-	}
-	var (
-		swap                                      *routers.SwapRoute
-		ratioAchieved                             bool
-		inputBalance, outputBalance, exchangeRate = token0Balance, token1Balance, position.Pool.Token0Price().Fraction
-		optimalRatio                              = preSwapOptimalRatio
-		postSwapTargetPool                        = position.Pool
-		n                                         = 0
-	)
-	if !zeroForOne {
-		inputBalance = token1Balance
-		outputBalance = token0Balance
-		exchangeRate = position.Pool.Token1Price().Fraction
-	}
-	for !ratioAchieved {
-		n++
-		if n > swapAndAddConfig.MaxIterations {
-			return nil, ErrNoRouteFound
-		}
-		amountToSwap, err := functions.CalculateRatioAmountIn(
-			optimalRatio,
-			exchangeRate,
-			inputBalance,
-			outputBalance,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		if amountToSwap.EqualTo(util.ZeroFraction) {
-			return nil, ErrSwapNeeded
-		}
-		swap, err = a.Route(amountToSwap, outputBalance.Currency, entities.ExactInput, nil, routingConfig)
-		if err != nil {
-			return nil, err
-		}
-		inputBalanceUpdated := inputBalance.Subtract(swap.Trade.InputAmount())
-		outputBalanceUpdated := outputBalance.Add(swap.Trade.OutputAmount())
-		newRatio := inputBalanceUpdated.Divide(outputBalanceUpdated.Fraction)
-
-		var targetPoolPriceUpdate *big.Int
-		for _, route := range swap.Route {
-			if route.Protocol() != base_entities.V3 {
-				continue
-			}
-			v3Route := route.(models.V3RouteWithValidQuote)
-			for i, v3Pool := range v3Route.Route.Pools {
-				if v3Pool.Token0().Equal(position.Pool.Token0) && v3Pool.Token1().Equal(position.Pool.Token1) && v3Pool.(*base_entities.V3Pool).Fee == position.Pool.Fee {
-					targetPoolPriceUpdate = v3Route.SqrtPriceX96AfterList[i]
-					optimalRatio, err = a.calculateOptimalRatio(position, targetPoolPriceUpdate, zeroForOne)
-					if err != nil {
-						return nil, err
-					}
-				}
-			}
-		}
-		if targetPoolPriceUpdate == nil {
-			optimalRatio = preSwapOptimalRatio
-		}
-		ratioAchieved = newRatio.EqualTo(optimalRatio) || absoluteValue(newRatio.Fraction.Divide(optimalRatio).Subtract(util.OneFraction)).LessThan(swapAndAddConfig.RatioErrorTolerance)
-
-		if ratioAchieved && targetPoolPriceUpdate != nil {
-			ratio, err := utils.GetTickAtSqrtRatio(targetPoolPriceUpdate)
-			if err != nil {
-				return nil, err
-			}
-			postSwapTargetPool, err = entitiesV3.NewPool(
-				position.Pool.Token0,
-				position.Pool.Token1,
-				position.Pool.Fee,
-				targetPoolPriceUpdate,
-				position.Pool.Liquidity,
-				ratio,
-				position.Pool.TickDataProvider,
-			)
-		}
-		exchangeRate = swap.Trade.OutputAmount().Divide(swap.Trade.InputAmount().Fraction).Fraction
-		if exchangeRate.EqualTo(util.ZeroFraction) {
-			return nil, errors.New("insufficient liquidity to swap to optimal ratio")
-		}
-	}
-	if swap == nil {
-		return nil, errors.New("no route found")
-	}
-
-	result := &routers.SwapToRatioRoute{
-		SwapRoute:          swap,
-		OptimalRatio:       optimalRatio,
-		PostSwapTargetPool: postSwapTargetPool,
-	}
-	if swapAndAddOptions != nil {
-		result.MethodParameters, err = a.buildSwapAndAddMethodParameters(swap.Trade, swapAndAddOptions, base_entities.SwapAndAddParameters{
-			InitialBalanceTokenIn:  inputBalance,
-			InitialBalanceTokenOut: outputBalance,
-			PreLiquidityPosition:   position,
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-	return result, nil
-}
+//func (a *AlphaRouter) RouteToRatio(
+//	token0Balance *entities.CurrencyAmount,
+//	token1Balance *entities.CurrencyAmount,
+//	position *entitiesV3.Position,
+//	swapAndAddConfig config.SwapAndAddConfig,
+//	swapAndAddOptions *config.SwapAndAddOptions,
+//	routingConfig config.AlphaRouterConfig,
+//) (*routers.SwapToRatioRoute, error) {
+//	before, err := token0Balance.Currency.Wrapped().SortsBefore(token1Balance.Currency.Wrapped())
+//	if err != nil {
+//		return nil, err
+//	}
+//	if before {
+//		token1Balance, token0Balance = token0Balance, token1Balance
+//	}
+//	preSwapOptimalRatio, err := a.calculateOptimalRatio(position, position.Pool.SqrtRatioX96, true)
+//	if err != nil {
+//		return nil, err
+//	}
+//	var zeroForOne bool
+//	if position.Pool.TickCurrent > position.TickUpper {
+//		zeroForOne = true
+//	} else if position.Pool.TickCurrent < position.TickLower {
+//		zeroForOne = false
+//	} else {
+//		zeroForOne = entities.NewFraction(token0Balance.Quotient(), token1Balance.Quotient()).GreaterThan(preSwapOptimalRatio)
+//		if !zeroForOne {
+//			preSwapOptimalRatio = preSwapOptimalRatio.Invert()
+//		}
+//	}
+//	var (
+//		swap                                      *routers.Swaps
+//		ratioAchieved                             bool
+//		inputBalance, outputBalance, exchangeRate = token0Balance, token1Balance, position.Pool.Token0Price().Fraction
+//		optimalRatio                              = preSwapOptimalRatio
+//		postSwapTargetPool                        = position.Pool
+//		n                                         = 0
+//	)
+//	if !zeroForOne {
+//		inputBalance = token1Balance
+//		outputBalance = token0Balance
+//		exchangeRate = position.Pool.Token1Price().Fraction
+//	}
+//	for !ratioAchieved {
+//		n++
+//		if n > swapAndAddConfig.MaxIterations {
+//			return nil, ErrNoRouteFound
+//		}
+//		amountToSwap, err := functions.CalculateRatioAmountIn(
+//			optimalRatio,
+//			exchangeRate,
+//			inputBalance,
+//			outputBalance,
+//		)
+//		if err != nil {
+//			return nil, err
+//		}
+//
+//		if amountToSwap.EqualTo(util.ZeroFraction) {
+//			return nil, ErrSwapNeeded
+//		}
+//		swap, err = a.Route(amountToSwap, outputBalance.Currency, entities.ExactInput, nil, routingConfig)
+//		if err != nil {
+//			return nil, err
+//		}
+//		inputBalanceUpdated := inputBalance.Subtract(swap.Trade.InputAmount())
+//		outputBalanceUpdated := outputBalance.Add(swap.Trade.OutputAmount())
+//		newRatio := inputBalanceUpdated.Divide(outputBalanceUpdated.Fraction)
+//
+//		var targetPoolPriceUpdate *big.Int
+//		for _, route := range swap.Route {
+//			if route.Protocol() != base_entities.V3 {
+//				continue
+//			}
+//			v3Route := route.(models.V3RouteWithValidQuote)
+//			for i, v3Pool := range v3Route.Route.Pools {
+//				if v3Pool.Token0().Equal(position.Pool.Token0) && v3Pool.Token1().Equal(position.Pool.Token1) && v3Pool.(*base_entities.V3Pool).Fee == position.Pool.Fee {
+//					targetPoolPriceUpdate = v3Route.SqrtPriceX96AfterList[i]
+//					optimalRatio, err = a.calculateOptimalRatio(position, targetPoolPriceUpdate, zeroForOne)
+//					if err != nil {
+//						return nil, err
+//					}
+//				}
+//			}
+//		}
+//		if targetPoolPriceUpdate == nil {
+//			optimalRatio = preSwapOptimalRatio
+//		}
+//		ratioAchieved = newRatio.EqualTo(optimalRatio) || absoluteValue(newRatio.Fraction.Divide(optimalRatio).Subtract(util.OneFraction)).LessThan(swapAndAddConfig.RatioErrorTolerance)
+//
+//		if ratioAchieved && targetPoolPriceUpdate != nil {
+//			ratio, err := utils.GetTickAtSqrtRatio(targetPoolPriceUpdate)
+//			if err != nil {
+//				return nil, err
+//			}
+//			postSwapTargetPool, err = entitiesV3.NewPool(
+//				position.Pool.Token0,
+//				position.Pool.Token1,
+//				position.Pool.Fee,
+//				targetPoolPriceUpdate,
+//				position.Pool.Liquidity,
+//				ratio,
+//				position.Pool.TickDataProvider,
+//			)
+//		}
+//		exchangeRate = swap.Trade.OutputAmount().Divide(swap.Trade.InputAmount().Fraction).Fraction
+//		if exchangeRate.EqualTo(util.ZeroFraction) {
+//			return nil, errors.New("insufficient liquidity to swap to optimal ratio")
+//		}
+//	}
+//	if swap == nil {
+//		return nil, errors.New("no route found")
+//	}
+//
+//	result := &routers.SwapToRatioRoute{
+//		Swaps:          swap,
+//		OptimalRatio:       optimalRatio,
+//		PostSwapTargetPool: postSwapTargetPool,
+//	}
+//	if swapAndAddOptions != nil {
+//		result.MethodParameters, err = a.buildSwapAndAddMethodParameters(swap.Trade, swapAndAddOptions, base_entities.SwapAndAddParameters{
+//			InitialBalanceTokenIn:  inputBalance,
+//			InitialBalanceTokenOut: outputBalance,
+//			PreLiquidityPosition:   position,
+//		})
+//		if err != nil {
+//			return nil, err
+//		}
+//	}
+//	return result, nil
+//}
 
 func (a *AlphaRouter) calculateOptimalRatio(
 	position *entitiesV3.Position,
@@ -566,9 +575,7 @@ func (a *AlphaRouter) getV3Quotes(
 			if amountQuote.Quote == nil || amountQuote.SqrtPriceX96AfterList == nil || amountQuote.InitializedTicksCrossedList == nil || amountQuote.GasEstimate == nil {
 				continue
 			}
-			//var swap []*base_entities.Swap
 
-			//routeWithQuote.Route.Pools
 			routeWithValidQuote, err := models.NewV3RouteWithValidQuote(models.V3RouteWithValidQuoteParams{
 				Route:                       routeWithQuote.Route,
 				RawQuote:                    amountQuote.Quote,
@@ -610,15 +617,15 @@ func absoluteValue(fraction *entities.Fraction) *entities.Fraction {
 	return entities.NewFraction(numeratorAbs, denominatorAbs)
 }
 
-func (a *AlphaRouter) buildSwapAndAddMethodParameters(
-	trade base_entities.Trade,
-	swapAndAddOptions *config.SwapAndAddOptions,
-	swapAndAddParameters base_entities.SwapAndAddParameters,
-) (*utils.MethodParameters, error) {
-
-	//periphery.SwapCallParameters()
-	return nil, nil
-}
+//func (a *AlphaRouter) buildSwapAndAddMethodParameters(
+//	trade base_entities.Trade,
+//	swapAndAddOptions *config.SwapAndAddOptions,
+//	swapAndAddParameters base_entities.SwapAndAddParameters,
+//) (*utils.MethodParameters, error) {
+//
+//	//periphery.SwapCallParameters()
+//	return nil, nil
+//}
 
 func (a *AlphaRouter) getV2Quotes(
 	tokenIn *entities.Token,
@@ -700,6 +707,7 @@ func (a *AlphaRouter) getV2Quotes(
 				QuoteToken: quoteToken,
 				TradeType:  swapType,
 			})
+
 			if err != nil {
 				return nil, err
 			}

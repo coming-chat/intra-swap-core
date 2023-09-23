@@ -4,7 +4,6 @@ import (
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"github.com/daoleno/uniswapv3-sdk/constants"
 	entitiesV3 "github.com/daoleno/uniswapv3-sdk/entities"
-	"github.com/ethereum/go-ethereum/common"
 	entitiesV2 "github.com/vaulverin/uniswapv2-sdk/entities"
 	"math/big"
 )
@@ -24,35 +23,33 @@ type Swap struct {
 }
 
 func NewMTrade(routes []*Swap, tradeType entities.TradeType) (*MTrade, error) {
-	//multi_swap means multi_hop, DO NOT CHECK every swap has same input & output
-	//we make the trade swap to not multi_route, is one route with multi_hop
-	//inputCurrency := routes[0].InputAmount.Currency
-	//outputCurrency := routes[0].OutputAmount.Currency
-	//for _, route := range routes {
-	//	if !inputCurrency.Wrapped().Equal(route.Route.Input.Wrapped()) {
-	//		return nil, entitiesV3.ErrInputCurrencyMismatch
-	//	}
-	//	if !outputCurrency.Wrapped().Equal(route.Route.Output.Wrapped()) {
-	//		return nil, entitiesV3.ErrOutputCurrencyMismatch
-	//	}
-	//}
+	inputCurrency := routes[0].InputAmount.Currency
+	outputCurrency := routes[0].OutputAmount.Currency
+	for _, route := range routes {
+		if !inputCurrency.Wrapped().Equal(route.Route.Input.Wrapped()) {
+			return nil, entitiesV3.ErrInputCurrencyMismatch
+		}
+		if !outputCurrency.Wrapped().Equal(route.Route.Output.Wrapped()) {
+			return nil, entitiesV3.ErrOutputCurrencyMismatch
+		}
+	}
 
 	var numPools int
 	for _, route := range routes {
 		numPools += len(route.Route.Pools)
 	}
 
-	var poolAddressSet = make(map[common.Address]bool)
-	for _, route := range routes {
-		for _, pool := range route.Route.Pools {
-			poolAddressSet[pool.PoolAddress()] = true
-		}
-	}
+	// Temp disable this check
+	//var poolAddressSet = make(map[common.Address]bool)
+	//for _, route := range routes {
+	//	for _, pool := range route.Route.Pools {
+	//		poolAddressSet[pool.PoolAddress()] = true
+	//	}
+	//}
 
-	if numPools != len(poolAddressSet) {
-		return nil, entitiesV3.ErrDuplicatePools
-	}
-
+	//if numPools != len(poolAddressSet) {
+	//	return nil, entitiesV3.ErrDuplicatePools
+	//}
 	return &MTrade{
 		Swaps:     routes,
 		TradeType: tradeType,
@@ -70,10 +67,26 @@ type MTrade struct {
 }
 
 func (m *MTrade) InputAmount() *entities.CurrencyAmount {
+	if m.inputAmount != nil {
+		return m.inputAmount
+	}
+	totalInputFromRoutes := entities.FromRawAmount(m.Swaps[0].InputAmount.Currency, big.NewInt(0))
+	for _, swap := range m.Swaps {
+		totalInputFromRoutes = totalInputFromRoutes.Add(swap.InputAmount)
+	}
+	m.inputAmount = totalInputFromRoutes
 	return m.inputAmount
 }
 
 func (m *MTrade) OutputAmount() *entities.CurrencyAmount {
+	if m.outputAmount != nil {
+		return m.outputAmount
+	}
+	totalOutputFromRoutes := entities.FromRawAmount(m.Swaps[0].OutputAmount.Currency, big.NewInt(0))
+	for _, swap := range m.Swaps {
+		totalOutputFromRoutes = totalOutputFromRoutes.Add(swap.OutputAmount)
+	}
+	m.outputAmount = totalOutputFromRoutes
 	return m.outputAmount
 }
 
@@ -89,10 +102,10 @@ func (m *MTrade) MinimumAmountOut(slippageTolerance *entities.Percent, amountOut
 		return amountOut, nil
 	}
 
-	slippageAdjustedAmountOut := entities.NewFraction(big.NewInt(0), big.NewInt(0)).
+	slippageAdjustedAmountOut := entities.NewFraction(big.NewInt(1), big.NewInt(1)).
 		Add(slippageTolerance.Fraction).
 		Invert().
-		Multiply(entities.NewFraction(amountOut.Quotient(), big.NewInt(0))).Quotient()
+		Multiply(amountOut.Fraction).Quotient()
 	return entities.FromRawAmount(amountOut.Currency, slippageAdjustedAmountOut), nil
 }
 
@@ -108,9 +121,9 @@ func (m *MTrade) MaximumAmountIn(slippageTolerance *entities.Percent, amountIn *
 		return amountIn, nil
 	}
 
-	slippageAdjustedAmountIn := entities.NewFraction(big.NewInt(0), big.NewInt(0)).
+	slippageAdjustedAmountIn := entities.NewFraction(big.NewInt(1), big.NewInt(1)).
 		Add(slippageTolerance.Fraction).
-		Multiply(entities.NewFraction(amountIn.Quotient(), big.NewInt(0))).Quotient()
+		Multiply(amountIn.Fraction).Quotient()
 	return entities.FromRawAmount(amountIn.Currency, slippageAdjustedAmountIn), nil
 }
 

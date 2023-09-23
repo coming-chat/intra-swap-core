@@ -2,9 +2,8 @@ package v3
 
 import (
 	"context"
-	"fmt"
 	"github.com/coming-chat/intra-swap-core/base_entities"
-	"github.com/coming-chat/intra-swap-core/providers/provider"
+	"github.com/coming-chat/intra-swap-core/providers/config"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/daoleno/uniswap-sdk-core/entities"
@@ -15,7 +14,6 @@ import (
 type AmountQuote struct {
 	Amount                      *entities.CurrencyAmount
 	Quote                       *big.Int
-	QuoteList                   []*big.Int
 	SqrtPriceX96AfterList       []*big.Int
 	InitializedTicksCrossedList []uint32
 	GasEstimate                 *big.Int
@@ -30,13 +28,13 @@ type QuoteProvider interface {
 	GetQuotesManyExactIn(
 		amountIns []*entities.CurrencyAmount,
 		routes []*base_entities.MRoute,
-		providerConfig *provider.Config,
+		providerConfig *config.Config,
 	) ([]RouteWithQuotes, int64, error)
 
 	GetQuotesManyExactOut(
 		amountOuts []*entities.CurrencyAmount,
 		routes []*base_entities.MRoute,
-		providerConfig *provider.Config,
+		providerConfig *config.Config,
 	) ([]RouteWithQuotes, int64, error)
 }
 
@@ -106,7 +104,7 @@ func NewBaseQuoteProvider(
 func (b *BaseQuoteProvider) GetQuotesManyExactIn(
 	amountIns []*entities.CurrencyAmount,
 	routes []*base_entities.MRoute,
-	providerConfig *provider.Config,
+	providerConfig *config.Config,
 ) ([]RouteWithQuotes, int64, error) {
 	return b.getQuotesManyData(amountIns, routes, QuoteExactInput, providerConfig)
 }
@@ -114,7 +112,7 @@ func (b *BaseQuoteProvider) GetQuotesManyExactIn(
 func (b *BaseQuoteProvider) GetQuotesManyExactOut(
 	amountOuts []*entities.CurrencyAmount,
 	routes []*base_entities.MRoute,
-	providerConfig *provider.Config,
+	providerConfig *config.Config,
 ) ([]RouteWithQuotes, int64, error) {
 	return b.getQuotesManyData(amountOuts, routes, QuoteExactOutput, providerConfig)
 }
@@ -123,14 +121,14 @@ func (b *BaseQuoteProvider) getQuotesManyData(
 	amounts []*entities.CurrencyAmount,
 	routes []*base_entities.MRoute,
 	functionName functionName,
-	providerConfig *provider.Config,
+	providerConfig *config.Config,
 ) ([]RouteWithQuotes, int64, error) {
 	originalBlockNumber, err := b.Provider.Rpc.BlockNumber(b.Ctx)
 	if err != nil {
 		return nil, 0, err
 	}
 	if providerConfig == nil {
-		providerConfig = &provider.Config{
+		providerConfig = &config.Config{
 			BlockNumber: originalBlockNumber + b.BlockNumberConfig.BaseBlockOffset,
 		}
 	}
@@ -170,7 +168,7 @@ func (b *BaseQuoteProvider) getQuotesManyData(
 				multiCallParams = append(multiCallParams, call)
 				if i == 0 {
 					result[ri].AmountQuote = append(result[ri].AmountQuote, AmountQuote{
-						Amount:      a,
+						Amount:      entities.FromRawAmount(a.Currency, a.Quotient()),
 						GasEstimate: big.NewInt(0),
 					})
 				}
@@ -190,13 +188,11 @@ func (b *BaseQuoteProvider) getQuotesManyData(
 			}
 			for ra, a := range syncAmounts[ri] {
 				if a.EqualTo(util.ZeroFraction) {
-					result[ri].AmountQuote[ra].QuoteList = append(result[ri].AmountQuote[ra].QuoteList, result[ri].AmountQuote[ra].Quote)
 					continue
 				}
 				quoteData := callResult.ReturnData[callDataIndex]
 				syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, quoteData.Data.AmountOut)
 				result[ri].AmountQuote[ra].Quote = quoteData.Data.AmountOut
-				result[ri].AmountQuote[ra].QuoteList = append(result[ri].AmountQuote[ra].QuoteList, quoteData.Data.AmountOut)
 				result[ri].AmountQuote[ra].SqrtPriceX96AfterList = append(result[ri].AmountQuote[ra].SqrtPriceX96AfterList, quoteData.Data.SqrtPriceX96AfterList...)
 				result[ri].AmountQuote[ra].InitializedTicksCrossedList = append(result[ri].AmountQuote[ra].InitializedTicksCrossedList, quoteData.Data.InitializedTicksCrossedList...)
 				result[ri].AmountQuote[ra].GasEstimate.Add(result[ri].AmountQuote[ra].GasEstimate, quoteData.Data.GasEstimate)
@@ -205,6 +201,5 @@ func (b *BaseQuoteProvider) getQuotesManyData(
 		}
 	}
 
-	fmt.Println("aaa: " + result[0].AmountQuote[19].Quote.String())
 	return result, 0, nil
 }

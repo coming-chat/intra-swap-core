@@ -2,10 +2,10 @@ package routers
 
 import (
 	"github.com/coming-chat/intra-swap-core/base_entities"
+	"github.com/coming-chat/intra-swap-core/contracts/omni_swap"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/config"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	entitiesV3 "github.com/daoleno/uniswapv3-sdk/entities"
-	"github.com/daoleno/uniswapv3-sdk/utils"
 	"math/big"
 )
 
@@ -19,10 +19,16 @@ type SwapRoute struct {
 	EstimatedGasUsedQuoteToken *entities.CurrencyAmount
 	EstimatedGasUsedUSD        *entities.CurrencyAmount
 	GasPriceWei                *big.Int
-	Trade                      base_entities.Trade
+	PriceImpact                *entities.Percent
+	Trade                      *base_entities.MTrade
 	Route                      []RouteWithValidQuote
 	BlockNumber                uint64
-	MethodParameters           *utils.MethodParameters
+	MethodParameters           *MethodParameters
+}
+
+type MethodParameters struct {
+	SoSoData                  omni_swap.ISoSoData
+	LibSwapNormalizedSwapData []omni_swap.LibSwapNormalizedSwapData
 }
 
 type SwapToRatioRoute struct {
@@ -72,5 +78,4 @@ type BaseRouteWithValidQuote struct {
 	QuoteToken     *entities.Token
 	RawQuote       *big.Int
 	Route          *base_entities.MRoute
-	SwapStepQuote  []*big.Int
 }

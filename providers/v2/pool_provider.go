@@ -3,8 +3,8 @@ package v2
 import (
 	"fmt"
 	"github.com/coming-chat/intra-swap-core/base_entities"
-	"github.com/coming-chat/intra-swap-core/contracts/uniswap_v2"
-	"github.com/coming-chat/intra-swap-core/providers/provider"
+	"github.com/coming-chat/intra-swap-core/contracts"
+	"github.com/coming-chat/intra-swap-core/providers/config"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/daoleno/uniswap-sdk-core/entities"
@@ -32,7 +32,7 @@ type IReserves struct {
 type PoolProvider interface {
 	GetPools(
 		tokenPairs []TokenPairs,
-		providerConfig *provider.Config,
+		providerConfig *config.Config,
 	) (PoolAccessor, error)
 
 	GetPoolAddress(
@@ -119,7 +119,7 @@ type BasePoolProvider struct {
 	RetryOptions      PoolRetryOptions
 }
 
-func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *provider.Config) (PoolAccessor, error) {
+func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *config.Config) (PoolAccessor, error) {
 	var (
 		poolAddressSet   = make(map[string]struct{})
 		sortedTokenPairs []struct {
@@ -128,11 +128,8 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 		}
 		sortedPoolAddresses []string
 		multiCallData       []rpc.MultiCallSingleParam
+		err                 error
 	)
-	abi, err := uniswap_v2.PoolMetaData.GetAbi()
-	if err != nil {
-		return nil, err
-	}
 	for _, pair := range tokenPairs {
 		var address string
 		token0, token1 := pair.Token0, pair.Token1
@@ -162,7 +159,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 
 		multiCallData = append(multiCallData, rpc.MultiCallSingleParam{
 			FunctionName:    "getReserves",
-			Contract:        abi,
+			Contract:        contracts.IUniswapV2PoolAbi,
 			ContractAddress: common.HexToAddress(pair.PairAddress),
 		})
 	}

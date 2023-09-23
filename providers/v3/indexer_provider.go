@@ -3,7 +3,7 @@ package v3
 import (
 	"errors"
 	"github.com/coming-chat/intra-swap-core/base_entities"
-	"github.com/coming-chat/intra-swap-core/providers/provider"
+	"github.com/coming-chat/intra-swap-core/providers/config"
 	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"github.com/daoleno/uniswapv3-sdk/constants"
@@ -34,7 +34,7 @@ type IndexerProvider interface {
 	GetPools(
 		tokenIn *entities.Token,
 		tokenOut *entities.Token,
-		providerConfig *provider.Config,
+		providerConfig *config.Config,
 	) ([]IndexerPool, error)
 }
 
@@ -89,7 +89,7 @@ type GeckoTerminalRespData struct {
 	}
 }
 
-func (g *GeckoTerminalProvider) GetPools(tokenIn *entities.Token, tokenOut *entities.Token, providerConfig *provider.Config) (pools []IndexerPool, err error) {
+func (g *GeckoTerminalProvider) GetPools(tokenIn *entities.Token, tokenOut *entities.Token, providerConfig *config.Config) (pools []IndexerPool, err error) {
 	params := map[string]string{}
 	geckoResp, err := util.GetReq[GeckoTerminalRespData](g.api+g.poolSearch, g.headers, params)
 	if err != nil {

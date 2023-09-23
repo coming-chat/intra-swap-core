@@ -7,6 +7,7 @@ import (
 	"github.com/coming-chat/intra-swap-core/routers"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/config"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/models"
+	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"math/big"
 	"sort"
@@ -51,10 +52,10 @@ func GetBestSwapRoute(
 
 	totalAmount := entities.FromRawAmount(swapRoute.Routes[0].GetBaseRouteWithValidQuote().Amount.Currency, big.NewInt(0))
 	for _, v := range swapRoute.Routes {
-		totalAmount.Add(v.GetBaseRouteWithValidQuote().Amount)
+		totalAmount = totalAmount.Add(v.GetBaseRouteWithValidQuote().Amount)
 	}
 	missingAmount := amount.Subtract(totalAmount)
-	if missingAmount.GreaterThan(entities.NewFraction(big.NewInt(0), big.NewInt(1))) {
+	if missingAmount.GreaterThan(util.ZeroFraction) {
 		swapRoute.Routes[len(swapRoute.Routes)-1].GetBaseRouteWithValidQuote().Amount =
 			swapRoute.Routes[len(swapRoute.Routes)-1].GetBaseRouteWithValidQuote().Amount.Add(missingAmount)
 	}

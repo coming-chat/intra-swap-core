@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/routers"
 	"github.com/daoleno/uniswap-sdk-core/entities"
@@ -22,30 +21,25 @@ func (v V2RouteWithValidQuote) GetBaseRouteWithValidQuote() *routers.BaseRouteWi
 }
 
 type V2RouteWithValidQuoteParams struct {
-	Amount        *entities.CurrencyAmount
-	RawQuote      *big.Int
-	Percent       int
-	Route         *base_entities.MRoute
-	GasModel      GasModel[V2RouteWithValidQuote]
-	QuoteToken    *entities.Token
-	TradeType     entities.TradeType
-	SwapStepQuote []*big.Int
+	Amount     *entities.CurrencyAmount
+	RawQuote   *big.Int
+	Percent    int
+	Route      *base_entities.MRoute
+	GasModel   GasModel[V2RouteWithValidQuote]
+	QuoteToken *entities.Token
+	TradeType  entities.TradeType
 }
 
 func NewV2RouteWithValidQuote(param V2RouteWithValidQuoteParams) (*V2RouteWithValidQuote, error) {
-	if len(param.Route.Pools) != len(param.SwapStepQuote) {
-		return nil, errors.New("the length of route pools is not equal the length of swapStepQuote")
-	}
 	v2rwvq := &V2RouteWithValidQuote{
 		BaseRouteWithValidQuote: &routers.BaseRouteWithValidQuote{
-			Amount:        param.Amount,
-			RawQuote:      param.RawQuote,
-			Quote:         entities.FromRawAmount(param.QuoteToken, param.RawQuote),
-			Percent:       param.Percent,
-			QuoteToken:    param.QuoteToken,
-			TradeType:     param.TradeType,
-			SwapStepQuote: param.SwapStepQuote,
-			Route:         param.Route,
+			Amount:     param.Amount,
+			RawQuote:   param.RawQuote,
+			Quote:      entities.FromRawAmount(param.QuoteToken, param.RawQuote),
+			Percent:    param.Percent,
+			QuoteToken: param.QuoteToken,
+			TradeType:  param.TradeType,
+			Route:      param.Route,
 		},
 		GasModel: param.GasModel,
 	}
@@ -90,26 +84,21 @@ type V3RouteWithValidQuoteParams struct {
 	QuoterGasEstimate           *big.Int
 	Percent                     int
 	Route                       *base_entities.MRoute
-	SwapStepQuote               []*big.Int
 	GasModel                    GasModel[V3RouteWithValidQuote]
 	QuoteToken                  *entities.Token
 	TradeType                   entities.TradeType
 }
 
 func NewV3RouteWithValidQuote(param V3RouteWithValidQuoteParams) (*V3RouteWithValidQuote, error) {
-	if len(param.Route.Pools) != len(param.SwapStepQuote) {
-		return nil, errors.New("the length of route pools is not equal the length of swapStepQuote")
-	}
 	v3rwvq := &V3RouteWithValidQuote{
 		BaseRouteWithValidQuote: &routers.BaseRouteWithValidQuote{
-			Amount:        param.Amount,
-			RawQuote:      param.RawQuote,
-			Quote:         entities.FromRawAmount(param.QuoteToken, param.RawQuote),
-			Percent:       param.Percent,
-			QuoteToken:    param.QuoteToken,
-			TradeType:     param.TradeType,
-			SwapStepQuote: param.SwapStepQuote,
-			Route:         param.Route,
+			Amount:     param.Amount,
+			RawQuote:   param.RawQuote,
+			Quote:      entities.FromRawAmount(param.QuoteToken, param.RawQuote),
+			Percent:    param.Percent,
+			QuoteToken: param.QuoteToken,
+			TradeType:  param.TradeType,
+			Route:      param.Route,
 		},
 		SqrtPriceX96AfterList:       param.SqrtPriceX96AfterList,
 		InitializedTicksCrossedList: param.InitializedTicksCrossedList,

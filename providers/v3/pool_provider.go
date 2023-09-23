@@ -3,8 +3,8 @@ package v3
 import (
 	"fmt"
 	"github.com/coming-chat/intra-swap-core/base_entities"
-	"github.com/coming-chat/intra-swap-core/contracts/uniswap_v3"
-	"github.com/coming-chat/intra-swap-core/providers/provider"
+	"github.com/coming-chat/intra-swap-core/contracts"
+	"github.com/coming-chat/intra-swap-core/providers/config"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/daoleno/uniswap-sdk-core/entities"
@@ -14,7 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 	"sync"
-	"time"
 )
 
 const cacheKeyFormat = "%d:%s-%s/%d"
@@ -51,7 +50,7 @@ type TokenPairs struct {
 }
 
 type PoolProvider interface {
-	GetPools(tokenPairs []TokenPairs, providerConfig *provider.Config) (PoolAccessor, error)
+	GetPools(tokenPairs []TokenPairs, providerConfig *config.Config) (PoolAccessor, error)
 
 	GetPoolAddress(
 		tokenA,
@@ -142,7 +141,7 @@ func NewBasePoolProvider(
 	return basePool
 }
 
-func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *provider.Config) (PoolAccessor, error) {
+func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *config.Config) (PoolAccessor, error) {
 	var (
 		poolAddressSet = make(map[string]struct{})
 		sortedPool     []struct {
@@ -158,10 +157,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 		slot0s, liquiditys  []rpc.MultiCallSingleParam
 	)
 
-	poolContract, err := uniswap_v3.PoolMetaData.GetAbi()
-	if err != nil {
-		return nil, err
-	}
+	var err error
 	for _, pair := range tokenPairs {
 		var address string
 		token0, token1 := pair.Token0, pair.Token1
@@ -202,13 +198,13 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 		sortedPoolAddresses = append(sortedPoolAddresses, pair.PairAddress)
 		slot0s = append(slot0s, rpc.MultiCallSingleParam{
 			FunctionName:    "slot0",
-			Contract:        poolContract,
+			Contract:        contracts.IUniswapV3PoolAbi,
 			ContractAddress: common.HexToAddress(pair.PairAddress),
 		})
 		liquiditys = append(liquiditys, rpc.MultiCallSingleParam{
 			FunctionName:    "liquidity",
 			ContractAddress: common.HexToAddress(pair.PairAddress),
-			Contract:        poolContract,
+			Contract:        contracts.IUniswapV3PoolAbi,
 		})
 	}
 	var (
@@ -219,7 +215,6 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 	)
 
 	syncGroup.Add(2)
-	bef := time.Now()
 	go func() {
 		defer syncGroup.Done()
 		for i := 0; i < b.RetryOptions.Retries; i++ {
@@ -288,7 +283,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 		tickInfoParams = append(tickInfoParams, rpc.MultiCallSingleParam{
 			FunctionName:    "ticks",
 			ContractAddress: common.HexToAddress(address),
-			Contract:        poolContract,
+			Contract:        contracts.IUniswapV3PoolAbi,
 			FunctionParams: []any{
 				slot0Results.ReturnData[i].Data.Tick,
 			},
@@ -302,8 +297,6 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *pro
 	if err != nil {
 		return nil, err
 	}
-	aft := time.Now()
-	fmt.Print(aft.Sub(bef).Seconds())
 
 	tickInfoResultIndex := 0
 	for i, address := range sortedPoolAddresses {

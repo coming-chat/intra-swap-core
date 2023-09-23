@@ -8,6 +8,7 @@ import (
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"github.com/ethereum/go-ethereum/common"
 	"math/big"
+	"time"
 )
 
 func main() {
@@ -16,7 +17,7 @@ func main() {
 		return
 	}
 
-	token0str := "0x4200000000000000000000000000000000000006" // aclUSDC 18
+	token0str := "0x4200000000000000000000000000000000000006" // weth 18
 	token1str := "0x50c5725949a6f0c72e6c4a641f24049a917db0cb" // DAI 18
 	tokenAccessor, err := router.TokenProvider.GetTokens([]string{token0str, token1str}, nil)
 	if err != nil {
@@ -32,15 +33,19 @@ func main() {
 		token1,
 		entities.ExactInput,
 		&config.SwapOptions{
-			Recipient: common.HexToAddress("0x8F18d6260b13B77FEddba9Ac5fe367d4a8c8cEC0"),
+			Recipient:         common.HexToAddress("0x8F18d6260b13B77FEddba9Ac5fe367d4a8c8cEC0"),
+			SlippageTolerance: entities.NewPercent(big.NewInt(1), big.NewInt(100)),
+			Deadline:          big.NewInt(time.Now().Add(10 * time.Second).Unix()),
+			InputTokenPermit:  nil,
+			SqrtPriceLimitX96: big.NewInt(0),
 		},
 		config.DefaultRoutingConfigByChain(base_entities.BASE),
 	)
 	if err != nil {
-		return
+		fmt.Printf("err %v\n", err)
 	}
 	fmt.Printf("Quote: %s\n", swap.Quote.ToFixed(4))
 	fmt.Printf("QuoteGasAdjusted: %s\n", swap.QuoteGasAdjusted.ToFixed(4))
-
+	fmt.Printf("priceImapct: %s\n", swap.PriceImpact.ToFixed(4))
 	fmt.Printf("%v", swap)
 }

@@ -3,7 +3,7 @@ package rpc
 import (
 	_ "embed"
 	"github.com/coming-chat/intra-swap-core/contracts"
-	"github.com/coming-chat/intra-swap-core/providers/provider"
+	"github.com/coming-chat/intra-swap-core/providers/config"
 	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -43,7 +43,7 @@ type MultiCallResultWithInfo[T any] struct {
 
 type MultiCallProvider[MultiCallConfig any, T any] interface {
 	MultiCall(
-		multiCallData []MultiCallSingleParam, providerConfig *provider.Config,
+		multiCallData []MultiCallSingleParam, providerConfig *config.Config,
 	) (
 		result MultiCallResultWithInfo[T],
 		err error,
@@ -60,7 +60,7 @@ func NewBaseMultiCallProvider[T any](multiCallContract *contracts.Multicall3Raw)
 	}
 }
 
-func (b *BaseMultiCallProvider[T]) MultiCall(multiCallData []MultiCallSingleParam, providerConfig *provider.Config) (result MultiCallResultWithInfo[T], err error) {
+func (b *BaseMultiCallProvider[T]) MultiCall(multiCallData []MultiCallSingleParam, providerConfig *config.Config) (result MultiCallResultWithInfo[T], err error) {
 	callOpts := &bind.CallOpts{}
 	if providerConfig != nil {
 		callOpts.BlockNumber = big.NewInt(int64(providerConfig.BlockNumber))
