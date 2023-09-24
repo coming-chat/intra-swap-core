@@ -552,25 +552,17 @@ func (a *AlphaRouter) getV3Quotes(
 		}, nil
 	}
 
-	var (
-		routesWithQuotes []v3.RouteWithQuotes
-	)
-
 	// For all our routes, and all the fractional amounts, fetch quotes on-chain.
-	if swapType == entities.ExactInput {
-		routesWithQuotes, _, err = a.V3QuoteProvider.GetQuotesManyExactIn(amounts, routes, nil)
-	} else {
-		routesWithQuotes, _, err = a.V3QuoteProvider.GetQuotesManyExactOut(amounts, routes, nil)
-	}
+	routesWithQuotes, _, err := a.V3QuoteProvider.GetQuotesMany(amounts, routes, swapType, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	var routesWithValidQuotes []routers.RouteWithValidQuote
 	for _, routeWithQuote := range routesWithQuotes {
-		for i := 0; i < len(routeWithQuote.AmountQuote); i++ {
+		for i := 0; i < len(routeWithQuote.AmountQuotes); i++ {
 			percent := percents[i]
-			amountQuote := routeWithQuote.AmountQuote[i]
+			amountQuote := routeWithQuote.AmountQuotes[i]
 
 			if amountQuote.Quote == nil || amountQuote.SqrtPriceX96AfterList == nil || amountQuote.InitializedTicksCrossedList == nil || amountQuote.GasEstimate == nil {
 				continue

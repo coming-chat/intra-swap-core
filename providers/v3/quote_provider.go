@@ -7,7 +7,6 @@ import (
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/daoleno/uniswap-sdk-core/entities"
-	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 )
 
@@ -20,20 +19,15 @@ type AmountQuote struct {
 }
 
 type RouteWithQuotes struct {
-	Route       *base_entities.MRoute
-	AmountQuote []AmountQuote
+	Route        *base_entities.MRoute
+	AmountQuotes []AmountQuote
 }
 
 type QuoteProvider interface {
-	GetQuotesManyExactIn(
-		amountIns []*entities.CurrencyAmount,
+	GetQuotesMany(
+		amounts []*entities.CurrencyAmount,
 		routes []*base_entities.MRoute,
-		providerConfig *config.Config,
-	) ([]RouteWithQuotes, int64, error)
-
-	GetQuotesManyExactOut(
-		amountOuts []*entities.CurrencyAmount,
-		routes []*base_entities.MRoute,
+		tradeType entities.TradeType,
 		providerConfig *config.Config,
 	) ([]RouteWithQuotes, int64, error)
 }
@@ -51,29 +45,29 @@ type QuoteData struct {
 }
 
 type BaseQuoteProvider struct {
-	QuoterAddress      common.Address
 	ChainId            base_entities.ChainId
 	Provider           rpc.BaseProvider
 	MultiCall2Provider rpc.MultiCallProviderCore
 	BlockNumberConfig  BlockNumberConfig
 	MultiCallConfig    *rpc.MultiCallConfig
+	Offline            bool
 	Ctx                context.Context
 }
 
 func NewBaseQuoteProvider(
 	ctx context.Context,
-	address common.Address,
 	chainId base_entities.ChainId,
 	baseProvider rpc.BaseProvider,
 	multiCallCore rpc.MultiCallProviderCore,
 	blockNumberConfig *BlockNumberConfig,
+	offline bool,
 	config *rpc.MultiCallConfig,
 ) *BaseQuoteProvider {
 	quoteProvider := &BaseQuoteProvider{
 		ChainId:            chainId,
 		Ctx:                ctx,
-		QuoterAddress:      address,
 		Provider:           baseProvider,
+		Offline:            offline,
 		MultiCall2Provider: multiCallCore,
 	}
 	if config == nil {
@@ -101,26 +95,22 @@ func NewBaseQuoteProvider(
 	return quoteProvider
 }
 
-func (b *BaseQuoteProvider) GetQuotesManyExactIn(
-	amountIns []*entities.CurrencyAmount,
-	routes []*base_entities.MRoute,
-	providerConfig *config.Config,
-) ([]RouteWithQuotes, int64, error) {
-	return b.getQuotesManyData(amountIns, routes, QuoteExactInput, providerConfig)
-}
-
-func (b *BaseQuoteProvider) GetQuotesManyExactOut(
-	amountOuts []*entities.CurrencyAmount,
-	routes []*base_entities.MRoute,
-	providerConfig *config.Config,
-) ([]RouteWithQuotes, int64, error) {
-	return b.getQuotesManyData(amountOuts, routes, QuoteExactOutput, providerConfig)
-}
-
-func (b *BaseQuoteProvider) getQuotesManyData(
+func (b *BaseQuoteProvider) GetQuotesMany(
 	amounts []*entities.CurrencyAmount,
 	routes []*base_entities.MRoute,
-	functionName functionName,
+	tradeType entities.TradeType,
+	providerConfig *config.Config,
+) ([]RouteWithQuotes, int64, error) {
+	if b.Offline {
+		// tmp not support offline
+	}
+	return b.getQuotesManyDataOnline(amounts, routes, tradeType, providerConfig)
+}
+
+func (b *BaseQuoteProvider) getQuotesManyDataOnline(
+	amounts []*entities.CurrencyAmount,
+	routes []*base_entities.MRoute,
+	tradeType entities.TradeType,
 	providerConfig *config.Config,
 ) ([]RouteWithQuotes, int64, error) {
 	originalBlockNumber, err := b.Provider.Rpc.BlockNumber(b.Ctx)
@@ -161,13 +151,13 @@ func (b *BaseQuoteProvider) getQuotesManyData(
 				if a.EqualTo(util.ZeroFraction) {
 					continue
 				}
-				call, err := QuoteMultiCall(route, i, functionName, a)
+				call, err := QuoteMultiCall(route, i, tradeType, a)
 				if err != nil {
 					return nil, 0, err
 				}
 				multiCallParams = append(multiCallParams, call)
 				if i == 0 {
-					result[ri].AmountQuote = append(result[ri].AmountQuote, AmountQuote{
+					result[ri].AmountQuotes = append(result[ri].AmountQuotes, AmountQuote{
 						Amount:      entities.FromRawAmount(a.Currency, a.Quotient()),
 						GasEstimate: big.NewInt(0),
 					})
@@ -192,10 +182,10 @@ func (b *BaseQuoteProvider) getQuotesManyData(
 				}
 				quoteData := callResult.ReturnData[callDataIndex]
 				syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, quoteData.Data.AmountOut)
-				result[ri].AmountQuote[ra].Quote = quoteData.Data.AmountOut
-				result[ri].AmountQuote[ra].SqrtPriceX96AfterList = append(result[ri].AmountQuote[ra].SqrtPriceX96AfterList, quoteData.Data.SqrtPriceX96AfterList...)
-				result[ri].AmountQuote[ra].InitializedTicksCrossedList = append(result[ri].AmountQuote[ra].InitializedTicksCrossedList, quoteData.Data.InitializedTicksCrossedList...)
-				result[ri].AmountQuote[ra].GasEstimate.Add(result[ri].AmountQuote[ra].GasEstimate, quoteData.Data.GasEstimate)
+				result[ri].AmountQuotes[ra].Quote = quoteData.Data.AmountOut
+				result[ri].AmountQuotes[ra].SqrtPriceX96AfterList = append(result[ri].AmountQuotes[ra].SqrtPriceX96AfterList, quoteData.Data.SqrtPriceX96AfterList...)
+				result[ri].AmountQuotes[ra].InitializedTicksCrossedList = append(result[ri].AmountQuotes[ra].InitializedTicksCrossedList, quoteData.Data.InitializedTicksCrossedList...)
+				result[ri].AmountQuotes[ra].GasEstimate.Add(result[ri].AmountQuotes[ra].GasEstimate, quoteData.Data.GasEstimate)
 				callDataIndex++
 			}
 		}

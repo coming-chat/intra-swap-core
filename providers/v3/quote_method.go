@@ -11,17 +11,10 @@ import (
 	"github.com/daoleno/uniswapv3-sdk/periphery"
 )
 
-type functionName = string
-
-const (
-	QuoteExactInput  functionName = "quoteExactInput"
-	QuoteExactOutput functionName = "quoteExactOutput"
-)
-
 func QuoteMultiCall(
 	route *base_entities.MRoute,
 	index int,
-	name functionName,
+	tradeType entities.TradeType,
 	amount *entities.CurrencyAmount,
 ) (rpc.MultiCallSingleParam, error) {
 	switch route.Pools[index].QuoterAddress() {
@@ -30,9 +23,13 @@ func QuoteMultiCall(
 		if err != nil {
 			return rpc.MultiCallSingleParam{}, nil
 		}
-		encodedRoute, err := periphery.EncodeRouteToPath(stepRoute, name == QuoteExactOutput)
+		encodedRoute, err := periphery.EncodeRouteToPath(stepRoute, tradeType == entities.ExactOutput)
 		if err != nil {
 			return rpc.MultiCallSingleParam{}, nil
+		}
+		name := "quoteExactInput"
+		if tradeType == entities.ExactOutput {
+			name = "quoteExactOutput"
 		}
 		return rpc.MultiCallSingleParam{
 			Contract: contracts.IQuoterV2Abi,
