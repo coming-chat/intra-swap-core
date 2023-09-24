@@ -1,9 +1,12 @@
 package v2
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/coming-chat/intra-swap-core/base_entities"
+	"github.com/coming-chat/intra-swap-core/providers/rpc"
+	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"math/big"
 )
@@ -19,27 +22,131 @@ type RouteWithQuotes struct {
 }
 
 type QuoteProvider interface {
-	GetQuotesManyExactIn(amountIns []*entities.CurrencyAmount, routes []*base_entities.MRoute) ([]RouteWithQuotes, error)
-	GetQuotesManyExactOut(amountOuts []*entities.CurrencyAmount, routes []*base_entities.MRoute) ([]RouteWithQuotes, error)
+	GetQuotesMany(amounts []*entities.CurrencyAmount, routes []*base_entities.MRoute, tradeType entities.TradeType) ([]RouteWithQuotes, error)
 }
 
-func NewBaseQuoteProvider() *BaseQuoteProvider {
-	return &BaseQuoteProvider{}
+func NewBaseQuoteProvider(
+	ctx context.Context,
+	chainId base_entities.ChainId,
+	baseProvider rpc.BaseProvider,
+	multiCallCore rpc.MultiCallProviderCore,
+	offline bool,
+	config *rpc.MultiCallConfig,
+) *BaseQuoteProvider {
+	provider := &BaseQuoteProvider{
+		ChainId:            chainId,
+		Provider:           baseProvider,
+		MultiCall2Provider: multiCallCore,
+		Offline:            offline,
+		Ctx:                ctx,
+	}
+	if config == nil {
+		config = &rpc.MultiCallConfig{
+			RetryOptions: rpc.RetryOptions{
+				Retries:    2,
+				MinTimeout: 25,
+				MaxTimeout: 250,
+			},
+			BatchParams: rpc.BatchParams{
+				MultiCallChunk:  100,
+				GasLimitPerCall: 1_000_000,
+				MinSuccessRate:  0.2,
+			},
+		}
+	}
+	provider.MultiCallConfig = config
+	return provider
 }
 
 type BaseQuoteProvider struct {
+	ChainId            base_entities.ChainId
+	Provider           rpc.BaseProvider
+	MultiCall2Provider rpc.MultiCallProviderCore
+	MultiCallConfig    *rpc.MultiCallConfig
+	Offline            bool
+	Ctx                context.Context
 }
 
-func (b *BaseQuoteProvider) GetQuotesManyExactIn(amountIns []*entities.CurrencyAmount, routes []*base_entities.MRoute) ([]RouteWithQuotes, error) {
-	return b.getQuotes(amountIns, routes, entities.ExactInput)
+func (b *BaseQuoteProvider) GetQuotesMany(amounts []*entities.CurrencyAmount, routes []*base_entities.MRoute, tradeType entities.TradeType) ([]RouteWithQuotes, error) {
+	if b.Offline {
+		return b.getQuotesOffline(amounts, routes, entities.ExactInput)
+	} else {
+		return b.getQuotesOnline(amounts, routes, tradeType)
+	}
 }
 
-func (b *BaseQuoteProvider) GetQuotesManyExactOut(amountOuts []*entities.CurrencyAmount, routes []*base_entities.MRoute) ([]RouteWithQuotes, error) {
-	return b.getQuotes(amountOuts, routes, entities.ExactOutput)
+func (b *BaseQuoteProvider) getQuotesOnline(amounts []*entities.CurrencyAmount,
+	routes []*base_entities.MRoute,
+	tradeType entities.TradeType,
+) (routesWithQuotes []RouteWithQuotes, err error) {
+	var (
+		maxHop = 0
+		result []RouteWithQuotes
+	)
+	for _, route := range routes {
+		if len(route.Pools) > maxHop {
+			maxHop = len(route.Pools)
+		}
+		result = append(result, RouteWithQuotes{
+			Route: route,
+		})
+	}
+	syncAmounts := make([][]*entities.CurrencyAmount, len(routes))
+	for i := range syncAmounts {
+		syncAmounts[i] = make([]*entities.CurrencyAmount, len(amounts))
+		copy(syncAmounts[i], amounts)
+	}
+	for i := 0; i < maxHop; i++ {
+		var multiCallParams []rpc.MultiCallSingleParam
+		for ri, route := range routes {
+			if len(route.Pools) <= i {
+				continue
+			}
+			for _, a := range syncAmounts[ri] {
+				if a.EqualTo(util.ZeroFraction) {
+					continue
+				}
+				call, err := QuoteMultiCall(route, i, tradeType, a)
+				if err != nil {
+					return nil, err
+				}
+				multiCallParams = append(multiCallParams, call)
+				if i == 0 {
+					result[ri].AmountQuotes = append(result[ri].AmountQuotes, AmountQuote{
+						Amount: entities.FromRawAmount(a.Currency, a.Quotient()),
+					})
+				}
+			}
+		}
+		if len(multiCallParams) == 0 {
+			continue
+		}
+		callResult, err := rpc.ConcurrentMultiCall[[]*big.Int](b.MultiCall2Provider, multiCallParams, b.MultiCallConfig)
+		if err != nil {
+			return nil, err
+		}
+		callDataIndex := 0
+		for ri, route := range routes {
+			if len(route.Pools) <= i {
+				continue
+			}
+			for ra, a := range syncAmounts[ri] {
+				if a.EqualTo(util.ZeroFraction) {
+					continue
+				}
+				quoteData := callResult.ReturnData[callDataIndex]
+				syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, quoteData.Data[len(quoteData.Data)-1])
+				result[ri].AmountQuotes[ra].Quote = quoteData.Data[len(quoteData.Data)-1]
+				callDataIndex++
+			}
+		}
+	}
+
+	return result, nil
 }
 
 // TODO support getQuote online use v2Router getAmountsOut
-func (b *BaseQuoteProvider) getQuotes(
+func (b *BaseQuoteProvider) getQuotesOffline(
 	amounts []*entities.CurrencyAmount,
 	routes []*base_entities.MRoute,
 	tradeType entities.TradeType,

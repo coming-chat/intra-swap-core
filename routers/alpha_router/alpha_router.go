@@ -662,12 +662,7 @@ func (a *AlphaRouter) getV2Quotes(
 		}, nil
 	}
 
-	var routesWithQuotes []v2.RouteWithQuotes
-	if swapType == entities.ExactInput {
-		routesWithQuotes, err = a.V2QuoteProvider.GetQuotesManyExactIn(amounts, routes)
-	} else {
-		routesWithQuotes, err = a.V2QuoteProvider.GetQuotesManyExactOut(amounts, routes)
-	}
+	routesWithQuotes, err := a.V2QuoteProvider.GetQuotesMany(amounts, routes, swapType)
 	if err != nil {
 		return nil, err
 	}
