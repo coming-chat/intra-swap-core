@@ -145,7 +145,6 @@ func (b *BaseQuoteProvider) getQuotesOnline(amounts []*entities.CurrencyAmount,
 	return result, nil
 }
 
-// TODO support getQuote online use v2Router getAmountsOut
 func (b *BaseQuoteProvider) getQuotesOffline(
 	amounts []*entities.CurrencyAmount,
 	routes []*base_entities.MRoute,
