@@ -125,7 +125,6 @@ func packedCallData(
 			return nil, err
 		}
 	}
-
 	switch swap.Route.Pools[poolIndex].RouterAddress() {
 	case base_constant.UniswapV3Router:
 		return iSwapRouter02(
@@ -137,9 +136,27 @@ func packedCallData(
 			amountOut.Quotient(),
 			swapConfig,
 		)
-	case base_constant.AlienbaseV2Router:
+	case base_constant.SwapBasedV3Router, base_constant.SushiswapV3Router:
+		return iSwapRouter(
+			trade.TradeType,
+			swap.Route.Path[poolIndex],
+			swap.Route.Path[poolIndex+1],
+			swap.Route.Pools[poolIndex].(*base_entities.V3Pool),
+			amountIn.Quotient(),
+			amountOut.Quotient(),
+			swapConfig,
+		)
+	case base_constant.AlienbaseV2Router, base_constant.SwapBasedV2Router, base_constant.BaseswapV2Router:
 		return iUniswapV2Router02(
 			trade.TradeType,
+			swap.Route.Path[poolIndex],
+			swap.Route.Path[poolIndex+1],
+			amountIn.Quotient(),
+			amountOut.Quotient(),
+			swapConfig,
+		)
+	case base_constant.AerodromeRouter:
+		return iAerodromeRouter(trade.TradeType,
 			swap.Route.Path[poolIndex],
 			swap.Route.Path[poolIndex+1],
 			amountIn.Quotient(),
