@@ -46,7 +46,7 @@ type QuoteData struct {
 
 type BaseQuoteProvider struct {
 	ChainId            base_entities.ChainId
-	Provider           rpc.BaseProvider
+	Provider           rpc.Provider
 	MultiCall2Provider rpc.MultiCallProviderCore
 	BlockNumberConfig  BlockNumberConfig
 	MultiCallConfig    *rpc.MultiCallConfig
@@ -57,7 +57,7 @@ type BaseQuoteProvider struct {
 func NewBaseQuoteProvider(
 	ctx context.Context,
 	chainId base_entities.ChainId,
-	baseProvider rpc.BaseProvider,
+	baseProvider rpc.Provider,
 	multiCallCore rpc.MultiCallProviderCore,
 	blockNumberConfig *BlockNumberConfig,
 	offline bool,
@@ -113,7 +113,11 @@ func (b *BaseQuoteProvider) getQuotesManyDataOnline(
 	tradeType entities.TradeType,
 	providerConfig *config.Config,
 ) ([]RouteWithQuotes, int64, error) {
-	originalBlockNumber, err := b.Provider.Rpc.BlockNumber(b.Ctx)
+	client, err := b.Provider.GetEthRpc(b.ChainId)
+	if err != nil {
+		return nil, 0, err
+	}
+	originalBlockNumber, err := client.BlockNumber(b.Ctx)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -167,7 +171,7 @@ func (b *BaseQuoteProvider) getQuotesManyDataOnline(
 		if len(multiCallParams) == 0 {
 			continue
 		}
-		callResult, err := rpc.ConcurrentMultiCall[QuoteData](b.MultiCall2Provider, multiCallParams, b.MultiCallConfig)
+		callResult, err := rpc.ConcurrentMultiCall[QuoteData](b.ChainId, b.MultiCall2Provider, multiCallParams, b.MultiCallConfig)
 		if err != nil {
 			return nil, 0, err
 		}

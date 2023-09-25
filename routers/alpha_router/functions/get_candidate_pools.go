@@ -59,7 +59,7 @@ func GetV3CandidatePools(params V3GetCandidatePoolsParams) (
 	candidatePools CandidatePoolsBySelectionCriteria,
 	err error,
 ) {
-	allPools, err := params.IndexerProvider.GetPools(params.TokenIn, params.TokenOut, &providersConfig.Config{
+	allPools, err := params.IndexerProvider.GetPools(params.ChainId, params.TokenIn, params.TokenOut, &providersConfig.Config{
 		BlockNumber: params.RoutingConfig.BlockNumber,
 	})
 	if err != nil {
@@ -70,8 +70,8 @@ func GetV3CandidatePools(params V3GetCandidatePoolsParams) (
 	if params.BlockedTokenListProvider != nil {
 		for _, pool := range allPools {
 			if params.BlockedTokenListProvider != nil {
-				token0InBlocklist, _ := params.BlockedTokenListProvider.GetTokenByAddress(pool.Token0.Id)
-				token1InBlocklist, _ := params.BlockedTokenListProvider.GetTokenByAddress(pool.Token1.Id)
+				token0InBlocklist, _ := params.BlockedTokenListProvider.GetTokenByAddress(params.ChainId, pool.Token0.Id)
+				token1InBlocklist, _ := params.BlockedTokenListProvider.GetTokenByAddress(params.ChainId, pool.Token1.Id)
 				if token0InBlocklist != nil || token1InBlocklist != nil {
 					continue
 				}
@@ -339,7 +339,7 @@ func GetV3CandidatePools(params V3GetCandidatePoolsParams) (
 		}
 	}
 
-	tokenAccessor, err := params.TokenProvider.GetTokens(tokenAddresses, &providersConfig.Config{
+	tokenAccessor, err := params.TokenProvider.GetTokens(params.ChainId, tokenAddresses, &providersConfig.Config{
 		BlockNumber: params.RoutingConfig.BlockNumber,
 	})
 	if err != nil {
@@ -379,7 +379,7 @@ func GetV2CandidatePools(params V2GetCandidatePoolsParams) (
 	candidatePools CandidatePoolsBySelectionCriteria,
 	err error,
 ) {
-	allPools, err := params.IndexerProvider.GetPools(params.TokenIn, params.TokenOut, &providersConfig.Config{
+	allPools, err := params.IndexerProvider.GetPools(params.ChainId, params.TokenIn, params.TokenOut, &providersConfig.Config{
 		BlockNumber: params.RoutingConfig.BlockNumber,
 	})
 	if err != nil {
@@ -390,8 +390,8 @@ func GetV2CandidatePools(params V2GetCandidatePoolsParams) (
 	if params.BlockedTokenListProvider != nil {
 		for _, pool := range allPools {
 			if params.BlockedTokenListProvider != nil {
-				token0InBlockList, _ := params.BlockedTokenListProvider.GetTokenByAddress(pool.Token0.Id)
-				token1InBlockList, _ := params.BlockedTokenListProvider.GetTokenBySymbol(pool.Token1.Id)
+				token0InBlockList, _ := params.BlockedTokenListProvider.GetTokenByAddress(params.ChainId, pool.Token0.Id)
+				token1InBlockList, _ := params.BlockedTokenListProvider.GetTokenBySymbol(params.ChainId, pool.Token1.Id)
 				if token0InBlockList != nil || token1InBlockList != nil {
 					continue
 				}
@@ -644,7 +644,7 @@ func GetV2CandidatePools(params V2GetCandidatePoolsParams) (
 		}
 	}
 
-	tokenAccessor, err := params.TokenProvider.GetTokens(tokenAddresses, &providersConfig.Config{
+	tokenAccessor, err := params.TokenProvider.GetTokens(params.ChainId, tokenAddresses, &providersConfig.Config{
 		BlockNumber: params.RoutingConfig.BlockNumber,
 	})
 	if err != nil {

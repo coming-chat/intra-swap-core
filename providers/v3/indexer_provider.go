@@ -2,6 +2,7 @@ package v3
 
 import (
 	"errors"
+	"fmt"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/providers/config"
 	"github.com/coming-chat/intra-swap-core/util"
@@ -32,26 +33,25 @@ type IndexerPool struct {
 }
 type IndexerProvider interface {
 	GetPools(
+		chainId base_entities.ChainId,
 		tokenIn *entities.Token,
 		tokenOut *entities.Token,
 		providerConfig *config.Config,
 	) ([]IndexerPool, error)
 }
 
-func NewGeckoTerminalProvider(chaiId base_entities.ChainId) *GeckoTerminalProvider {
+func NewGeckoTerminalProvider() *GeckoTerminalProvider {
 	return &GeckoTerminalProvider{
 		api:        "https://api.geckoterminal.com/api/v2",
-		poolSearch: "/networks/base/dexes/uniswap-v3-base/pools",
+		poolSearch: "/networks/%s/dexes/uniswap-v3-base/pools",
 		headers: map[string]string{
 			"Accept":     "application/json;version=20230302",
 			"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36",
 		},
-		ChainId: chaiId,
 	}
 }
 
 type GeckoTerminalProvider struct {
-	ChainId    base_entities.ChainId
 	api        string
 	headers    map[string]string
 	poolSearch string
@@ -89,9 +89,9 @@ type GeckoTerminalRespData struct {
 	}
 }
 
-func (g *GeckoTerminalProvider) GetPools(tokenIn *entities.Token, tokenOut *entities.Token, providerConfig *config.Config) (pools []IndexerPool, err error) {
+func (g *GeckoTerminalProvider) GetPools(chainId base_entities.ChainId, tokenIn *entities.Token, tokenOut *entities.Token, providerConfig *config.Config) (pools []IndexerPool, err error) {
 	params := map[string]string{}
-	geckoResp, err := util.GetReq[GeckoTerminalRespData](g.api+g.poolSearch, g.headers, params)
+	geckoResp, err := util.GetReq[GeckoTerminalRespData](g.api+fmt.Sprintf(g.poolSearch, base_entities.ChainName[chainId]), g.headers, params)
 	if err != nil {
 		return nil, err
 	}

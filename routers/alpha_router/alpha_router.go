@@ -35,7 +35,7 @@ type AlphaRouterParams struct {
 	/**
 	 * The Web3 provider for getting on-chain data.
 	 */
-	Provider rpc.BaseProvider
+	Provider rpc.Provider
 	/**
 	 * The provider to use for making multicalls. Used for getting on-chain data
 	 * like pools, tokens, quotes in batch.
@@ -137,7 +137,7 @@ func NewAlphaRouter(params AlphaRouterParams, ctx context.Context) *AlphaRouter 
 
 type AlphaRouter struct {
 	ChainId                   base_entities.ChainId
-	Provider                  rpc.BaseProvider
+	Provider                  rpc.Provider
 	MultiCall2Provider        rpc.MultiCallProviderCore
 	V3IndexerProviderProvider v3.IndexerProvider
 	V3PoolProvider            v3.PoolProvider
@@ -164,7 +164,11 @@ func (a *AlphaRouter) Route(
 ) (*routers.SwapRoute, error) {
 	var err error
 	if routingConfig.BlockNumber == 0 {
-		routingConfig.BlockNumber, err = a.Provider.Rpc.BlockNumber(a.Ctx)
+		client, err := a.Provider.GetEthRpc(a.ChainId)
+		if err != nil {
+			return nil, err
+		}
+		routingConfig.BlockNumber, err = client.BlockNumber(a.Ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -179,7 +183,10 @@ func (a *AlphaRouter) Route(
 	}
 	tokenIn, tokenOut := currencyIn.Wrapped(), currencyOut.Wrapped()
 	percents, amounts := a.getAmountDistribution(amount, routingConfig)
-	gasPrice := a.GasPriceProvider.GetGasPrice()
+	gasPrice, err := a.GasPriceProvider.GetGasPrice(a.ChainId)
+	if err != nil {
+		return nil, err
+	}
 	quoteToken := quoteCurrency.Wrapped()
 	protocolsSet := make(map[base_entities.Protocol]struct{})
 	for _, v := range routingConfig.Protocols {

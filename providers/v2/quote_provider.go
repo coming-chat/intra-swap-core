@@ -28,7 +28,7 @@ type QuoteProvider interface {
 func NewBaseQuoteProvider(
 	ctx context.Context,
 	chainId base_entities.ChainId,
-	baseProvider rpc.BaseProvider,
+	baseProvider rpc.Provider,
 	multiCallCore rpc.MultiCallProviderCore,
 	offline bool,
 	config *rpc.MultiCallConfig,
@@ -60,7 +60,7 @@ func NewBaseQuoteProvider(
 
 type BaseQuoteProvider struct {
 	ChainId            base_entities.ChainId
-	Provider           rpc.BaseProvider
+	Provider           rpc.Provider
 	MultiCall2Provider rpc.MultiCallProviderCore
 	MultiCallConfig    *rpc.MultiCallConfig
 	Offline            bool
@@ -121,7 +121,7 @@ func (b *BaseQuoteProvider) getQuotesOnline(amounts []*entities.CurrencyAmount,
 		if len(multiCallParams) == 0 {
 			continue
 		}
-		callResult, err := rpc.ConcurrentMultiCall[[]*big.Int](b.MultiCall2Provider, multiCallParams, b.MultiCallConfig)
+		callResult, err := rpc.ConcurrentMultiCall[[]*big.Int](b.ChainId, b.MultiCall2Provider, multiCallParams, b.MultiCallConfig)
 		if err != nil {
 			return nil, err
 		}

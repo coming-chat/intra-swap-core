@@ -21,7 +21,7 @@ import (
 // Cost for crossing an uninitialized tick.
 var costPerUninitTick = big.NewInt(0)
 
-func NewHeuristicGasModelFactory(baseProvider rpc.BaseProvider, multiCallCore rpc.MultiCallProviderCore, gasPriceAddress string) *HeuristicGasModelFactory {
+func NewHeuristicGasModelFactory(baseProvider rpc.Provider, multiCallCore rpc.MultiCallProviderCore, gasPriceAddress string) *HeuristicGasModelFactory {
 	return &HeuristicGasModelFactory{
 		provider:          baseProvider,
 		multiCallProvider: multiCallCore,
@@ -30,7 +30,7 @@ func NewHeuristicGasModelFactory(baseProvider rpc.BaseProvider, multiCallCore rp
 }
 
 type HeuristicGasModelFactory struct {
-	provider          rpc.BaseProvider
+	provider          rpc.Provider
 	multiCallProvider rpc.MultiCallProviderCore
 	gasPriceAddress   string
 }

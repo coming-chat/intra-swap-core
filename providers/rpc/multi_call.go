@@ -2,6 +2,7 @@ package rpc
 
 import (
 	_ "embed"
+	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/contracts"
 	"github.com/coming-chat/intra-swap-core/providers/config"
 	"github.com/coming-chat/intra-swap-core/util"
@@ -43,7 +44,7 @@ type MultiCallResultWithInfo[T any] struct {
 
 type MultiCallProvider[MultiCallConfig any, T any] interface {
 	MultiCall(
-		multiCallData []MultiCallSingleParam, providerConfig *config.Config,
+		chainId base_entities.ChainId, multiCallData []MultiCallSingleParam, providerConfig *config.Config,
 	) (
 		result MultiCallResultWithInfo[T],
 		err error,
@@ -51,16 +52,16 @@ type MultiCallProvider[MultiCallConfig any, T any] interface {
 }
 
 type BaseMultiCallProvider[T any] struct {
-	*contracts.Multicall3Raw
+	core MultiCallProviderCore
 }
 
-func NewBaseMultiCallProvider[T any](multiCallContract *contracts.Multicall3Raw) *BaseMultiCallProvider[T] {
+func GetMultiCallProvider[T any](core MultiCallProviderCore) *BaseMultiCallProvider[T] {
 	return &BaseMultiCallProvider[T]{
-		multiCallContract,
+		core: core,
 	}
 }
 
-func (b *BaseMultiCallProvider[T]) MultiCall(multiCallData []MultiCallSingleParam, providerConfig *config.Config) (result MultiCallResultWithInfo[T], err error) {
+func (b *BaseMultiCallProvider[T]) MultiCall(chainId base_entities.ChainId, multiCallData []MultiCallSingleParam, providerConfig *config.Config) (result MultiCallResultWithInfo[T], err error) {
 	callOpts := &bind.CallOpts{}
 	if providerConfig != nil {
 		callOpts.BlockNumber = big.NewInt(int64(providerConfig.BlockNumber))
@@ -84,7 +85,11 @@ func (b *BaseMultiCallProvider[T]) MultiCall(multiCallData []MultiCallSinglePara
 		BlockHash   common.Hash
 		ReturnData  []contracts.Multicall3Result
 	}{}
-	err = b.Call(callOpts, &[]any{&decodeResults}, "blockAndAggregate", calls)
+	multiCall, err := b.core.GetMultiCallContract(chainId)
+	if err != nil {
+		return result, err
+	}
+	err = multiCall.Call(callOpts, &[]any{&decodeResults}, "blockAndAggregate", calls)
 	if err != nil {
 		return
 	}
@@ -110,5 +115,5 @@ func (b *BaseMultiCallProvider[T]) MultiCall(multiCallData []MultiCallSinglePara
 }
 
 type MultiCallProviderCore interface {
-	GetMultiCallContract() *contracts.Multicall3Raw
+	GetMultiCallContract(chainId base_entities.ChainId) (*contracts.Multicall3Raw, error)
 }

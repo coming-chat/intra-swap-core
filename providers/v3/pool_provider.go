@@ -218,7 +218,8 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 	go func() {
 		defer syncGroup.Done()
 		for i := 0; i < b.RetryOptions.Retries; i++ {
-			slot0Results, errSlot0 = rpc.NewUniswapMultiCallProvider[ISlot0](b.MultiCallProvider).MultiCall(
+			slot0Results, errSlot0 = rpc.GetMultiCallProvider[ISlot0](b.MultiCallProvider).MultiCall(
+				b.ChainId,
 				slot0s,
 				providerConfig,
 			)
@@ -232,7 +233,8 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 	go func() {
 		defer syncGroup.Done()
 		for i := 0; i < b.RetryOptions.Retries; i++ {
-			liquidityResults, errLiquidity = rpc.NewUniswapMultiCallProvider[*big.Int](b.MultiCallProvider).MultiCall(
+			liquidityResults, errLiquidity = rpc.GetMultiCallProvider[*big.Int](b.MultiCallProvider).MultiCall(
+				b.ChainId,
 				liquiditys,
 				providerConfig,
 			)
@@ -290,7 +292,8 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 		})
 	}
 
-	tickInfoResult, err := rpc.NewUniswapMultiCallProvider[Tick](b.MultiCallProvider).MultiCall(
+	tickInfoResult, err := rpc.GetMultiCallProvider[Tick](b.MultiCallProvider).MultiCall(
+		b.ChainId,
 		tickInfoParams,
 		providerConfig,
 	)

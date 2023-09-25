@@ -164,7 +164,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 		})
 	}
 
-	reservesResults, err := rpc.NewUniswapMultiCallProvider[IReserves](b.MultiCallProvider).MultiCall(multiCallData, nil)
+	reservesResults, err := rpc.GetMultiCallProvider[IReserves](b.MultiCallProvider).MultiCall(b.ChainId, multiCallData, nil)
 	if err != nil {
 		return nil, err
 	}

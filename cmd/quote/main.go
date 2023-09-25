@@ -19,7 +19,7 @@ func main() {
 
 	token0str := "0x4200000000000000000000000000000000000006" // weth 18
 	token1str := "0x50c5725949a6f0c72e6c4a641f24049a917db0cb" // DAI 18
-	tokenAccessor, err := router.TokenProvider.GetTokens([]string{token0str, token1str}, nil)
+	tokenAccessor, err := router.TokenProvider.GetTokens(base_entities.BASE, []string{token0str, token1str}, nil)
 	if err != nil {
 		return
 	}

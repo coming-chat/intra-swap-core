@@ -11,7 +11,7 @@ import (
 )
 
 type TokenProvider interface {
-	GetTokens(addresses []string, providerConfig *config.Config) (TokenAccessor, error)
+	GetTokens(chainId base_entities.ChainId, addresses []string, providerConfig *config.Config) (TokenAccessor, error)
 }
 
 type TokenAccessor interface {
@@ -21,36 +21,34 @@ type TokenAccessor interface {
 }
 
 type BaseTokenAccessor struct {
-	addressToToken map[string]*entities.Token
-	symbolToToken  map[string]*entities.Token
-	tokens         []*entities.Token
+	getTokenByAddress func(address string) *entities.Token
+	getTokenBySymbol  func(symbol string) *entities.Token
+	getAllTokens      func() []*entities.Token
 }
 
-func (b BaseTokenAccessor) GetTokenByAddress(address string) *entities.Token {
-	return b.addressToToken[address]
+func (a BaseTokenAccessor) GetTokenByAddress(address string) *entities.Token {
+	return a.getTokenByAddress(address)
 }
 
-func (b BaseTokenAccessor) GetTokenBySymbol(symbol string) *entities.Token {
-	return b.symbolToToken[symbol]
+func (a BaseTokenAccessor) GetTokenBySymbol(symbol string) *entities.Token {
+	return a.getTokenBySymbol(symbol)
 }
 
-func (b BaseTokenAccessor) GetAllTokens() []*entities.Token {
-	return b.tokens
+func (a BaseTokenAccessor) GetAllTokens() []*entities.Token {
+	return a.getAllTokens()
 }
 
-func NewBaseTokenProvider(chainId base_entities.ChainId, multiCallCore rpc.MultiCallProviderCore) *BaseTokenProvider {
+func NewBaseTokenProvider(multiCallCore rpc.MultiCallProviderCore) *BaseTokenProvider {
 	return &BaseTokenProvider{
-		ChainId:               chainId,
 		MultiCallProviderCore: multiCallCore,
 	}
 }
 
 type BaseTokenProvider struct {
-	ChainId               base_entities.ChainId
 	MultiCallProviderCore rpc.MultiCallProviderCore
 }
 
-func (o *BaseTokenProvider) GetTokens(addresses []string, providerConfig *config.Config) (TokenAccessor, error) {
+func (o *BaseTokenProvider) GetTokens(chainId base_entities.ChainId, addresses []string, providerConfig *config.Config) (TokenAccessor, error) {
 	addressToToken := make(map[string]*entities.Token)
 	symbolToToken := make(map[string]*entities.Token)
 	var tokens []*entities.Token
@@ -81,12 +79,12 @@ func (o *BaseTokenProvider) GetTokens(addresses []string, providerConfig *config
 
 	go func() {
 		defer syncGroup.Done()
-		symbolsResults, errSymbol = rpc.NewUniswapMultiCallProvider[string](o.MultiCallProviderCore).MultiCall(multiCallSymbol, providerConfig)
+		symbolsResults, errSymbol = rpc.GetMultiCallProvider[string](o.MultiCallProviderCore).MultiCall(chainId, multiCallSymbol, providerConfig)
 	}()
 
 	go func() {
 		defer syncGroup.Done()
-		decimalsResults, errDecimals = rpc.NewUniswapMultiCallProvider[uint8](o.MultiCallProviderCore).MultiCall(multiCallDecimals, providerConfig)
+		decimalsResults, errDecimals = rpc.GetMultiCallProvider[uint8](o.MultiCallProviderCore).MultiCall(chainId, multiCallDecimals, providerConfig)
 	}()
 
 	syncGroup.Wait()
@@ -102,7 +100,7 @@ func (o *BaseTokenProvider) GetTokens(addresses []string, providerConfig *config
 			continue
 		}
 		addressToToken[address] = entities.NewToken(
-			o.ChainId,
+			chainId,
 			common.HexToAddress(address),
 			uint(decimalsResults.ReturnData[i].Data),
 			symbolsResults.ReturnData[i].Data,
@@ -111,12 +109,17 @@ func (o *BaseTokenProvider) GetTokens(addresses []string, providerConfig *config
 		symbolToToken[symbolsResults.ReturnData[i].Data] = addressToToken[address]
 		tokens = append(tokens, addressToToken[address])
 	}
-
-	return BaseTokenAccessor{
-		tokens:         tokens,
-		addressToToken: addressToToken,
-		symbolToToken:  symbolToToken,
-	}, nil
+	baseTokenAccessor := BaseTokenAccessor{}
+	baseTokenAccessor.getAllTokens = func() []*entities.Token {
+		return tokens
+	}
+	baseTokenAccessor.getTokenByAddress = func(address string) *entities.Token {
+		return addressToToken[address]
+	}
+	baseTokenAccessor.getTokenBySymbol = func(symbol string) *entities.Token {
+		return symbolToToken[symbol]
+	}
+	return baseTokenAccessor, nil
 }
 
 // Some well known tokens on each chain for seeding cache / testing.

@@ -3,6 +3,7 @@ package rpc
 import (
 	"errors"
 	"fmt"
+	"github.com/coming-chat/intra-swap-core/base_entities"
 	"math"
 	"sync"
 	"sync/atomic"
@@ -25,7 +26,7 @@ type MultiCallConfig struct {
 	BatchParams  BatchParams
 }
 
-func ConcurrentMultiCall[T any](core MultiCallProviderCore, multiCallParams []MultiCallSingleParam, c *MultiCallConfig) (rInfo MultiCallResultWithInfo[T], err error) {
+func ConcurrentMultiCall[T any](chainId base_entities.ChainId, core MultiCallProviderCore, multiCallParams []MultiCallSingleParam, c *MultiCallConfig) (rInfo MultiCallResultWithInfo[T], err error) {
 	var (
 		split          = math.Ceil(float64(len(multiCallParams)) / float64(c.BatchParams.MultiCallChunk))
 		syncGroup      = sync.WaitGroup{}
@@ -45,7 +46,7 @@ func ConcurrentMultiCall[T any](core MultiCallProviderCore, multiCallParams []Mu
 				if index+c.BatchParams.MultiCallChunk > len(multiCallParams) {
 					endIndex = len(multiCallParams)
 				}
-				returnData, err := NewUniswapMultiCallProvider[T](core).MultiCall(multiCallParams[index:endIndex], nil)
+				returnData, err := GetMultiCallProvider[T](core).MultiCall(chainId, multiCallParams[index:endIndex], nil)
 				if err != nil {
 					fmt.Printf("%v\n", err)
 					continue
