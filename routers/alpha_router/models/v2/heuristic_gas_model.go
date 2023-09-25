@@ -3,10 +3,10 @@ package v2
 import (
 	"errors"
 	"fmt"
+	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	v2 "github.com/coming-chat/intra-swap-core/providers/v2"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/models"
-	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"math/big"
 	"sort"
@@ -185,7 +185,7 @@ func (h *HeuristicGasModelFactory) getHighestLiquidityUSDPool(
 	poolsRaw := poolAccessor.GetAllPools()
 	var pools []*base_entities.V2Pool
 	for _, poolRaw := range poolsRaw {
-		if poolRaw.Reserve0().GreaterThan(util.ZeroFraction) && poolRaw.Reserve1().GreaterThan(util.ZeroFraction) {
+		if poolRaw.Reserve0().GreaterThan(base_constant.ZeroFraction) && poolRaw.Reserve1().GreaterThan(base_constant.ZeroFraction) {
 			pools = append(pools, poolRaw)
 		}
 	}
@@ -232,7 +232,7 @@ func (h *HeuristicGasModelFactory) getEthPool(
 		return nil, err
 	}
 
-	if pool.Reserve0().EqualTo(util.ZeroFraction) || pool.Reserve1().EqualTo(util.ZeroFraction) {
+	if pool.Reserve0().EqualTo(base_constant.ZeroFraction) || pool.Reserve1().EqualTo(base_constant.ZeroFraction) {
 		return nil, fmt.Errorf("could not find a valid WETH pool with %s for computing gas costs", token.Symbol())
 	}
 

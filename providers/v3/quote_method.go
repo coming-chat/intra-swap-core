@@ -2,10 +2,10 @@ package v3
 
 import (
 	"errors"
+	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/contracts"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
-	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	entitiesV3 "github.com/daoleno/uniswapv3-sdk/entities"
 	"github.com/daoleno/uniswapv3-sdk/periphery"
@@ -18,7 +18,7 @@ func QuoteMultiCall(
 	amount *entities.CurrencyAmount,
 ) (rpc.MultiCallSingleParam, error) {
 	switch route.Pools[index].QuoterAddress() {
-	case util.UniswapV3Quoter:
+	case base_constant.UniswapV3Quoter:
 		stepRoute, err := entitiesV3.NewRoute([]*entitiesV3.Pool{route.Pools[index].(*base_entities.V3Pool).Pool}, route.Path[index], route.Path[index+1])
 		if err != nil {
 			return rpc.MultiCallSingleParam{}, nil

@@ -2,10 +2,10 @@ package v2
 
 import (
 	"errors"
+	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/contracts"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
-	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -17,7 +17,7 @@ func QuoteMultiCall(
 	amount *entities.CurrencyAmount,
 ) (rpc.MultiCallSingleParam, error) {
 	switch route.Pools[index].QuoterAddress() {
-	case util.AlienbaseV2Quoter:
+	case base_constant.AlienbaseV2Quoter:
 		name := "getAmountsOut"
 		if tradeType == entities.ExactOutput {
 			name = "getAmountsIn"

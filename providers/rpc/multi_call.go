@@ -2,10 +2,10 @@ package rpc
 
 import (
 	_ "embed"
+	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/contracts"
 	"github.com/coming-chat/intra-swap-core/providers/config"
-	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -14,7 +14,7 @@ import (
 )
 
 func NewMultiCallV3(backend *ethclient.Client) (*contracts.Multicall3Raw, error) {
-	mc3, err := contracts.NewMulticall3(common.HexToAddress(util.MultiCall3Address), backend)
+	mc3, err := contracts.NewMulticall3(common.HexToAddress(base_constant.MultiCall3Address), backend)
 	if err != nil {
 		return nil, err
 	}

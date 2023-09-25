@@ -2,11 +2,11 @@ package v3
 
 import (
 	"fmt"
+	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/contracts"
 	"github.com/coming-chat/intra-swap-core/providers/config"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
-	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"github.com/daoleno/uniswapv3-sdk/constants"
 	entitiesV3 "github.com/daoleno/uniswapv3-sdk/entities"
@@ -363,7 +363,7 @@ func (b *BasePoolProvider) GetPoolAddress(
 		return cacheAddress, token0, token1, nil
 	}
 	// offline
-	poolAddress, err := utils.ComputePoolAddress(util.UniswapV3Factory, token0, token1, feeAmount, "")
+	poolAddress, err := utils.ComputePoolAddress(base_constant.UniswapV3Factory, token0, token1, feeAmount, "")
 	//abi, err := uniswap_v3.FactoryMetaData.GetAbi()
 	//if err != nil {
 	//	return "", nil, nil, err

@@ -2,11 +2,11 @@ package build
 
 import (
 	"fmt"
+	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/contracts/omni_swap"
 	"github.com/coming-chat/intra-swap-core/routers"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/config"
-	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"math/big"
 )
@@ -127,7 +127,7 @@ func packedCallData(
 	}
 
 	switch swap.Route.Pools[poolIndex].RouterAddress() {
-	case util.UniswapV3Router:
+	case base_constant.UniswapV3Router:
 		return iSwapRouter02(
 			trade.TradeType,
 			swap.Route.Path[poolIndex],
@@ -137,7 +137,7 @@ func packedCallData(
 			amountOut.Quotient(),
 			swapConfig,
 		)
-	case util.AlienbaseV2Router:
+	case base_constant.AlienbaseV2Router:
 		return iUniswapV2Router02(
 			trade.TradeType,
 			swap.Route.Path[poolIndex],

@@ -2,10 +2,10 @@ package v3
 
 import (
 	"context"
+	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/providers/config"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
-	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"math/big"
 )
@@ -152,7 +152,7 @@ func (b *BaseQuoteProvider) getQuotesManyDataOnline(
 				continue
 			}
 			for _, a := range syncAmounts[ri] {
-				if a.EqualTo(util.ZeroFraction) {
+				if a.EqualTo(base_constant.ZeroFraction) {
 					continue
 				}
 				call, err := QuoteMultiCall(route, i, tradeType, a)
@@ -181,7 +181,7 @@ func (b *BaseQuoteProvider) getQuotesManyDataOnline(
 				continue
 			}
 			for ra, a := range syncAmounts[ri] {
-				if a.EqualTo(util.ZeroFraction) {
+				if a.EqualTo(base_constant.ZeroFraction) {
 					continue
 				}
 				quoteData := callResult.ReturnData[callDataIndex]

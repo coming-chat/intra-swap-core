@@ -3,11 +3,11 @@ package functions
 import (
 	"errors"
 	"fmt"
+	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/routers"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/config"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/models"
-	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"math/big"
 	"sort"
@@ -55,7 +55,7 @@ func GetBestSwapRoute(
 		totalAmount = totalAmount.Add(v.GetBaseRouteWithValidQuote().Amount)
 	}
 	missingAmount := amount.Subtract(totalAmount)
-	if missingAmount.GreaterThan(util.ZeroFraction) {
+	if missingAmount.GreaterThan(base_constant.ZeroFraction) {
 		swapRoute.Routes[len(swapRoute.Routes)-1].GetBaseRouteWithValidQuote().Amount =
 			swapRoute.Routes[len(swapRoute.Routes)-1].GetBaseRouteWithValidQuote().Amount.Add(missingAmount)
 	}
