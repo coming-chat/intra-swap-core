@@ -124,7 +124,8 @@ func packedCallData(
 		if err != nil {
 			return nil, err
 		}
-	} else if poolIndex == 0 {
+	}
+	if poolIndex == 0 {
 		switch trade.TradeType {
 		case entities.ExactInput:
 			amountIn = swap.InputAmount
