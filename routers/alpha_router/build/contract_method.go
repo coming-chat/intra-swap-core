@@ -128,7 +128,7 @@ func iSwapRouter(
 			AmountOutMinimum: amountOut,
 		})
 	case entities.ExactOutput:
-		callData, err = contracts.ISwapRouter02Abi.Pack("exactOutput", omni_swap.ISwapRouterExactOutputParams{
+		callData, err = contracts.ISwapRouterAbi.Pack("exactOutput", omni_swap.ISwapRouterExactOutputParams{
 			Path:            path,
 			Recipient:       swapConfig.Recipient,
 			AmountInMaximum: amountIn,

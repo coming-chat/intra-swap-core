@@ -113,7 +113,7 @@ func packedCallData(
 ) ([]byte, error) {
 	amountIn := entities.FromRawAmount(swap.Route.Path[poolIndex], big.NewInt(0))
 	amountOut := entities.FromRawAmount(swap.Route.Path[poolIndex+1], big.NewInt(0))
-	if len(swap.Route.Pools) == poolIndex+1 || poolIndex == 0 {
+	if len(swap.Route.Pools) == poolIndex+1 {
 		var err error
 		switch trade.TradeType {
 		case entities.ExactInput:
@@ -123,6 +123,13 @@ func packedCallData(
 		}
 		if err != nil {
 			return nil, err
+		}
+	} else if poolIndex == 0 {
+		switch trade.TradeType {
+		case entities.ExactInput:
+			amountIn = swap.InputAmount
+		case entities.ExactOutput:
+			amountOut = swap.InputAmount
 		}
 	}
 	switch swap.Route.Pools[poolIndex].RouterAddress() {
