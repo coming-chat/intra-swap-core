@@ -22,25 +22,41 @@ type BatchParams struct {
 }
 
 type MultiCallConfig struct {
-	RetryOptions RetryOptions
-	BatchParams  BatchParams
+	RetryOptions     RetryOptions
+	BatchParams      BatchParams
+	MaxConcurrentNum int
 }
 
 func ConcurrentMultiCall[T any](chainId base_entities.ChainId, core MultiCallProviderCore, multiCallParams []MultiCallSingleParam, c *MultiCallConfig) (rInfo MultiCallResultWithInfo[T], err error) {
+	if c == nil {
+		c = &MultiCallConfig{
+			RetryOptions: RetryOptions{
+				Retries: 1,
+			},
+			BatchParams: BatchParams{
+				MultiCallChunk: 200,
+				MinSuccessRate: 1,
+			},
+			MaxConcurrentNum: 5,
+		}
+	}
 	var (
 		split          = math.Ceil(float64(len(multiCallParams)) / float64(c.BatchParams.MultiCallChunk))
 		syncGroup      = sync.WaitGroup{}
 		rwLock         = sync.Mutex{}
 		totalSuccess   = atomic.Uint32{}
 		successResults = make([]MultiCallResultWithInfo[T], int(split))
+		concurrentPool = make(chan struct{}, c.MaxConcurrentNum)
 	)
 
 	for i := 0; i < len(multiCallParams); i += c.BatchParams.MultiCallChunk {
 		syncGroup.Add(1)
 		go func(index int) {
 			defer func() {
+				<-concurrentPool
 				syncGroup.Done()
 			}()
+			concurrentPool <- struct{}{}
 			for try := 0; try < c.RetryOptions.Retries; try++ {
 				endIndex := index + c.BatchParams.MultiCallChunk
 				if index+c.BatchParams.MultiCallChunk > len(multiCallParams) {
