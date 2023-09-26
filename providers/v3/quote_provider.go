@@ -82,6 +82,7 @@ func NewBaseQuoteProvider(
 				GasLimitPerCall: 1_000_000,
 				MinSuccessRate:  0.2,
 			},
+			MaxConcurrentNum: 3,
 		}
 	}
 	if blockNumberConfig == nil {
