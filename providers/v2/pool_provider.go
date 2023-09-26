@@ -215,7 +215,7 @@ func (b *BasePoolProvider) GetPoolAddress(
 		return cachePoolCache, token0, token1, nil
 	}
 	// offline
-	address, err := entitiesV2.GetAddress(token0, token1, base_constant.AlienbaseV2Factory, common.FromHex("0x60faccfea37b2ca2a11c3f92823f437251b05755a3d924bd97259ab624057faa"))
+	address, err := entitiesV2.GetAddress(token0, token1, base_constant.BaseAlienbaseV2Factory, common.FromHex("0x60faccfea37b2ca2a11c3f92823f437251b05755a3d924bd97259ab624057faa"))
 	//if err != nil {
 	//abi, err := uniswap_v2.PairFactoryMetaData.GetAbi()
 	//if err != nil {

@@ -67,6 +67,7 @@ func BuildTrade(
 }
 
 func BuildOmniSwapMethodParameters(
+	chainId base_entities.ChainId,
 	trade *base_entities.MTrade,
 	swapConfig config.SwapOptions,
 ) (omni_swap.ISoSoData, []omni_swap.LibSwapNormalizedSwapData, error) {
@@ -95,7 +96,7 @@ func BuildOmniSwapMethodParameters(
 			if i == 0 {
 				swapData.FromAmount = swap.InputAmount.Quotient()
 			}
-			swapData.CallData, err = packedCallData(trade, swap, i, swapConfig)
+			swapData.CallData, err = packedCallData(chainId, trade, swap, i, swapConfig)
 			if err != nil {
 				return soData, nil, err
 			}
@@ -106,6 +107,7 @@ func BuildOmniSwapMethodParameters(
 }
 
 func packedCallData(
+	chainId base_entities.ChainId,
 	trade *base_entities.MTrade,
 	swap *base_entities.Swap,
 	poolIndex int,
@@ -134,7 +136,9 @@ func packedCallData(
 		}
 	}
 	switch swap.Route.Pools[poolIndex].RouterAddress() {
-	case base_constant.UniswapV3Router:
+	case base_constant.BaseUniswapV3Router,
+		base_constant.OptimismUniswapV3Router,
+		base_constant.ArbitrumUniswapV3Router:
 		return iSwapRouter02(
 			trade.TradeType,
 			swap.Route.Path[poolIndex],
@@ -144,7 +148,8 @@ func packedCallData(
 			amountOut.Quotient(),
 			swapConfig,
 		)
-	case base_constant.SwapBasedV3Router, base_constant.SushiswapV3Router:
+	case base_constant.BaseSwapBasedV3Router,
+		base_constant.BaseSushiswapV3Router:
 		return iSwapRouter(
 			trade.TradeType,
 			swap.Route.Path[poolIndex],
@@ -154,7 +159,11 @@ func packedCallData(
 			amountOut.Quotient(),
 			swapConfig,
 		)
-	case base_constant.AlienbaseV2Router, base_constant.SwapBasedV2Router, base_constant.BaseswapV2Router:
+	case base_constant.BaseAlienbaseV2Router,
+		base_constant.BaseSwapBasedV2Router,
+		base_constant.BaseBaseswapV2Router,
+		base_constant.ArbitrumCamelotRouter,
+		base_constant.ArbitrumSushiRouter:
 		return iUniswapV2Router02(
 			trade.TradeType,
 			swap.Route.Path[poolIndex],
@@ -163,14 +172,27 @@ func packedCallData(
 			amountOut.Quotient(),
 			swapConfig,
 		)
-	case base_constant.AerodromeRouter:
-		return iAerodromeRouter(trade.TradeType,
+	case base_constant.BaseAerodromerouter:
+		return iAerodromeRouter(
+			trade.TradeType,
 			swap.Route.Path[poolIndex],
 			swap.Route.Path[poolIndex+1],
 			amountIn.Quotient(),
 			amountOut.Quotient(),
 			swapConfig,
 		)
+	case base_constant.OptimismVelodromeV2Router:
+		return iVelodromeRouter(
+			trade.TradeType,
+			swap.Route.Path[poolIndex],
+			swap.Route.Path[poolIndex+1],
+			amountIn.Quotient(),
+			amountOut.Quotient(),
+			swapConfig,
+		)
+	// TODO support in the feature
+	//case base_constant.ArbitrumTraderJoeRouter:
+	//	return iLBRouter()
 	default:
 		return nil, fmt.Errorf("unsupported router [%s]", swap.Route.Pools[poolIndex].RouterAddress().String())
 	}

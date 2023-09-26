@@ -32,10 +32,18 @@ func QuoteMultiCall(
 		FunctionName:    name,
 	}
 	switch route.Pools[index].QuoterAddress() {
-	case base_constant.AlienbaseV2Quoter, base_constant.SwapBasedV2Quoter, base_constant.BaseswapV2Quoter:
+	case base_constant.BaseAlienbaseV2Quoter,
+		base_constant.BaseSwapBasedV2Quoter,
+		base_constant.BaseBaseswapV2Quoter,
+		base_constant.ArbitrumCamelotQuoter,
+		base_constant.ArbitrumSushiQuoter:
 		param.Contract = contracts.IUniswapV2Router02Abi
-	case base_constant.AerodromeQuoter:
+	case base_constant.BaseAerodromeQuoter:
 		param.Contract = contracts.IAerodromeAbi
+	case base_constant.OptimismVelodromeV2Quoter:
+		param.Contract = contracts.IVelodromeAbi
+	case base_constant.ArbitrumTraderJoeQuoter:
+		param.Contract = contracts.ILBRouterAbi
 	default:
 		return rpc.MultiCallSingleParam{}, errors.New("unsupported quote")
 	}

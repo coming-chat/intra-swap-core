@@ -12,6 +12,8 @@ var (
 	ISwapRouterAbi, _        = omni_swap.ISwapRouterMetaData.GetAbi()
 	IUniswapV2Router02Abi, _ = omni_swap.IUniswapV2Router02MetaData.GetAbi()
 	IAerodromeAbi, _         = omni_swap.IAerodromeMetaData.GetAbi()
+	IVelodromeAbi, _         = omni_swap.IVelodromeMetaData.GetAbi()
+	ILBRouterAbi, _          = omni_swap.ILBRouterMetaData.GetAbi()
 
 	//Quoter
 	IQuoterV2Abi, _ = omni_swap.IQuoterV2MetaData.GetAbi()

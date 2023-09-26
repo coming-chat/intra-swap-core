@@ -30,7 +30,10 @@ func QuoteMultiCall(
 		return rpc.MultiCallSingleParam{}, nil
 	}
 	switch route.Pools[index].QuoterAddress() {
-	case base_constant.UniswapV3Quoter, base_constant.SushiswapV3Quoter:
+	case base_constant.BaseUniswapV3Quoter,
+		base_constant.BaseSushiswapV3Quoter,
+		base_constant.OptimismUniswapV3Quoter,
+		base_constant.ArbitrumUniswapV3Quoter:
 		return rpc.MultiCallSingleParam{
 			Contract: contracts.IQuoterV2Abi,
 			FunctionParams: []any{
@@ -40,14 +43,14 @@ func QuoteMultiCall(
 			ContractAddress: route.Pools[index].QuoterAddress(),
 			FunctionName:    name,
 		}, nil
-	case base_constant.SwapBasedV3Quoter:
+	case base_constant.BaseSwapBasedV3Quoter:
 		return rpc.MultiCallSingleParam{
 			Contract: contracts.IQuoterAbi,
 			FunctionParams: []any{
 				encodedRoute,
 				amount.Quotient(),
 			},
-			ContractAddress: base_constant.SwapBasedV3Quoter,
+			ContractAddress: base_constant.BaseSwapBasedV3Quoter,
 			FunctionName:    name,
 		}, nil
 	default:

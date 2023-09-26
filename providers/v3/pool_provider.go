@@ -363,7 +363,7 @@ func (b *BasePoolProvider) GetPoolAddress(
 		return cacheAddress, token0, token1, nil
 	}
 	// offline
-	poolAddress, err := utils.ComputePoolAddress(base_constant.UniswapV3Factory, token0, token1, feeAmount, "")
+	poolAddress, err := utils.ComputePoolAddress(base_constant.BaseUniswapV3Factory, token0, token1, feeAmount, "")
 	//abi, err := uniswap_v3.FactoryMetaData.GetAbi()
 	//if err != nil {
 	//	return "", nil, nil, err
@@ -377,7 +377,7 @@ func (b *BasePoolProvider) GetPoolAddress(
 	//			token1.Address,
 	//			big.NewInt(int64(feeAmount)),
 	//		},
-	//		ContractAddress: util.UniswapV3Factory,
+	//		ContractAddress: util.BaseUniswapV3Factory,
 	//	},
 	//}, nil)
 	if err != nil {

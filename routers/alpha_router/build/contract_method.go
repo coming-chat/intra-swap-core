@@ -167,3 +167,72 @@ func iAerodromeRouter(
 	callData, err = contracts.IAerodromeAbi.Pack(methodName, args...)
 	return
 }
+
+func iVelodromeRouter(
+	tradeType entities.TradeType,
+	tokenIn, tokenOut *entities.Token,
+	amountIn, amountOut *big.Int,
+	swapConfig config.SwapOptions,
+) (callData []byte, err error) {
+	methodName, args, err := baseUniswapV2(tradeType, tokenIn, tokenOut, amountIn, amountOut, swapConfig)
+	if err != nil {
+		return nil, err
+	}
+	callData, err = contracts.IVelodromeAbi.Pack(methodName, args...)
+	return
+}
+
+func iLBRouter(
+	tradeType entities.TradeType,
+	tokenIn, tokenOut *entities.Token,
+	amountIn, amountOut *big.Int,
+	swapConfig config.SwapOptions,
+) (callData []byte, err error) {
+	if tokenIn.IsNative() && tokenOut.IsNative() {
+		return nil, router.ErrEtherInOut
+	}
+	path := []common.Address{tokenIn.Address, tokenOut.Address}
+
+	deadline := swapConfig.Deadline
+	if swapConfig.Deadline == nil {
+		deadline = big.NewInt(time.Now().Add(5 * time.Minute).Unix())
+	}
+	var (
+		args       []any
+		methodName string
+	)
+	switch tradeType {
+	case entities.ExactInput:
+		if tokenIn.IsNative() {
+			args = []any{amountOut, path, swapConfig.Recipient, deadline}
+			methodName = "swapExactETHForTokens"
+			// TODO handle the FeeOnTransfer
+			//methodName = "swapExactETHForTokensSupportingFeeOnTransferTokens"
+		} else if tokenOut.IsNative() {
+			// TODO handle the FeeOnTransfer
+			args = []any{amountIn, amountOut, path, swapConfig.Recipient, deadline}
+			methodName = "swapExactTokensForETH"
+			//methodName = "swapExactTokensForETHSupportingFeeOnTransferTokens"
+		} else {
+			args = []any{amountIn, amountOut, path, swapConfig.Recipient, deadline}
+			methodName = "swapExactTokensForTokens"
+			// TODO handle the FeeOnTransfer
+			//methodName = "swapExactTokensForTokensSupportingFeeOnTransferTokens"
+		}
+	case entities.ExactOutput:
+		if tokenIn.IsNative() {
+			methodName = "swapETHForExactTokens"
+			args = []any{amountOut, path, swapConfig.Recipient, deadline}
+		} else if tokenOut.IsNative() {
+			methodName = "swapTokensForExactETH"
+			args = []any{amountOut, amountIn, path, swapConfig.Recipient, deadline}
+		} else {
+			methodName = "swapTokensForExactTokens"
+			args = []any{amountOut, amountIn, path, swapConfig.Recipient, deadline}
+		}
+	default:
+		return nil, errors.New("unsupported tradeType")
+	}
+	callData, err = contracts.ILBRouterAbi.Pack(methodName, args...)
+	return
+}

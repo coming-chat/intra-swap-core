@@ -307,7 +307,7 @@ func (a *AlphaRouter) Route(
 	var methodParameters *routers.MethodParameters
 	if swapConfig != nil {
 		methodParameters = &routers.MethodParameters{}
-		methodParameters.SoSoData, methodParameters.LibSwapNormalizedSwapData, err = build.BuildOmniSwapMethodParameters(trade, *swapConfig)
+		methodParameters.SoSoData, methodParameters.LibSwapNormalizedSwapData, err = build.BuildOmniSwapMethodParameters(a.ChainId, trade, *swapConfig)
 		if err != nil {
 			return nil, err
 		}
