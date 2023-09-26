@@ -91,7 +91,7 @@ func ConcurrentMultiCall[T any](chainId base_entities.ChainId, core MultiCallPro
 	}
 	syncGroup.Wait()
 	if totalSuccess.Load() == 0 {
-		return rInfo, errors.New("quotes returned null")
+		return rInfo, errors.New("no success multicall req")
 	}
 	for _, r := range successResults {
 		rInfo.ReturnData = append(rInfo.ReturnData, r.ReturnData...)
