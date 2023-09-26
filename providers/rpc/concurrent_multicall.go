@@ -2,7 +2,6 @@ package rpc
 
 import (
 	"errors"
-	"fmt"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"math"
 	"sync"
@@ -62,24 +61,31 @@ func ConcurrentMultiCall[T any](chainId base_entities.ChainId, core MultiCallPro
 				if index+c.BatchParams.MultiCallChunk > len(multiCallParams) {
 					endIndex = len(multiCallParams)
 				}
-				returnData, err := GetMultiCallProvider[T](core).MultiCall(chainId, multiCallParams[index:endIndex], nil)
-				if err != nil {
-					fmt.Printf("%v\n", err)
+				returnData, errReq := GetMultiCallProvider[T](core).MultiCall(chainId, multiCallParams[index:endIndex], nil)
+				if errReq != nil && try+1 < c.RetryOptions.Retries {
 					continue
 				}
 				successResult := 0
 				for _, result := range returnData.ReturnData {
 					if result.Success {
 						successResult++
+						totalSuccess.Add(1)
 					}
 				}
-				if float64(successResult/len(returnData.ReturnData)) < c.BatchParams.MinSuccessRate {
+				if errReq != nil && len(returnData.ReturnData) == 0 {
+					for range multiCallParams[index:endIndex] {
+						returnData.ReturnData = append(returnData.ReturnData, MultiCallResult[T]{
+							Success: false,
+							Err:     errReq,
+						})
+					}
+				}
+				if float64(successResult/len(returnData.ReturnData)) < c.BatchParams.MinSuccessRate && try+1 < c.RetryOptions.Retries {
 					continue
 				}
 				rwLock.Lock()
 				successResults[index/c.BatchParams.MultiCallChunk] = returnData
 				rwLock.Unlock()
-				totalSuccess.Add(1)
 			}
 		}(i)
 	}
@@ -93,5 +99,9 @@ func ConcurrentMultiCall[T any](chainId base_entities.ChainId, core MultiCallPro
 		rInfo.BlockNumber = r.BlockNumber
 	}
 
-	return rInfo, nil
+	if len(multiCallParams) != len(rInfo.ReturnData) {
+		return rInfo, errors.New("concurrent result length not equal to req params length")
+	}
+
+	return
 }
