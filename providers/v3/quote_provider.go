@@ -78,7 +78,7 @@ func NewBaseQuoteProvider(
 				MaxTimeout: 250,
 			},
 			BatchParams: rpc.BatchParams{
-				MultiCallChunk:  100,
+				MultiCallChunk:  1000,
 				GasLimitPerCall: 1_000_000,
 				MinSuccessRate:  0.2,
 			},
