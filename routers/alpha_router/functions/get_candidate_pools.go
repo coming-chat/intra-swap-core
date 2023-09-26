@@ -1,6 +1,7 @@
 package functions
 
 import (
+	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/providers"
 	providersConfig "github.com/coming-chat/intra-swap-core/providers/config"
@@ -39,6 +40,7 @@ type V2GetCandidatePoolsParams struct {
 	TokenProvider            providers.TokenProvider
 	PoolProvider             v2.PoolProvider
 	BlockedTokenListProvider providers.TokenListProvider
+	WNprovider               providers.WrappedNativeCurrencyProvider
 	ChainId                  base_entities.ChainId
 }
 
@@ -50,6 +52,7 @@ type V3GetCandidatePoolsParams struct {
 	IndexerProvider          v3.IndexerProvider
 	TokenProvider            providers.TokenProvider
 	PoolProvider             v3.PoolProvider
+	WNProvider               providers.WrappedNativeCurrencyProvider
 	BlockedTokenListProvider providers.TokenListProvider
 	ChainId                  base_entities.ChainId
 }
@@ -172,17 +175,19 @@ func GetV3CandidatePools(params V3GetCandidatePoolsParams) (
 		}
 	}
 	addToAddressSet(top2DirectSwapPool)
-	wrappedNativeToken := base_entities.WRAPPED_NATIVE_CURRENCY[params.ChainId]
-
+	wrappedNativeToken, err := params.WNProvider.GetTokenByChain(params.ChainId)
+	if err != nil {
+		return poolAccessor, candidatePools, err
+	}
 	// Main reason we need this is for gas estimates, only needed if token out is not native.
 	// We don't check the seen address set because if we've already added pools for getting native quotes
 	// theres no need to add more.
 	var top2EthQuoteTokenPool []v3.IndexerPool
-	if (wrappedNativeToken.Symbol() == base_entities.WRAPPED_NATIVE_CURRENCY[base_entities.MAINNET].Symbol() &&
+	if (wrappedNativeToken.Symbol() == base_constant.WrappedNativeCurrency[base_constant.MAINNET].Symbol() &&
 		params.TokenOut.Symbol() != "WETH" &&
 		params.TokenOut.Symbol() != "WETH9" &&
 		params.TokenOut.Symbol() != "ETH") ||
-		(wrappedNativeToken.Symbol() == providers.WMATIC_POLYGON.Symbol() &&
+		(wrappedNativeToken.Symbol() == base_constant.WMATIC_POLYGON.Symbol() &&
 			params.TokenOut.Symbol() != "MATIC" &&
 			params.TokenOut.Symbol() != "WMATIC") {
 		for _, pool := range filteredPools {
@@ -487,7 +492,10 @@ func GetV2CandidatePools(params V2GetCandidatePoolsParams) (
 	}
 	addToAddressSet(topByDirectSwapPool)
 
-	wrappedNativeToken := base_entities.WRAPPED_NATIVE_CURRENCY[params.ChainId]
+	wrappedNativeToken, err := params.WNprovider.GetTokenByChain(params.ChainId)
+	if err != nil {
+		return poolAccessor, candidatePools, err
+	}
 	var topByEthQuoteTokenPool []v2.IndexerPool
 	if params.TokenOut.Symbol() != "WETH" && params.TokenOut.Symbol() != "WETH9" && params.TokenOut.Symbol() != "ETH" {
 		for _, pool := range filteredPools {
@@ -679,35 +687,35 @@ func GetV2CandidatePools(params V2GetCandidatePoolsParams) (
 }
 
 var baseTokensByChain = map[base_entities.ChainId][]*entities.Token{
-	base_entities.MAINNET: {
-		providers.USDC_MAINNET,
-		providers.USDT_MAINNET,
-		providers.WBTC_MAINNET,
-		providers.DAI_MAINNET,
-		base_entities.WRAPPED_NATIVE_CURRENCY[base_entities.MAINNET],
-		providers.FEI_MAINNET,
+	base_constant.MAINNET: {
+		base_constant.USDC_MAINNET,
+		base_constant.USDT_MAINNET,
+		base_constant.WBTC_MAINNET,
+		base_constant.DAI_MAINNET,
+		base_constant.WrappedNativeCurrency[base_constant.MAINNET],
+		base_constant.FEI_MAINNET,
 	},
-	base_entities.RINKEBY: {providers.DAI_RINKEBY_1, providers.DAI_RINKEBY_2},
-	base_entities.OPTIMISM: {
-		providers.DAI_OPTIMISM,
-		providers.USDC_OPTIMISM,
-		providers.USDT_OPTIMISM,
-		providers.WBTC_OPTIMISM,
+	base_constant.RINKEBY: {base_constant.DAI_RINKEBY_1, base_constant.DAI_RINKEBY_2},
+	base_constant.OPTIMISM: {
+		base_constant.DAI_OPTIMISM,
+		base_constant.USDC_OPTIMISM,
+		base_constant.USDT_OPTIMISM,
+		base_constant.WBTC_OPTIMISM,
 	},
-	base_entities.OPTIMISTIC_KOVAN: {
-		providers.DAI_OPTIMISTIC_KOVAN,
-		providers.USDC_OPTIMISTIC_KOVAN,
-		providers.WBTC_OPTIMISTIC_KOVAN,
-		providers.USDT_OPTIMISTIC_KOVAN,
+	base_constant.OPTIMISTIC_KOVAN: {
+		base_constant.DAI_OPTIMISTIC_KOVAN,
+		base_constant.USDC_OPTIMISTIC_KOVAN,
+		base_constant.WBTC_OPTIMISTIC_KOVAN,
+		base_constant.USDT_OPTIMISTIC_KOVAN,
 	},
-	base_entities.ARBITRUM_ONE: {
-		providers.DAI_ARBITRUM,
-		providers.USDC_ARBITRUM,
-		providers.WBTC_ARBITRUM,
-		providers.USDT_ARBITRUM,
+	base_constant.ARBITRUM_ONE: {
+		base_constant.DAI_ARBITRUM,
+		base_constant.USDC_ARBITRUM,
+		base_constant.WBTC_ARBITRUM,
+		base_constant.USDT_ARBITRUM,
 	},
-	base_entities.ARBITRUM_RINKEBY: {providers.DAI_ARBITRUM_RINKEBY, providers.USDT_ARBITRUM_RINKEBY},
-	base_entities.POLYGON:          {providers.USDC_POLYGON, providers.WMATIC_POLYGON},
-	base_entities.POLYGON_MUMBAI:   {providers.DAI_POLYGON_MUMBAI, providers.WMATIC_POLYGON_MUMBAI},
-	base_entities.BASE:             {base_entities.WRAPPED_NATIVE_CURRENCY[base_entities.BASE]},
+	base_constant.ARBITRUM_RINKEBY: {base_constant.DAI_ARBITRUM_RINKEBY, base_constant.USDT_ARBITRUM_RINKEBY},
+	base_constant.POLYGON:          {base_constant.USDC_POLYGON, base_constant.WMATIC_POLYGON},
+	base_constant.POLYGON_MUMBAI:   {base_constant.DAI_POLYGON_MUMBAI, base_constant.WMATIC_POLYGON_MUMBAI},
+	base_constant.BASE:             {base_constant.WrappedNativeCurrency[base_constant.BASE]},
 }

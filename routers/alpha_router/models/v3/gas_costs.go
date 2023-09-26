@@ -1,6 +1,7 @@
 package v3
 
 import (
+	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"math/big"
 )
@@ -8,27 +9,27 @@ import (
 // l2 execution fee on optimism is roughly the same as mainnet
 func BASE_SWAP_COST(id base_entities.ChainId) *big.Int {
 	switch id {
-	case base_entities.MAINNET:
+	case base_constant.MAINNET:
 		fallthrough
-	case base_entities.ROPSTEN:
+	case base_constant.ROPSTEN:
 		fallthrough
-	case base_entities.RINKEBY:
+	case base_constant.RINKEBY:
 		fallthrough
-	case base_entities.GÖRLI:
+	case base_constant.GÖRLI:
 		fallthrough
-	case base_entities.OPTIMISM:
+	case base_constant.OPTIMISM:
 		fallthrough
-	case base_entities.OPTIMISTIC_KOVAN:
+	case base_constant.OPTIMISTIC_KOVAN:
 		return big.NewInt(0)
-	case base_entities.KOVAN:
+	case base_constant.KOVAN:
 		return big.NewInt(2000)
-	case base_entities.ARBITRUM_ONE:
+	case base_constant.ARBITRUM_ONE:
 		return big.NewInt(0)
-	case base_entities.ARBITRUM_RINKEBY:
+	case base_constant.ARBITRUM_RINKEBY:
 		return big.NewInt(5000)
-	case base_entities.POLYGON:
+	case base_constant.POLYGON:
 		return big.NewInt(0)
-	case base_entities.POLYGON_MUMBAI:
+	case base_constant.POLYGON_MUMBAI:
 		return big.NewInt(2000)
 	default:
 		return big.NewInt(0)
@@ -37,27 +38,27 @@ func BASE_SWAP_COST(id base_entities.ChainId) *big.Int {
 
 func COST_PER_INIT_TICK(id base_entities.ChainId) *big.Int {
 	switch id {
-	case base_entities.MAINNET:
+	case base_constant.MAINNET:
 		fallthrough
-	case base_entities.ROPSTEN:
+	case base_constant.ROPSTEN:
 		fallthrough
-	case base_entities.RINKEBY:
+	case base_constant.RINKEBY:
 		fallthrough
-	case base_entities.GÖRLI:
+	case base_constant.GÖRLI:
 		return big.NewInt(0)
-	case base_entities.KOVAN:
+	case base_constant.KOVAN:
 		return big.NewInt(31000)
-	case base_entities.OPTIMISM:
+	case base_constant.OPTIMISM:
 		return big.NewInt(0)
-	case base_entities.OPTIMISTIC_KOVAN:
+	case base_constant.OPTIMISTIC_KOVAN:
 		return big.NewInt(31000)
-	case base_entities.ARBITRUM_ONE:
+	case base_constant.ARBITRUM_ONE:
 		return big.NewInt(0)
-	case base_entities.ARBITRUM_RINKEBY:
+	case base_constant.ARBITRUM_RINKEBY:
 		return big.NewInt(31000)
-	case base_entities.POLYGON:
+	case base_constant.POLYGON:
 		return big.NewInt(0)
-	case base_entities.POLYGON_MUMBAI:
+	case base_constant.POLYGON_MUMBAI:
 		return big.NewInt(31000)
 	default:
 		return big.NewInt(0)
@@ -66,27 +67,27 @@ func COST_PER_INIT_TICK(id base_entities.ChainId) *big.Int {
 
 func COST_PER_HOP(id base_entities.ChainId) *big.Int {
 	switch id {
-	case base_entities.MAINNET:
+	case base_constant.MAINNET:
 		fallthrough
-	case base_entities.ROPSTEN:
+	case base_constant.ROPSTEN:
 		fallthrough
-	case base_entities.RINKEBY:
+	case base_constant.RINKEBY:
 		fallthrough
-	case base_entities.GÖRLI:
+	case base_constant.GÖRLI:
 		fallthrough
-	case base_entities.KOVAN:
+	case base_constant.KOVAN:
 		fallthrough
-	case base_entities.OPTIMISM:
+	case base_constant.OPTIMISM:
 		return big.NewInt(0)
-	case base_entities.OPTIMISTIC_KOVAN:
+	case base_constant.OPTIMISTIC_KOVAN:
 		return big.NewInt(80000)
-	case base_entities.ARBITRUM_ONE:
+	case base_constant.ARBITRUM_ONE:
 		return big.NewInt(0)
-	case base_entities.ARBITRUM_RINKEBY:
+	case base_constant.ARBITRUM_RINKEBY:
 		return big.NewInt(80000)
-	case base_entities.POLYGON:
+	case base_constant.POLYGON:
 		return big.NewInt(0)
-	case base_entities.POLYGON_MUMBAI:
+	case base_constant.POLYGON_MUMBAI:
 		return big.NewInt(80000)
 	default:
 		return big.NewInt(0)

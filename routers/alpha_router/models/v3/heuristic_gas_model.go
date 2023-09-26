@@ -3,7 +3,9 @@ package v3
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
+	"github.com/coming-chat/intra-swap-core/providers"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	v3 "github.com/coming-chat/intra-swap-core/providers/v3"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/config"
@@ -21,11 +23,12 @@ import (
 // Cost for crossing an uninitialized tick.
 var costPerUninitTick = big.NewInt(0)
 
-func NewHeuristicGasModelFactory(baseProvider rpc.Provider, multiCallCore rpc.MultiCallProviderCore, gasPriceAddress string) *HeuristicGasModelFactory {
+func NewHeuristicGasModelFactory(baseProvider rpc.Provider, multiCallCore rpc.MultiCallProviderCore, gasPriceAddress string, wNProvider providers.WrappedNativeCurrencyProvider) *HeuristicGasModelFactory {
 	return &HeuristicGasModelFactory{
 		provider:          baseProvider,
 		multiCallProvider: multiCallCore,
 		gasPriceAddress:   gasPriceAddress,
+		wNProvider:        wNProvider,
 	}
 }
 
@@ -33,6 +36,7 @@ type HeuristicGasModelFactory struct {
 	provider          rpc.Provider
 	multiCallProvider rpc.MultiCallProviderCore
 	gasPriceAddress   string
+	wNProvider        providers.WrappedNativeCurrencyProvider
 }
 
 func (h *HeuristicGasModelFactory) BuildGasModel(
@@ -49,6 +53,11 @@ func (h *HeuristicGasModelFactory) BuildGasModel(
 		return gasModel, err
 	}
 
+	nativeCurrency, err := h.wNProvider.GetTokenByChain(chainId)
+	if err != nil {
+		return gasModel, err
+	}
+
 	gasModel.CalculateL1GasFeesFn = func(routes []models.V3RouteWithValidQuote) (*models.L1ToL2GasCosts, error) {
 		swapOptions := config.SwapOptions{
 			Recipient:         common.HexToAddress("0x0000000000000000000000000000000000000001"),
@@ -57,13 +66,13 @@ func (h *HeuristicGasModelFactory) BuildGasModel(
 		}
 		var l1Used, l1FeeInWei *big.Int
 		switch chainId {
-		case base_entities.OPTIMISM, base_entities.OPTIMISTIC_KOVAN:
+		case base_constant.OPTIMISM, base_constant.OPTIMISTIC_KOVAN:
 			gasData, err := v3.GetOptimismL2GasData(h.multiCallProvider, h.gasPriceAddress)
 			if err != nil {
 				return nil, err
 			}
 			l1Used, l1FeeInWei, err = h.calculateOptimismToL1SecurityFee(routes, swapOptions, gasData)
-		case base_entities.ARBITRUM_ONE, base_entities.ARBITRUM_RINKEBY:
+		case base_constant.ARBITRUM_ONE, base_constant.ARBITRUM_RINKEBY:
 			gasData, err := v3.GetArbitrumL2GasData(h.multiCallProvider, h.gasPriceAddress)
 			if err != nil {
 				return nil, err
@@ -76,7 +85,6 @@ func (h *HeuristicGasModelFactory) BuildGasModel(
 			return nil, err
 		}
 		// wrap fee to native currency
-		nativeCurrency := base_entities.WRAPPED_NATIVE_CURRENCY[chainId]
 		costNativeCurrency := entities.FromRawAmount(nativeCurrency, l1FeeInWei)
 
 		// convert fee into usd
@@ -115,7 +123,6 @@ func (h *HeuristicGasModelFactory) BuildGasModel(
 		}, nil
 	}
 
-	nativeCurrency := base_entities.WRAPPED_NATIVE_CURRENCY[chainId]
 	if token.Equal(nativeCurrency) {
 		gasModel.EstimateGasCostFn = func(routeWithValidQuote models.V3RouteWithValidQuote) (
 			gasEstimate *big.Int,
@@ -191,13 +198,13 @@ func (h *HeuristicGasModelFactory) getHighestLiquidityUSDPool(
 	chainId base_entities.ChainId,
 	poolProvider v3.PoolProvider,
 ) (*base_entities.V3Pool, error) {
-	usdTokens, ok := models.UsdGasTokensByChain[chainId]
+	usdTokens, ok := base_constant.UsdGasTokensByChain[chainId]
 	if !ok {
 		return nil, fmt.Errorf("could not find a USD token for computing gas costs on %d", chainId)
 	}
-	wrappedCurrency, ok := base_entities.WRAPPED_NATIVE_CURRENCY[chainId]
-	if !ok {
-		return nil, fmt.Errorf("could not find a wrapped currency token for computing gas costs on %d", chainId)
+	wrappedCurrency, err := h.wNProvider.GetTokenByChain(chainId)
+	if err != nil {
+		return nil, err
 	}
 	var tokenPairs []v3.TokenPairs
 	feeAmounts := []constants.FeeAmount{
@@ -323,9 +330,9 @@ func (h *HeuristicGasModelFactory) estimateGas(
 
 	baseGasCostWei := new(big.Int).Mul(gasPriceWei, baseGasUse)
 
-	wrappedCurrency, ok := base_entities.WRAPPED_NATIVE_CURRENCY[chainId]
-	if !ok {
-		return nil, nil, nil, fmt.Errorf("no found wrapped currency on chain %d", chainId)
+	wrappedCurrency, err := h.wNProvider.GetTokenByChain(chainId)
+	if err != nil {
+		return nil, nil, nil, err
 	}
 
 	totalGasCostNativeCurrency := entities.FromRawAmount(wrappedCurrency, baseGasCostWei)
@@ -337,9 +344,9 @@ func (h *HeuristicGasModelFactory) getHighestLiquidityNativePool(
 	token *entities.Token,
 	poolProvider v3.PoolProvider,
 ) (*base_entities.V3Pool, error) {
-	nativeCurrency, ok := base_entities.WRAPPED_NATIVE_CURRENCY[chainId]
-	if !ok {
-		return nil, fmt.Errorf("not found wrapped native currency on chain %s", chainId)
+	nativeCurrency, err := h.wNProvider.GetTokenByChain(chainId)
+	if err != nil {
+		return nil, err
 	}
 
 	var (

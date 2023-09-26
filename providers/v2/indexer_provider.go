@@ -2,6 +2,7 @@ package v2
 
 import (
 	"fmt"
+	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/providers/config"
 	"github.com/coming-chat/intra-swap-core/util"
@@ -82,7 +83,7 @@ type GeckoTerminalRespData struct {
 
 func (g *GeckoTerminalProvider) GetPools(chainId base_entities.ChainId, tokenIn *entities.Token, tokenOut *entities.Token, providerConfig *config.Config) (pools []IndexerPool, err error) {
 	params := map[string]string{}
-	geckoResp, err := util.GetReq[GeckoTerminalRespData](g.api+fmt.Sprintf(g.poolSearch, base_entities.ChainName[chainId]), g.headers, params)
+	geckoResp, err := util.GetReq[GeckoTerminalRespData](g.api+fmt.Sprintf(g.poolSearch, base_constant.ChainName[chainId]), g.headers, params)
 	if err != nil {
 		return nil, err
 	}

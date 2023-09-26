@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/providers"
 	"github.com/coming-chat/intra-swap-core/providers/gas"
@@ -92,6 +93,8 @@ type AlphaRouterParams struct {
 	 */
 	BlockedTokenListProvider providers.TokenListProvider
 
+	WrappedNativeCurrencyProvider providers.WrappedNativeCurrencyProvider
+
 	/**
 	 * Calls lens function on SwapRouter02 to determine ERC20 approval types for
 	 * LP position tokens.
@@ -116,21 +119,22 @@ type AlphaRouterParams struct {
 
 func NewAlphaRouter(params AlphaRouterParams, ctx context.Context) *AlphaRouter {
 	router := &AlphaRouter{
-		ChainId:                   params.ChainId,
-		Provider:                  params.Provider,
-		MultiCall2Provider:        params.MultiCall2ProviderCore,
-		V3IndexerProviderProvider: params.V3IndexerProvider,
-		V3PoolProvider:            params.V3PoolProvider,
-		V3QuoteProvider:           params.V3QuoteProvider,
-		V2IndexerProvider:         params.V2IndexerProvider,
-		V2PoolProvider:            params.V2PoolProvider,
-		V2QuoteProvider:           params.V2QuoteProvider,
-		TokenProvider:             params.TokenProvider,
-		GasPriceProvider:          params.GasPriceProvider,
-		V3GasModelFactory:         params.V3GasModelFactory,
-		V2GasModelFactory:         params.V2GasModelFactory,
-		BlockedTokenListProvider:  params.BlockedTokenListProvider,
-		Ctx:                       ctx,
+		ChainId:                       params.ChainId,
+		Provider:                      params.Provider,
+		MultiCall2Provider:            params.MultiCall2ProviderCore,
+		V3IndexerProviderProvider:     params.V3IndexerProvider,
+		V3PoolProvider:                params.V3PoolProvider,
+		V3QuoteProvider:               params.V3QuoteProvider,
+		V2IndexerProvider:             params.V2IndexerProvider,
+		V2PoolProvider:                params.V2PoolProvider,
+		V2QuoteProvider:               params.V2QuoteProvider,
+		TokenProvider:                 params.TokenProvider,
+		GasPriceProvider:              params.GasPriceProvider,
+		V3GasModelFactory:             params.V3GasModelFactory,
+		V2GasModelFactory:             params.V2GasModelFactory,
+		BlockedTokenListProvider:      params.BlockedTokenListProvider,
+		WrappedNativeCurrencyProvider: params.WrappedNativeCurrencyProvider,
+		Ctx:                           ctx,
 	}
 	return router
 }
@@ -151,8 +155,9 @@ type AlphaRouter struct {
 	V3GasModelFactory models.V3GasModelFactory
 	V2GasModelFactory models.V2GasModelFactory
 	//TokenValidatorProvider   TokenValidatorProvider
-	BlockedTokenListProvider providers.TokenListProvider
-	Ctx                      context.Context
+	BlockedTokenListProvider      providers.TokenListProvider
+	WrappedNativeCurrencyProvider providers.WrappedNativeCurrencyProvider
+	Ctx                           context.Context
 }
 
 func (a *AlphaRouter) Route(
@@ -205,7 +210,7 @@ func (a *AlphaRouter) Route(
 
 	_, hasV2 := protocolsSet[base_entities.V2]
 	_, hasV3 := protocolsSet[base_entities.V3]
-	_, v2Supported := base_entities.V2Supported[a.ChainId]
+	_, v2Supported := base_constant.V2Supported[a.ChainId]
 	syncGroup := sync.WaitGroup{}
 	lock := sync.Mutex{}
 	var routesWithValidQuotesAndPools []routesWithValidQuotesAndPool
@@ -536,6 +541,7 @@ func (a *AlphaRouter) getV3Quotes(
 		IndexerProvider:          a.V3IndexerProviderProvider,
 		RoutingConfig:            routingConfig,
 		ChainId:                  a.ChainId,
+		WNProvider:               a.WrappedNativeCurrencyProvider,
 	})
 	if err != nil {
 		return nil, err
@@ -646,6 +652,7 @@ func (a *AlphaRouter) getV2Quotes(
 		IndexerProvider:          a.V2IndexerProvider,
 		RoutingConfig:            routingConfig,
 		ChainId:                  a.ChainId,
+		WNprovider:               a.WrappedNativeCurrencyProvider,
 	})
 	if err != nil {
 		return nil, err

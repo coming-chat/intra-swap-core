@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/coming-chat/intra-swap-core/base_entities"
+	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/cmd"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/config"
 	"github.com/daoleno/uniswap-sdk-core/entities"
@@ -12,14 +12,14 @@ import (
 )
 
 func main() {
-	router, err := cmd.Ready(base_entities.BASE)
+	router, err := cmd.Ready(base_constant.BASE)
 	if err != nil {
 		return
 	}
 
 	token0str := "0x4200000000000000000000000000000000000006" // weth 18
 	token1str := "0x50c5725949a6f0c72e6c4a641f24049a917db0cb" // DAI 18
-	tokenAccessor, err := router.TokenProvider.GetTokens(base_entities.BASE, []string{token0str, token1str}, nil)
+	tokenAccessor, err := router.TokenProvider.GetTokens(base_constant.BASE, []string{token0str, token1str}, nil)
 	if err != nil {
 		return
 	}
@@ -39,7 +39,7 @@ func main() {
 			InputTokenPermit:  nil,
 			SqrtPriceLimitX96: big.NewInt(0),
 		},
-		config.DefaultRoutingConfigByChain(base_entities.BASE),
+		config.DefaultRoutingConfigByChain(base_constant.BASE),
 	)
 	if err != nil {
 		fmt.Printf("err %v\n", err)

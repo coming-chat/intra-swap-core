@@ -216,7 +216,7 @@ func getBestSwapRouteBy(
 
 					gasCostL1QuoteToken := entities.FromRawAmount(quoteNew.Currency, big.NewInt(0))
 
-					if _, hasL1Fee := base_entities.HasL1Fee[chainId]; hasL1Fee {
+					if _, hasL1Fee := base_constant.HasL1Fee[chainId]; hasL1Fee {
 						var curRoutesNewV3 []models.V3RouteWithValidQuote
 						for _, cr := range curRoutesNew {
 							if cr.Protocol() == base_entities.V2 {
@@ -287,7 +287,7 @@ func getBestSwapRouteBy(
 	// this calculates the base gas used
 	// if on L1, its the estimated gas used based on hops and ticks across all the routes
 	// if on L2, its the gas used on the L2 based on hops and ticks across all the routes
-	token, ok := models.UsdGasTokensByChain[chainId]
+	token, ok := base_constant.UsdGasTokensByChain[chainId]
 	if !ok || len(token) == 0 {
 		// Each route can use a different stablecoin to account its gas costs.
 		// They should all be pegged, and this is just an estimate, so we do a merge
@@ -308,7 +308,7 @@ func getBestSwapRouteBy(
 	}
 
 	// If swapping on an L2 that includes a L1 security fee, calculate the fee and include it in the gas adjusted quotes
-	if _, hasL1Fee := base_entities.HasL1Fee[chainId]; hasL1Fee {
+	if _, hasL1Fee := base_constant.HasL1Fee[chainId]; hasL1Fee {
 		// ensure the gasModel exists and that the swap route is a v3 only route
 		var bsV3 []models.V3RouteWithValidQuote
 		for _, bs := range bestSwap {

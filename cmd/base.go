@@ -25,21 +25,23 @@ func Ready(chainId base_entities.ChainId) (*alpha_router.AlphaRouter, error) {
 	if err != nil {
 		return nil, err
 	}
+	wNprovider := &providers.BaseWrappedNativeCurrencyProvider{}
 	router := alpha_router.NewAlphaRouter(alpha_router.AlphaRouterParams{
-		ChainId:                  chainId,
-		Provider:                 rpcProvider,
-		MultiCall2ProviderCore:   uniswapMultiCallCore,
-		V3IndexerProvider:        v3.NewGeckoTerminalProvider(),
-		V3PoolProvider:           v3.NewBasePoolProvider(chainId, map[string]string{}, uniswapMultiCallCore, nil),
-		V3QuoteProvider:          v3.NewBaseQuoteProvider(context.TODO(), chainId, rpcProvider, uniswapMultiCallCore, nil, false, nil),
-		V2IndexerProvider:        v2.NewGeckoTerminalProvider(),
-		V2PoolProvider:           v2.NewBasePoolProvider(chainId, map[string]string{}, uniswapMultiCallCore, nil),
-		V2QuoteProvider:          v2.NewBaseQuoteProvider(context.TODO(), chainId, rpcProvider, uniswapMultiCallCore, false, nil),
-		TokenProvider:            providers.NewBaseTokenProvider(uniswapMultiCallCore),
-		GasPriceProvider:         gas.NewBaseGasPriceProvider(context.TODO(), rpcProvider),
-		V3GasModelFactory:        gasModelsV3.NewHeuristicGasModelFactory(rpcProvider, uniswapMultiCallCore, ""),
-		V2GasModelFactory:        &gasModelsV2.HeuristicGasModelFactory{},
-		BlockedTokenListProvider: nil,
+		ChainId:                       chainId,
+		Provider:                      rpcProvider,
+		MultiCall2ProviderCore:        uniswapMultiCallCore,
+		V3IndexerProvider:             v3.NewGeckoTerminalProvider(),
+		V3PoolProvider:                v3.NewBasePoolProvider(chainId, map[string]string{}, uniswapMultiCallCore, nil),
+		V3QuoteProvider:               v3.NewBaseQuoteProvider(context.TODO(), chainId, rpcProvider, uniswapMultiCallCore, nil, false, nil),
+		V2IndexerProvider:             v2.NewGeckoTerminalProvider(),
+		V2PoolProvider:                v2.NewBasePoolProvider(chainId, map[string]string{}, uniswapMultiCallCore, nil),
+		V2QuoteProvider:               v2.NewBaseQuoteProvider(context.TODO(), chainId, rpcProvider, uniswapMultiCallCore, false, nil),
+		TokenProvider:                 providers.NewBaseTokenProvider(uniswapMultiCallCore),
+		GasPriceProvider:              gas.NewBaseGasPriceProvider(context.TODO(), rpcProvider),
+		V3GasModelFactory:             gasModelsV3.NewHeuristicGasModelFactory(rpcProvider, uniswapMultiCallCore, "", wNprovider),
+		V2GasModelFactory:             gasModelsV2.NewHeuristicGasModelFactory(wNprovider),
+		BlockedTokenListProvider:      nil,
+		WrappedNativeCurrencyProvider: wNprovider,
 	}, context.TODO())
 	return router, nil
 }

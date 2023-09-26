@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"github.com/daoleno/uniswapv3-sdk/periphery"
@@ -121,7 +122,7 @@ type ProtocolPoolSelection struct {
 func DefaultRoutingConfigByChain(chainId base_entities.ChainId) AlphaRouterConfig {
 	switch chainId {
 	// Optimism
-	case base_entities.OPTIMISM, base_entities.OPTIMISTIC_KOVAN:
+	case base_constant.OPTIMISM, base_constant.OPTIMISTIC_KOVAN:
 		return AlphaRouterConfig{
 			V2PoolSelection: ProtocolPoolSelection{
 				TopN:                  3,
@@ -148,7 +149,7 @@ func DefaultRoutingConfigByChain(chainId base_entities.ChainId) AlphaRouterConfi
 		// Arbitrum calls have lower gas limits and tend to timeout more, which causes us to reduce the multicall
 		// batch size and send more multicalls per quote. To reduce the amount of requests each quote sends, we
 		// have to adjust the routing config so we explore fewer routes.
-	case base_entities.ARBITRUM_ONE, base_entities.ARBITRUM_RINKEBY:
+	case base_constant.ARBITRUM_ONE, base_constant.ARBITRUM_RINKEBY:
 		return AlphaRouterConfig{
 			V2PoolSelection: ProtocolPoolSelection{
 				TopN:                  3,
@@ -197,7 +198,7 @@ func DefaultRoutingConfigByChain(chainId base_entities.ChainId) AlphaRouterConfi
 			MaxSwapsPerPath:     3,
 			MinSplits:           1,
 			MaxSplits:           7,
-			DistributionPercent: 5,
+			DistributionPercent: 1,
 			ForceCrossProtocol:  false,
 		}
 	}

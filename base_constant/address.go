@@ -1,6 +1,8 @@
 package base_constant
 
-import "github.com/ethereum/go-ethereum/common"
+import (
+	"github.com/ethereum/go-ethereum/common"
+)
 
 const (
 	OvmGasPriceAddress = "0x420000000000000000000000000000000000000F"
