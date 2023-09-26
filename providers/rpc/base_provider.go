@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/sirupsen/logrus"
 	"math/rand"
 	"sync"
 )
@@ -28,11 +29,13 @@ func NewBaseProvider(ctx context.Context, rpcAddresses []string, maxScore int64)
 	for _, address := range rpcAddresses {
 		client, err := ethclient.Dial(address)
 		if err != nil {
-			return nil, err
+			logrus.Errorf("init ethclient to rpc [%s] err: %v", address, err)
+			continue
 		}
 		id, err := client.ChainID(ctx)
 		if err != nil {
-			return nil, err
+			logrus.Errorf("get eth chain id failed: %v", err)
+			continue
 		}
 		//TODO make the score useful
 		p.rpcs[base_entities.ChainId(id.Uint64())] = append(p.rpcs[base_entities.ChainId(id.Uint64())], &IntraClient{Client: client})
