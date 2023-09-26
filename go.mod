@@ -7,6 +7,7 @@ require (
 	github.com/daoleno/uniswapv3-sdk v0.4.0
 	github.com/ethereum/go-ethereum v1.12.2
 	github.com/shopspring/decimal v1.3.1
+	github.com/sirupsen/logrus v1.9.3
 	github.com/vaulverin/uniswapv2-sdk v0.0.3
 )
 
