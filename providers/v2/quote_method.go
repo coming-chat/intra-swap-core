@@ -38,12 +38,8 @@ func QuoteMultiCall(
 		base_constant.ArbitrumCamelotQuoter,
 		base_constant.ArbitrumSushiQuoter:
 		param.Contract = contracts.IUniswapV2Router02Abi
-	case base_constant.BaseAerodromeQuoter:
-		param.Contract = contracts.IAerodromeAbi
-	case base_constant.OptimismVelodromeV2Quoter:
-		param.Contract = contracts.IVelodromeAbi
-	case base_constant.ArbitrumTraderJoeQuoter:
-		param.Contract = contracts.ILBRouterAbi
+	//case base_constant.ArbitrumTraderJoeQuoter:
+	//	param.Contract = contracts.ILBRouterAbi
 	default:
 		return rpc.MultiCallSingleParam{}, errors.New("unsupported quote")
 	}

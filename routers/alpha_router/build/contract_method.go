@@ -158,11 +158,44 @@ func iAerodromeRouter(
 	tradeType entities.TradeType,
 	tokenIn, tokenOut *entities.Token,
 	amountIn, amountOut *big.Int,
+	pool *base_entities.V3Pool,
 	swapConfig config.SwapOptions,
 ) (callData []byte, err error) {
-	methodName, args, err := baseUniswapV2(tradeType, tokenIn, tokenOut, amountIn, amountOut, swapConfig)
-	if err != nil {
-		return nil, err
+	if tokenIn.IsNative() && tokenOut.IsNative() {
+		return nil, router.ErrEtherInOut
+	}
+
+	deadline := swapConfig.Deadline
+	if swapConfig.Deadline == nil {
+		deadline = big.NewInt(time.Now().Add(5 * time.Minute).Unix())
+	}
+	var (
+		methodName string
+		args       []any
+	)
+	path := []omni_swap.IAerodromeRoute{
+		{
+			From:    tokenIn.Address,
+			To:      tokenOut.Address,
+			Stable:  pool.Stable,
+			Factory: pool.FactoryAddress(),
+		},
+	}
+	if tokenIn.IsNative() {
+		args = []any{amountOut, path, swapConfig.Recipient, deadline}
+		methodName = "swapExactETHForTokens"
+		// TODO handle the FeeOnTransfer
+		//methodName = "swapExactETHForTokensSupportingFeeOnTransferTokens"
+	} else if tokenOut.IsNative() {
+		// TODO handle the FeeOnTransfer
+		args = []any{amountIn, amountOut, path, swapConfig.Recipient, deadline}
+		methodName = "swapExactTokensForETH"
+		//methodName = "swapExactTokensForETHSupportingFeeOnTransferTokens"
+	} else {
+		args = []any{amountIn, amountOut, path, swapConfig.Recipient, deadline}
+		methodName = "swapExactTokensForTokens"
+		// TODO handle the FeeOnTransfer
+		//methodName = "swapExactTokensForTokensSupportingFeeOnTransferTokens"
 	}
 	callData, err = contracts.IAerodromeAbi.Pack(methodName, args...)
 	return
@@ -172,11 +205,45 @@ func iVelodromeRouter(
 	tradeType entities.TradeType,
 	tokenIn, tokenOut *entities.Token,
 	amountIn, amountOut *big.Int,
+	pool *base_entities.V3Pool,
 	swapConfig config.SwapOptions,
 ) (callData []byte, err error) {
-	methodName, args, err := baseUniswapV2(tradeType, tokenIn, tokenOut, amountIn, amountOut, swapConfig)
-	if err != nil {
-		return nil, err
+	if tokenIn.IsNative() && tokenOut.IsNative() {
+		return nil, router.ErrEtherInOut
+	}
+
+	deadline := swapConfig.Deadline
+	if swapConfig.Deadline == nil {
+		deadline = big.NewInt(time.Now().Add(5 * time.Minute).Unix())
+	}
+	var (
+		methodName string
+		args       []any
+	)
+	path := []omni_swap.IAerodromeRoute{
+		{
+			From:    tokenIn.Address,
+			To:      tokenOut.Address,
+			Stable:  pool.Stable,
+			Factory: pool.FactoryAddress(),
+		},
+	}
+
+	if tokenIn.IsNative() {
+		args = []any{amountOut, path, swapConfig.Recipient, deadline}
+		methodName = "swapExactETHForTokens"
+		// TODO handle the FeeOnTransfer
+		//methodName = "swapExactETHForTokensSupportingFeeOnTransferTokens"
+	} else if tokenOut.IsNative() {
+		// TODO handle the FeeOnTransfer
+		args = []any{amountIn, amountOut, path, swapConfig.Recipient, deadline}
+		methodName = "swapExactTokensForETH"
+		//methodName = "swapExactTokensForETHSupportingFeeOnTransferTokens"
+	} else {
+		args = []any{amountIn, amountOut, path, swapConfig.Recipient, deadline}
+		methodName = "swapExactTokensForTokens"
+		// TODO handle the FeeOnTransfer
+		//methodName = "swapExactTokensForTokensSupportingFeeOnTransferTokens"
 	}
 	callData, err = contracts.IVelodromeAbi.Pack(methodName, args...)
 	return

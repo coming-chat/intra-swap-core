@@ -21,6 +21,7 @@ type IndexerPool struct {
 	QuoteAddress   string
 	FactoryAddress string
 	FeeTier        constants.FeeAmount
+	Stable         bool
 	Liquidity      string
 	Token0         struct {
 		Id string

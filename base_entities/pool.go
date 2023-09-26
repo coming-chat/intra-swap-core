@@ -71,6 +71,7 @@ func NewV3Pool(pool *entitiesV3.Pool, poolAddr, quoteAddr, routerAddr, factoryAd
 
 type V3Pool struct {
 	*entitiesV3.Pool
+	Stable         bool
 	poolAddress    common.Address
 	quoterAddress  common.Address
 	routerAddress  common.Address
