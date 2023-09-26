@@ -19,15 +19,30 @@ func main() {
 		return
 	}
 
-	token0str := "0x4200000000000000000000000000000000000006" // weth 18
+	token0str := "0x0000000000000000000000000000000000000000" // weth 18
 	token1str := "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA" // DAI 18
 	tokenAccessor, err := router.TokenProvider.GetTokens(base_constant.BASE, []string{token0str, token1str}, nil)
 	if err != nil {
 		return
 	}
 	amountIn := new(big.Int).Mul(big.NewInt(1), big.NewInt(1).Exp(big.NewInt(10), big.NewInt(18), nil))
-	token0 := tokenAccessor.GetTokenByAddress(token0str)
-	token1 := tokenAccessor.GetTokenByAddress(token1str)
+	wrappedEth, err := router.WrappedNativeCurrencyProvider.GetTokenByChain(base_constant.BASE)
+	if err != nil {
+		log.Errorf("get wrapped eth err: %v", err)
+	}
+	var token0, token1 entities.Currency
+	if token0str == "0x0000000000000000000000000000000000000000" {
+		token0 = entities.NewNative(wrappedEth, "eth", "ether")
+	} else {
+		token0 = tokenAccessor.GetTokenByAddress(token0str)
+	}
+
+	if token1str == "0x0000000000000000000000000000000000000000" {
+		token1 = entities.NewNative(wrappedEth, "eth", "ether")
+	} else {
+		token1 = tokenAccessor.GetTokenByAddress(token1str)
+	}
+
 	token0Balance := entities.FromRawAmount(token0, amountIn)
 
 	swap, err := router.Route(

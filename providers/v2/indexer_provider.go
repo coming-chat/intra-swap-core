@@ -100,9 +100,9 @@ func (g *GeckoTerminalProvider) GetPools(chainId base_entities.ChainId, tokenIn 
 			Token1:         struct{ Id string }{Id: common.HexToAddress(strings.TrimPrefix(poolData.Relationships.QuoteToken.Data.Id, "base_")).String()},
 			Reserve:        reserve,
 			Dex:            poolData.Relationships.Dex.Data.Id,
-			RouterAddress:  "0x8c1A3cF8f83074169FE5D7aD50B978e1cD6b37c7",
+			RouterAddress:  "0xaaa3b1F1bd7BCc97fD1917c18ADE665C5D31F066",
 			FactoryAddress: "",
-			QuoteAddress:   "0x8c1A3cF8f83074169FE5D7aD50B978e1cD6b37c7",
+			QuoteAddress:   "0xaaa3b1F1bd7BCc97fD1917c18ADE665C5D31F066",
 		})
 	}
 	return

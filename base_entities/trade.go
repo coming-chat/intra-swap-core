@@ -138,7 +138,8 @@ func (m *MTrade) PriceImpact() (*entities.Percent, error) {
 		if err != nil {
 			return nil, err
 		}
-		quotePrice, err := midPrice.Quote(swap.InputAmount)
+		//avoid the eth not equal to weth
+		quotePrice, err := midPrice.Quote(entities.FromRawAmount(midPrice.BaseCurrency, swap.InputAmount.Quotient()))
 		if err != nil {
 			return nil, err
 		}

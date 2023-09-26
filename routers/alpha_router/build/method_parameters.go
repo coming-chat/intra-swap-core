@@ -144,8 +144,8 @@ func packedCallData(
 			swap.Route.Path[poolIndex],
 			swap.Route.Path[poolIndex+1],
 			swap.Route.Pools[poolIndex].(*base_entities.V3Pool),
-			amountIn.Quotient(),
-			amountOut.Quotient(),
+			amountIn,
+			amountOut,
 			swapConfig,
 		)
 	case base_constant.BaseSwapBasedV3Router,
@@ -155,8 +155,8 @@ func packedCallData(
 			swap.Route.Path[poolIndex],
 			swap.Route.Path[poolIndex+1],
 			swap.Route.Pools[poolIndex].(*base_entities.V3Pool),
-			amountIn.Quotient(),
-			amountOut.Quotient(),
+			amountIn,
+			amountOut,
 			swapConfig,
 		)
 	case base_constant.BaseAlienbaseV2Router,
@@ -168,8 +168,8 @@ func packedCallData(
 			trade.TradeType,
 			swap.Route.Path[poolIndex],
 			swap.Route.Path[poolIndex+1],
-			amountIn.Quotient(),
-			amountOut.Quotient(),
+			amountIn,
+			amountOut,
 			swapConfig,
 		)
 	case base_constant.BaseAerodromerouter:
@@ -177,8 +177,8 @@ func packedCallData(
 			trade.TradeType,
 			swap.Route.Path[poolIndex],
 			swap.Route.Path[poolIndex+1],
-			amountIn.Quotient(),
-			amountOut.Quotient(),
+			amountIn,
+			amountOut,
 			swap.Route.Pools[poolIndex].(*base_entities.V3Pool),
 			swapConfig,
 		)
@@ -187,8 +187,8 @@ func packedCallData(
 			trade.TradeType,
 			swap.Route.Path[poolIndex],
 			swap.Route.Path[poolIndex+1],
-			amountIn.Quotient(),
-			amountOut.Quotient(),
+			amountIn,
+			amountOut,
 			swap.Route.Pools[poolIndex].(*base_entities.V3Pool),
 			swapConfig,
 		)
