@@ -177,7 +177,7 @@ func DefaultRoutingConfigByChain(chainId base_entities.ChainId) AlphaRouterConfi
 		return AlphaRouterConfig{
 			Protocols: []base_entities.Protocol{
 				base_entities.V2,
-				base_entities.V3,
+				//base_entities.V3,
 			},
 			V2PoolSelection: ProtocolPoolSelection{
 				TopN:                  3,

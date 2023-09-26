@@ -3,7 +3,6 @@ package alpha_router
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/providers"
@@ -19,6 +18,7 @@ import (
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	entitiesV3 "github.com/daoleno/uniswapv3-sdk/entities"
 	"github.com/daoleno/uniswapv3-sdk/utils"
+	"github.com/sirupsen/logrus"
 	"math/big"
 	"sync"
 )
@@ -135,6 +135,7 @@ func NewAlphaRouter(params AlphaRouterParams, ctx context.Context) *AlphaRouter 
 		BlockedTokenListProvider:      params.BlockedTokenListProvider,
 		WrappedNativeCurrencyProvider: params.WrappedNativeCurrencyProvider,
 		Ctx:                           ctx,
+		log:                           logrus.WithField("Router", "AlphaRouter"),
 	}
 	return router
 }
@@ -158,6 +159,7 @@ type AlphaRouter struct {
 	BlockedTokenListProvider      providers.TokenListProvider
 	WrappedNativeCurrencyProvider providers.WrappedNativeCurrencyProvider
 	Ctx                           context.Context
+	log                           *logrus.Entry
 }
 
 func (a *AlphaRouter) Route(
@@ -221,7 +223,7 @@ func (a *AlphaRouter) Route(
 			defer syncGroup.Done()
 			routes, err := a.getV3Quotes(tokenIn, tokenOut, amounts, percents, quoteToken, gasModel, tradeType, routingConfig)
 			if err != nil {
-				fmt.Printf("getV3Quotes err: %v", err)
+				a.log.Errorf("getV3Quotes err: %v", err)
 				return
 			}
 			lock.Lock()
@@ -233,7 +235,7 @@ func (a *AlphaRouter) Route(
 			defer syncGroup.Done()
 			routes, err := a.getV2Quotes(tokenIn, tokenOut, amounts, percents, quoteToken, gasPrice.GasPriceWei, tradeType, routingConfig)
 			if err != nil {
-				fmt.Printf("getV2Quotes err: %v", err)
+				a.log.Errorf("getV2Quotes err: %v", err)
 				return
 			}
 			lock.Lock()
@@ -247,7 +249,7 @@ func (a *AlphaRouter) Route(
 				defer syncGroup.Done()
 				routes, err := a.getV3Quotes(tokenIn, tokenOut, amounts, percents, quoteToken, gasModel, tradeType, routingConfig)
 				if err != nil {
-					fmt.Printf("getV3Quotes err: %v", err)
+					a.log.Errorf("getV3Quotes err: %v", err)
 					return
 				}
 				lock.Lock()
@@ -261,7 +263,7 @@ func (a *AlphaRouter) Route(
 				defer syncGroup.Done()
 				routes, err := a.getV2Quotes(tokenIn, tokenOut, amounts, percents, quoteToken, gasPrice.GasPriceWei, tradeType, routingConfig)
 				if err != nil {
-					fmt.Printf("getV2Quotes err: %v", err)
+					a.log.Errorf("getV2Quotes err: %v", err)
 					return
 				}
 				lock.Lock()
