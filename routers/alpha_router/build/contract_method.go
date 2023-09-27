@@ -89,19 +89,21 @@ func iSwapRouter02(
 	}
 	switch tradeType {
 	case entities.ExactInput:
-		callData, err = contracts.ISwapRouter02Abi.Pack("exactInput", omni_swap.ISwapRouter02ExactInputParams{
+		param := omni_swap.ISwapRouter02ExactInputParams{
 			Path:             path,
 			Recipient:        swapConfig.Recipient,
 			AmountIn:         amountIn.Quotient(),
 			AmountOutMinimum: amountOut.Quotient(),
-		})
+		}
+		callData, err = contracts.ISwapRouter02Abi.Pack("exactInput", param)
 	case entities.ExactOutput:
-		callData, err = contracts.ISwapRouter02Abi.Pack("exactOutput", omni_swap.ISwapRouter02ExactOutputParams{
+		param := omni_swap.ISwapRouter02ExactOutputParams{
 			Path:            path,
 			Recipient:       swapConfig.Recipient,
 			AmountInMaximum: amountIn.Quotient(),
 			AmountOut:       amountOut.Quotient(),
-		})
+		}
+		callData, err = contracts.ISwapRouter02Abi.Pack("exactOutput", param)
 	default:
 		return nil, errors.New("unsupported tradeType")
 	}
@@ -126,6 +128,7 @@ func iSwapRouter(
 			Recipient:        swapConfig.Recipient,
 			AmountIn:         amountIn.Quotient(),
 			AmountOutMinimum: amountOut.Quotient(),
+			Deadline:         swapConfig.Deadline,
 		})
 	case entities.ExactOutput:
 		callData, err = contracts.ISwapRouterAbi.Pack("exactOutput", omni_swap.ISwapRouterExactOutputParams{
@@ -133,6 +136,7 @@ func iSwapRouter(
 			Recipient:       swapConfig.Recipient,
 			AmountInMaximum: amountIn.Quotient(),
 			AmountOut:       amountOut.Quotient(),
+			Deadline:        swapConfig.Deadline,
 		})
 	default:
 		return nil, errors.New("unsupported tradeType")
