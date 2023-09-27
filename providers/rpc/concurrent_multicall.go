@@ -24,6 +24,7 @@ type MultiCallConfig struct {
 	RetryOptions     RetryOptions
 	BatchParams      BatchParams
 	MaxConcurrentNum int
+	RequireSuccess   bool
 }
 
 func ConcurrentMultiCall[T any](chainId base_entities.ChainId, core MultiCallProviderCore, multiCallParams []MultiCallSingleParam, c *MultiCallConfig) (rInfo MultiCallResultWithInfo[T], err error) {
@@ -61,7 +62,7 @@ func ConcurrentMultiCall[T any](chainId base_entities.ChainId, core MultiCallPro
 				if index+c.BatchParams.MultiCallChunk > len(multiCallParams) {
 					endIndex = len(multiCallParams)
 				}
-				returnData, errReq := GetMultiCallProvider[T](core).MultiCall(chainId, multiCallParams[index:endIndex], nil)
+				returnData, errReq := GetMultiCallProvider[T](core).MultiCall(chainId, multiCallParams[index:endIndex], c.RequireSuccess, nil)
 				if errReq != nil && try+1 < c.RetryOptions.Retries {
 					continue
 				}

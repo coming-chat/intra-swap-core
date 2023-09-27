@@ -186,11 +186,15 @@ func (b *BaseQuoteProvider) getQuotesManyDataOnline(
 					continue
 				}
 				quoteData := callResult.ReturnData[callDataIndex]
-				syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, quoteData.Data.AmountOut)
-				result[ri].AmountQuotes[ra].Quote = quoteData.Data.AmountOut
-				result[ri].AmountQuotes[ra].SqrtPriceX96AfterList = append(result[ri].AmountQuotes[ra].SqrtPriceX96AfterList, quoteData.Data.SqrtPriceX96AfterList...)
-				result[ri].AmountQuotes[ra].InitializedTicksCrossedList = append(result[ri].AmountQuotes[ra].InitializedTicksCrossedList, quoteData.Data.InitializedTicksCrossedList...)
-				result[ri].AmountQuotes[ra].GasEstimate.Add(result[ri].AmountQuotes[ra].GasEstimate, quoteData.Data.GasEstimate)
+				if !quoteData.Success {
+					result[ri].AmountQuotes[ra].Quote = big.NewInt(0)
+				} else {
+					syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, quoteData.Data.AmountOut)
+					result[ri].AmountQuotes[ra].Quote = quoteData.Data.AmountOut
+					result[ri].AmountQuotes[ra].SqrtPriceX96AfterList = append(result[ri].AmountQuotes[ra].SqrtPriceX96AfterList, quoteData.Data.SqrtPriceX96AfterList...)
+					result[ri].AmountQuotes[ra].InitializedTicksCrossedList = append(result[ri].AmountQuotes[ra].InitializedTicksCrossedList, quoteData.Data.InitializedTicksCrossedList...)
+					result[ri].AmountQuotes[ra].GasEstimate.Add(result[ri].AmountQuotes[ra].GasEstimate, quoteData.Data.GasEstimate)
+				}
 				callDataIndex++
 			}
 		}

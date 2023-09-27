@@ -221,6 +221,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 			slot0Results, errSlot0 = rpc.GetMultiCallProvider[ISlot0](b.MultiCallProvider).MultiCall(
 				b.ChainId,
 				slot0s,
+				false,
 				providerConfig,
 			)
 			if errSlot0 != nil {
@@ -236,6 +237,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 			liquidityResults, errLiquidity = rpc.GetMultiCallProvider[*big.Int](b.MultiCallProvider).MultiCall(
 				b.ChainId,
 				liquiditys,
+				false,
 				providerConfig,
 			)
 			if errLiquidity != nil {
@@ -295,6 +297,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 	tickInfoResult, err := rpc.GetMultiCallProvider[Tick](b.MultiCallProvider).MultiCall(
 		b.ChainId,
 		tickInfoParams,
+		false,
 		providerConfig,
 	)
 	if err != nil {

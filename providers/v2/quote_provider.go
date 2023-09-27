@@ -136,8 +136,12 @@ func (b *BaseQuoteProvider) getQuotesOnline(amounts []*entities.CurrencyAmount,
 					continue
 				}
 				quoteData := callResult.ReturnData[callDataIndex]
-				syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, quoteData.Data[len(quoteData.Data)-1])
-				result[ri].AmountQuotes[ra].Quote = quoteData.Data[len(quoteData.Data)-1]
+				if !quoteData.Success {
+					result[ri].AmountQuotes[ra].Quote = big.NewInt(0)
+				} else {
+					syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, quoteData.Data[len(quoteData.Data)-1])
+					result[ri].AmountQuotes[ra].Quote = quoteData.Data[len(quoteData.Data)-1]
+				}
 				callDataIndex++
 			}
 		}

@@ -61,7 +61,7 @@ func GetMultiCallProvider[T any](core MultiCallProviderCore) *BaseMultiCallProvi
 	}
 }
 
-func (b *BaseMultiCallProvider[T]) MultiCall(chainId base_entities.ChainId, multiCallData []MultiCallSingleParam, providerConfig *config.Config) (result MultiCallResultWithInfo[T], err error) {
+func (b *BaseMultiCallProvider[T]) MultiCall(chainId base_entities.ChainId, multiCallData []MultiCallSingleParam, requireSuccess bool, providerConfig *config.Config) (result MultiCallResultWithInfo[T], err error) {
 	callOpts := &bind.CallOpts{}
 	if providerConfig != nil {
 		callOpts.BlockNumber = big.NewInt(int64(providerConfig.BlockNumber))
@@ -89,7 +89,7 @@ func (b *BaseMultiCallProvider[T]) MultiCall(chainId base_entities.ChainId, mult
 	if err != nil {
 		return result, err
 	}
-	err = multiCall.Call(callOpts, &[]any{&decodeResults}, "blockAndAggregate", calls)
+	err = multiCall.Call(callOpts, &[]any{&decodeResults}, "tryBlockAndAggregate", requireSuccess, calls)
 	if err != nil {
 		return
 	}
