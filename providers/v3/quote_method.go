@@ -5,7 +5,6 @@ import (
 	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/contracts"
-	"github.com/coming-chat/intra-swap-core/contracts/omni_swap"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	entitiesV3 "github.com/daoleno/uniswapv3-sdk/entities"
@@ -45,34 +44,6 @@ func QuoteMultiCall(
 		param.Contract = contracts.IQuoterV2Abi
 	case base_constant.BaseSwapBasedV3Quoter:
 		param.Contract = contracts.IQuoterAbi
-	case base_constant.BaseAerodromeQuoter:
-		param.Contract = contracts.IAerodromeAbi
-		param.FunctionName = "getAmountsOut"
-		param.FunctionParams = []any{
-			amount.Quotient(),
-			[]omni_swap.IAerodromeRoute{
-				{
-					From:    route.Path[index].Address,
-					To:      route.Path[index+1].Address,
-					Stable:  route.Pools[index].(*base_entities.V3Pool).Stable,
-					Factory: route.Pools[index].(*base_entities.V3Pool).FactoryAddress(),
-				},
-			},
-		}
-	case base_constant.OptimismVelodromeV2Quoter:
-		param.Contract = contracts.IVelodromeAbi
-		param.FunctionName = "getAmountsOut"
-		param.FunctionParams = []any{
-			amount.Quotient(),
-			[]omni_swap.IVelodromeRoute{
-				{
-					From:    route.Path[index].Address,
-					To:      route.Path[index+1].Address,
-					Stable:  route.Pools[index].(*base_entities.V3Pool).Stable,
-					Factory: route.Pools[index].(*base_entities.V3Pool).FactoryAddress(),
-				},
-			},
-		}
 	default:
 		return rpc.MultiCallSingleParam{}, errors.New("unsupported quote")
 	}

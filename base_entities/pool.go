@@ -19,11 +19,13 @@ type Pool interface {
 	FactoryAddress() common.Address
 	ChainID() uint
 	Protocol() Protocol
+	Stable() bool
 }
 
-func NewV2Pool(pair *entitiesV2.Pair, poolAddr, quoteAddr, routerAddr, factoryAddr string) *V2Pool {
+func NewV2Pool(pair *entitiesV2.Pair, poolAddr, quoteAddr, routerAddr, factoryAddr string, stable bool) *V2Pool {
 	return &V2Pool{
 		Pair:           pair,
+		stable:         stable,
 		poolAddress:    common.HexToAddress(poolAddr),
 		quoterAddress:  common.HexToAddress(quoteAddr),
 		routerAddress:  common.HexToAddress(routerAddr),
@@ -33,10 +35,15 @@ func NewV2Pool(pair *entitiesV2.Pair, poolAddr, quoteAddr, routerAddr, factoryAd
 
 type V2Pool struct {
 	*entitiesV2.Pair
+	stable         bool
 	poolAddress    common.Address
 	quoterAddress  common.Address
 	routerAddress  common.Address
 	factoryAddress common.Address
+}
+
+func (v2 *V2Pool) Stable() bool {
+	return v2.stable
 }
 
 func (v2 *V2Pool) Protocol() Protocol {
@@ -59,9 +66,10 @@ func (v2 *V2Pool) FactoryAddress() common.Address {
 	return v2.factoryAddress
 }
 
-func NewV3Pool(pool *entitiesV3.Pool, poolAddr, quoteAddr, routerAddr, factoryAddr string) *V3Pool {
+func NewV3Pool(pool *entitiesV3.Pool, poolAddr, quoteAddr, routerAddr, factoryAddr string, stable bool) *V3Pool {
 	return &V3Pool{
 		Pool:           pool,
+		stable:         stable,
 		poolAddress:    common.HexToAddress(poolAddr),
 		quoterAddress:  common.HexToAddress(quoteAddr),
 		routerAddress:  common.HexToAddress(routerAddr),
@@ -71,11 +79,15 @@ func NewV3Pool(pool *entitiesV3.Pool, poolAddr, quoteAddr, routerAddr, factoryAd
 
 type V3Pool struct {
 	*entitiesV3.Pool
-	Stable         bool
+	stable         bool
 	poolAddress    common.Address
 	quoterAddress  common.Address
 	routerAddress  common.Address
 	factoryAddress common.Address
+}
+
+func (v3 *V3Pool) Stable() bool {
+	return v3.stable
 }
 
 func (v3 *V3Pool) Protocol() Protocol {

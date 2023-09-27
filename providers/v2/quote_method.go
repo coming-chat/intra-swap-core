@@ -5,6 +5,7 @@ import (
 	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/contracts"
+	"github.com/coming-chat/intra-swap-core/contracts/omni_swap"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"github.com/ethereum/go-ethereum/common"
@@ -38,6 +39,34 @@ func QuoteMultiCall(
 		base_constant.ArbitrumCamelotQuoter,
 		base_constant.ArbitrumSushiQuoter:
 		param.Contract = contracts.IUniswapV2Router02Abi
+	case base_constant.BaseAerodromeQuoter:
+		param.Contract = contracts.IAerodromeAbi
+		param.FunctionName = "getAmountsOut"
+		param.FunctionParams = []any{
+			amount.Quotient(),
+			[]omni_swap.IAerodromeRoute{
+				{
+					From:    route.Path[index].Address,
+					To:      route.Path[index+1].Address,
+					Stable:  route.Pools[index].Stable(),
+					Factory: route.Pools[index].FactoryAddress(),
+				},
+			},
+		}
+	case base_constant.OptimismVelodromeV2Quoter:
+		param.Contract = contracts.IVelodromeAbi
+		param.FunctionName = "getAmountsOut"
+		param.FunctionParams = []any{
+			amount.Quotient(),
+			[]omni_swap.IVelodromeRoute{
+				{
+					From:    route.Path[index].Address,
+					To:      route.Path[index+1].Address,
+					Stable:  route.Pools[index].Stable(),
+					Factory: route.Pools[index].FactoryAddress(),
+				},
+			},
+		}
 	//case base_constant.ArbitrumTraderJoeQuoter:
 	//	param.Contract = contracts.ILBRouterAbi
 	default:

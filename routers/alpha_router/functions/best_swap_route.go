@@ -216,26 +216,26 @@ func getBestSwapRouteBy(
 
 					gasCostL1QuoteToken := entities.FromRawAmount(quoteNew.Currency, big.NewInt(0))
 
-					if _, hasL1Fee := base_constant.HasL1Fee[chainId]; hasL1Fee {
-						var curRoutesNewV3 []models.V3RouteWithValidQuote
-						for _, cr := range curRoutesNew {
-							if cr.Protocol() == base_entities.V2 {
-								break
-							}
-							curRoutesNewV3 = append(curRoutesNewV3, cr.(models.V3RouteWithValidQuote))
-						}
-
-						if gasModel == nil || len(curRoutesNewV3) != len(curRoutesNew) {
-							return nil, errors.New("can't compute L1 gas fees")
-						}
-
-						gasCostL1, err := gasModel.CalculateL1GasFees(curRoutesNewV3)
-						if err != nil {
-							return nil, err
-						}
-						gasCostL1QuoteToken = gasCostL1.GasCostL1QuoteToken
-
-					}
+					//if _, hasL1Fee := base_constant.HasL1Fee[chainId]; hasL1Fee {
+					//	var curRoutesNewV3 []*models.V3RouteWithValidQuote
+					//	for _, cr := range curRoutesNew {
+					//		if cr.Protocol() == base_entities.V2 {
+					//			break
+					//		}
+					//		curRoutesNewV3 = append(curRoutesNewV3, cr.(*models.V3RouteWithValidQuote))
+					//	}
+					//
+					//	if gasModel == nil || len(curRoutesNewV3) != len(curRoutesNew) {
+					//		return nil, errors.New("can't compute L1 gas fees")
+					//	}
+					//
+					//	gasCostL1, err := gasModel.CalculateL1GasFees(curRoutesNewV3)
+					//	if err != nil {
+					//		return nil, err
+					//	}
+					//	gasCostL1QuoteToken = gasCostL1.GasCostL1QuoteToken
+					//
+					//}
 
 					var quoteAfterL1Adjust *entities.CurrencyAmount
 					if routeType == entities.ExactInput {
@@ -308,26 +308,26 @@ func getBestSwapRouteBy(
 	}
 
 	// If swapping on an L2 that includes a L1 security fee, calculate the fee and include it in the gas adjusted quotes
-	if _, hasL1Fee := base_constant.HasL1Fee[chainId]; hasL1Fee {
-		// ensure the gasModel exists and that the swap route is a v3 only route
-		var bsV3 []models.V3RouteWithValidQuote
-		for _, bs := range bestSwap {
-			if bs.Protocol() == base_entities.V2 {
-				break
-			}
-			bsV3 = append(bsV3, bs.(models.V3RouteWithValidQuote))
-		}
-
-		if gasModel == nil || len(bsV3) != len(bestSwap) {
-			return nil, errors.New("can't compute L1 gas fees")
-		}
-		//var err error
-		//gasCostsL1ToL2, err = gasModel.CalculateL1GasFees(bsV3)
-		//if err != nil {
-		//	return nil, err
-		//}
-
-	}
+	//if _, hasL1Fee := base_constant.HasL1Fee[chainId]; hasL1Fee {
+	//	// ensure the gasModel exists and that the swap route is a v3 only route
+	//	var bsV3 []models.V3RouteWithValidQuote
+	//	for _, bs := range bestSwap {
+	//		if bs.Protocol() == base_entities.V2 {
+	//			break
+	//		}
+	//		bsV3 = append(bsV3, bs.(models.V3RouteWithValidQuote))
+	//	}
+	//
+	//	if gasModel == nil || len(bsV3) != len(bestSwap) {
+	//		return nil, errors.New("can't compute L1 gas fees")
+	//	}
+	//	//var err error
+	//	//gasCostsL1ToL2, err = gasModel.CalculateL1GasFees(bsV3)
+	//	//if err != nil {
+	//	//	return nil, err
+	//	//}
+	//
+	//}
 
 	var (
 		quotes []*entities.CurrencyAmount //estimatedGasUsedUSDs, gasCostInToken,

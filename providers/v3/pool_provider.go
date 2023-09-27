@@ -346,7 +346,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 			//TODO log err
 			continue
 		}
-		pool := base_entities.NewV3Pool(v3pool, sortedPool[i].PairAddress, sortedPool[i].QuoteAddress, sortedPool[i].RouterAddress, sortedPool[i].FactoryAddress)
+		pool := base_entities.NewV3Pool(v3pool, sortedPool[i].PairAddress, sortedPool[i].QuoteAddress, sortedPool[i].RouterAddress, sortedPool[i].FactoryAddress, false)
 		poolAccessor.poolAddressToPool[common.HexToAddress(address).String()] = pool
 		poolAccessor.subPoolMap[pool.Pool] = pool
 		b.PoolAddressCache[fmt.Sprintf(cacheKeyFormat, b.ChainId, sortedPool[i].Token0.Address.String(), sortedPool[i].Token1.Address.String(), sortedPool[i].FeeAmount)] = common.HexToAddress(address).String()

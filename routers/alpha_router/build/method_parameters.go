@@ -179,7 +179,7 @@ func packedCallData(
 			swap.Route.Path[poolIndex+1],
 			amountIn,
 			amountOut,
-			swap.Route.Pools[poolIndex].(*base_entities.V3Pool),
+			swap.Route.Pools[poolIndex],
 			swapConfig,
 		)
 	case base_constant.OptimismVelodromeV2Router:
@@ -189,7 +189,7 @@ func packedCallData(
 			swap.Route.Path[poolIndex+1],
 			amountIn,
 			amountOut,
-			swap.Route.Pools[poolIndex].(*base_entities.V3Pool),
+			swap.Route.Pools[poolIndex],
 			swapConfig,
 		)
 	// TODO support in the feature

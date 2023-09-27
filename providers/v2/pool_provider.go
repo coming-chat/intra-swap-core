@@ -187,7 +187,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 		if err != nil {
 			return nil, err
 		}
-		pool := base_entities.NewV2Pool(pair, tokenPairs[i].PairAddress, tokenPairs[i].RouterAddress, tokenPairs[i].RouterAddress, tokenPairs[i].FactoryAddress)
+		pool := base_entities.NewV2Pool(pair, tokenPairs[i].PairAddress, tokenPairs[i].RouterAddress, tokenPairs[i].RouterAddress, tokenPairs[i].FactoryAddress, false)
 		poolAccessor.poolAddressToPool[poolAddress.String()] = pool
 		poolAccessor.subPoolMap[pool.Pair] = pool
 		b.PoolAddressCache[fmt.Sprintf(cacheKeyFormat, b.ChainId, sortedTokenPairs[i].Token0.Address.String(), sortedTokenPairs[i].Token1.Address.String())] = poolAddress.String()

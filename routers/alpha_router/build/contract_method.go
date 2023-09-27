@@ -158,7 +158,7 @@ func iAerodromeRouter(
 	tradeType entities.TradeType,
 	tokenIn, tokenOut *entities.Token,
 	amountIn, amountOut *entities.CurrencyAmount,
-	pool *base_entities.V3Pool,
+	pool base_entities.Pool,
 	swapConfig config.SwapOptions,
 ) (callData []byte, err error) {
 	if tokenIn.IsNative() && tokenOut.IsNative() {
@@ -177,7 +177,7 @@ func iAerodromeRouter(
 		{
 			From:    tokenIn.Address,
 			To:      tokenOut.Address,
-			Stable:  pool.Stable,
+			Stable:  pool.Stable(),
 			Factory: pool.FactoryAddress(),
 		},
 	}
@@ -205,7 +205,7 @@ func iVelodromeRouter(
 	tradeType entities.TradeType,
 	tokenIn, tokenOut *entities.Token,
 	amountIn, amountOut *entities.CurrencyAmount,
-	pool *base_entities.V3Pool,
+	pool base_entities.Pool,
 	swapConfig config.SwapOptions,
 ) (callData []byte, err error) {
 	if tokenIn.IsNative() && tokenOut.IsNative() {
@@ -224,7 +224,7 @@ func iVelodromeRouter(
 		{
 			From:    tokenIn.Address,
 			To:      tokenOut.Address,
-			Stable:  pool.Stable,
+			Stable:  pool.Stable(),
 			Factory: pool.FactoryAddress(),
 		},
 	}
