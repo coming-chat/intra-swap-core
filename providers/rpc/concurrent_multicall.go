@@ -16,7 +16,7 @@ type RetryOptions struct {
 
 type BatchParams struct {
 	MultiCallChunk  int
-	GasLimitPerCall int64
+	GasLimitPerCall uint64
 	MinSuccessRate  float64
 }
 
@@ -34,8 +34,9 @@ func ConcurrentMultiCall[T any](chainId base_entities.ChainId, core MultiCallPro
 				Retries: 1,
 			},
 			BatchParams: BatchParams{
-				MultiCallChunk: 200,
-				MinSuccessRate: 1,
+				MultiCallChunk:  200,
+				MinSuccessRate:  1,
+				GasLimitPerCall: 1000_000,
 			},
 			MaxConcurrentNum: 5,
 		}
@@ -62,7 +63,7 @@ func ConcurrentMultiCall[T any](chainId base_entities.ChainId, core MultiCallPro
 				if index+c.BatchParams.MultiCallChunk > len(multiCallParams) {
 					endIndex = len(multiCallParams)
 				}
-				returnData, errReq := GetMultiCallProvider[T](core).MultiCall(chainId, multiCallParams[index:endIndex], c.RequireSuccess, nil)
+				returnData, errReq := GetMultiCallProvider[T](core).MultiCall(chainId, multiCallParams[index:endIndex], c.BatchParams.GasLimitPerCall, c.RequireSuccess, nil)
 				if errReq != nil && try+1 < c.RetryOptions.Retries {
 					continue
 				}

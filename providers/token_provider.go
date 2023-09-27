@@ -79,12 +79,12 @@ func (o *BaseTokenProvider) GetTokens(chainId base_entities.ChainId, addresses [
 
 	go func() {
 		defer syncGroup.Done()
-		symbolsResults, errSymbol = rpc.GetMultiCallProvider[string](o.MultiCallProviderCore).MultiCall(chainId, multiCallSymbol, false, providerConfig)
+		symbolsResults, errSymbol = rpc.GetMultiCallProvider[string](o.MultiCallProviderCore).MultiCall(chainId, multiCallSymbol, 0, false, providerConfig)
 	}()
 
 	go func() {
 		defer syncGroup.Done()
-		decimalsResults, errDecimals = rpc.GetMultiCallProvider[uint8](o.MultiCallProviderCore).MultiCall(chainId, multiCallDecimals, false, providerConfig)
+		decimalsResults, errDecimals = rpc.GetMultiCallProvider[uint8](o.MultiCallProviderCore).MultiCall(chainId, multiCallDecimals, 0, false, providerConfig)
 	}()
 
 	syncGroup.Wait()

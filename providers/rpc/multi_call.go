@@ -1,11 +1,14 @@
 package rpc
 
 import (
+	"context"
 	_ "embed"
+	"errors"
 	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/contracts"
 	"github.com/coming-chat/intra-swap-core/providers/config"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -61,7 +64,7 @@ func GetMultiCallProvider[T any](core MultiCallProviderCore) *BaseMultiCallProvi
 	}
 }
 
-func (b *BaseMultiCallProvider[T]) MultiCall(chainId base_entities.ChainId, multiCallData []MultiCallSingleParam, requireSuccess bool, providerConfig *config.Config) (result MultiCallResultWithInfo[T], err error) {
+func (b *BaseMultiCallProvider[T]) MultiCall(chainId base_entities.ChainId, multiCallData []MultiCallSingleParam, gas uint64, requireSuccess bool, providerConfig *config.Config) (result MultiCallResultWithInfo[T], err error) {
 	callOpts := &bind.CallOpts{}
 	if providerConfig != nil {
 		callOpts.BlockNumber = big.NewInt(int64(providerConfig.BlockNumber))
@@ -85,14 +88,44 @@ func (b *BaseMultiCallProvider[T]) MultiCall(chainId base_entities.ChainId, mult
 		BlockHash   common.Hash
 		ReturnData  []contracts.Multicall3Result
 	}{}
-	multiCall, err := b.core.GetMultiCallContract(chainId)
+	client, err := b.core.GetMultiCallContract(chainId)
 	if err != nil {
 		return result, err
 	}
-	err = multiCall.Call(callOpts, &[]any{&decodeResults}, "tryBlockAndAggregate", requireSuccess, calls)
+	method := "tryBlockAndAggregate"
+
+	// Pack the input, call and unpack the results
+	input, err := contracts.MultiCallABi.Pack(method, requireSuccess, calls)
 	if err != nil {
-		return
+		return result, err
 	}
+	var (
+		msg = ethereum.CallMsg{
+			From: common.Address{},
+			To:   &base_constant.MultiCallAddress,
+			Data: input,
+			Gas:  gas,
+		}
+	)
+	resp, err := client.CallContract(context.Background(), msg, callOpts.BlockNumber)
+	if err != nil {
+		return result, err
+	}
+	results := &[]any{&decodeResults}
+	if len(resp) == 0 {
+		// Make sure we have a contract to operate on, and bail out otherwise.
+		if code, err := client.CodeAt(context.Background(), base_constant.MultiCallAddress, callOpts.BlockNumber); err != nil {
+			return result, err
+		} else if len(code) == 0 {
+			return result, errors.New("error code")
+		}
+	}
+	res := *results
+	err = contracts.MultiCallABi.UnpackIntoInterface(res[0], method, resp)
+	if err != nil {
+		return result, err
+	}
+
 	result.BlockHash = decodeResults.BlockHash
 	result.BlockNumber = decodeResults.BlockNumber
 
@@ -115,5 +148,5 @@ func (b *BaseMultiCallProvider[T]) MultiCall(chainId base_entities.ChainId, mult
 }
 
 type MultiCallProviderCore interface {
-	GetMultiCallContract(chainId base_entities.ChainId) (*contracts.Multicall3Raw, error)
+	GetMultiCallContract(chainId base_entities.ChainId) (*ethclient.Client, error)
 }

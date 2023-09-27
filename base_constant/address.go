@@ -68,3 +68,7 @@ var (
 	ArbitrumTraderJoeRouter = common.HexToAddress("0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30")
 	ArbitrumTraderJoeQuoter = common.HexToAddress("0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30")
 )
+
+var (
+	MultiCallAddress = common.HexToAddress(MultiCall3Address)
+)

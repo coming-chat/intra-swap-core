@@ -2,7 +2,7 @@ package rpc
 
 import (
 	"github.com/coming-chat/intra-swap-core/base_entities"
-	"github.com/coming-chat/intra-swap-core/contracts"
+	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 type UniswapMultiCallProviderCore struct {
@@ -10,12 +10,8 @@ type UniswapMultiCallProviderCore struct {
 	GasLimitPerCall int64
 }
 
-func (u *UniswapMultiCallProviderCore) GetMultiCallContract(chainId base_entities.ChainId) (*contracts.Multicall3Raw, error) {
-	rpc, err := u.provider.GetEthRpc(chainId)
-	if err != nil {
-		return nil, err
-	}
-	return NewMultiCallV3(rpc)
+func (u *UniswapMultiCallProviderCore) GetMultiCallContract(chainId base_entities.ChainId) (*ethclient.Client, error) {
+	return u.provider.GetEthRpc(chainId)
 }
 
 func NewUniswapMultiCallProviderCore(provider Provider) (*UniswapMultiCallProviderCore, error) {

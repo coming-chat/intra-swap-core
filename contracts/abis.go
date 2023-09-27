@@ -29,4 +29,7 @@ var (
 
 	//Erc20
 	Erc20Abi, _ = Erc20MetaData.GetAbi()
+
+	//multicall
+	MultiCallABi, _ = Multicall3MetaData.GetAbi()
 )
