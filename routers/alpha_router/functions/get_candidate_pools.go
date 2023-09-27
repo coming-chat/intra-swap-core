@@ -9,8 +9,6 @@ import (
 	v3 "github.com/coming-chat/intra-swap-core/providers/v3"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/config"
 	"github.com/daoleno/uniswap-sdk-core/entities"
-	"github.com/daoleno/uniswapv3-sdk/constants"
-	"github.com/shopspring/decimal"
 	"sort"
 )
 
@@ -153,27 +151,27 @@ func GetV3CandidatePools(params V3GetCandidatePoolsParams) (
 	if len(top2DirectSwapPool) > params.RoutingConfig.V3PoolSelection.TopNDirectSwaps {
 		top2DirectSwapPool = top2DirectSwapPool[:params.RoutingConfig.V3PoolSelection.TopNDirectSwaps]
 	}
-	if len(top2DirectSwapPool) == 0 && params.RoutingConfig.V3PoolSelection.TopNDirectSwaps > 0 {
-		feeAmounts := []constants.FeeAmount{
-			constants.FeeHigh, constants.FeeMedium, constants.FeeLow, constants.FeeLowest,
-		}
-		//Fake pool
-		for _, v := range feeAmounts {
-			address, token0, token1, err := params.PoolProvider.GetPoolAddress(params.TokenIn, params.TokenOut, v)
-			if err != nil {
-				return nil, candidatePools, err
-			}
-			top2DirectSwapPool = append(top2DirectSwapPool, v3.IndexerPool{
-				Id:        address,
-				FeeTier:   v,
-				Liquidity: "10000",
-				Token0:    struct{ Id string }{Id: token0.Address.String()},
-				Token1:    struct{ Id string }{Id: token1.Address.String()},
-				TvlETH:    decimal.NewFromInt(10000),
-				TvlUSD:    decimal.NewFromInt(10000),
-			})
-		}
-	}
+	//if len(top2DirectSwapPool) == 0 && params.RoutingConfig.V3PoolSelection.TopNDirectSwaps > 0 {
+	//	feeAmounts := []constants.FeeAmount{
+	//		constants.FeeHigh, constants.FeeMedium, constants.FeeLow, constants.FeeLowest,
+	//	}
+	//	//Fake pool
+	//	for _, v := range feeAmounts {
+	//		address, token0, token1, err := params.PoolProvider.GetPoolAddress(params.TokenIn, params.TokenOut, v)
+	//		if err != nil {
+	//			return nil, candidatePools, err
+	//		}
+	//		top2DirectSwapPool = append(top2DirectSwapPool, v3.IndexerPool{
+	//			Id:        address,
+	//			FeeTier:   v,
+	//			Liquidity: "10000",
+	//			Token0:    struct{ Id string }{Id: token0.Address.String()},
+	//			Token1:    struct{ Id string }{Id: token1.Address.String()},
+	//			TvlETH:    decimal.NewFromInt(10000),
+	//			TvlUSD:    decimal.NewFromInt(10000),
+	//		})
+	//	}
+	//}
 	addToAddressSet(top2DirectSwapPool)
 	wrappedNativeToken, err := params.WNProvider.GetTokenByChain(params.ChainId)
 	if err != nil {
@@ -465,31 +463,31 @@ func GetV2CandidatePools(params V2GetCandidatePoolsParams) (
 	}
 
 	var topByDirectSwapPool []v2.IndexerPool
-	if params.RoutingConfig.V2PoolSelection.TopNDirectSwaps != 0 {
-		address, token0, token1, err := params.PoolProvider.GetPoolAddress(params.TokenIn, params.TokenOut)
-		if err != nil {
-			return nil, candidatePools, err
-
-		}
-		topByDirectSwapPool = []v2.IndexerPool{
-			{
-				Id: address,
-				Token0: struct {
-					Id string
-				}{
-					Id: token0.Address.String(),
-				},
-				Token1: struct {
-					Id string
-				}{
-					Id: token1.Address.String(),
-				},
-				Supply:  decimal.NewFromInt(10000), // Not used. Set to arbitrary number.
-				Reserve: decimal.NewFromInt(10000), // Not used. Set to arbitrary number.
-				Dex:     "pretend_direct",
-			},
-		}
-	}
+	//if params.RoutingConfig.V2PoolSelection.TopNDirectSwaps != 0 {
+	//	address, token0, token1, err := params.PoolProvider.GetPoolAddress(params.TokenIn, params.TokenOut)
+	//	if err != nil {
+	//		return nil, candidatePools, err
+	//
+	//	}
+	//	topByDirectSwapPool = []v2.IndexerPool{
+	//		{
+	//			Id: address,
+	//			Token0: struct {
+	//				Id string
+	//			}{
+	//				Id: token0.Address.String(),
+	//			},
+	//			Token1: struct {
+	//				Id string
+	//			}{
+	//				Id: token1.Address.String(),
+	//			},
+	//			Supply:  decimal.NewFromInt(10000), // Not used. Set to arbitrary number.
+	//			Reserve: decimal.NewFromInt(10000), // Not used. Set to arbitrary number.
+	//			Dex:     "pretend_direct",
+	//		},
+	//	}
+	//}
 	addToAddressSet(topByDirectSwapPool)
 
 	wrappedNativeToken, err := params.WNprovider.GetTokenByChain(params.ChainId)
