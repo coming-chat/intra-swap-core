@@ -43,18 +43,18 @@ func NewV2RouteWithValidQuote(param V2RouteWithValidQuoteParams) (*V2RouteWithVa
 		},
 		GasModel: param.GasModel,
 	}
-	gasEstimate, gasCostInToken, gasCostInUSD, err := v2rwvq.GasModel.EstimateGasCost(*v2rwvq)
-	if err != nil {
-		return nil, err
-	}
-	v2rwvq.GasCostInToken = gasCostInToken
-	v2rwvq.GasCostInUSD = gasCostInUSD
-	v2rwvq.GasEstimate = gasEstimate
+	//gasEstimate, gasCostInToken, gasCostInUSD, err := v2rwvq.GasModel.EstimateGasCost(*v2rwvq)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//v2rwvq.GasCostInToken = gasCostInToken
+	//v2rwvq.GasCostInUSD = gasCostInUSD
+	//v2rwvq.GasEstimate = gasEstimate
 
 	if v2rwvq.TradeType == entities.ExactInput {
-		v2rwvq.QuoteAdjustedForGas = v2rwvq.Quote.Subtract(gasCostInToken)
+		v2rwvq.QuoteAdjustedForGas = v2rwvq.Quote //.Subtract(gasCostInToken)
 	} else {
-		v2rwvq.QuoteAdjustedForGas = v2rwvq.Quote.Add(gasCostInToken)
+		v2rwvq.QuoteAdjustedForGas = v2rwvq.Quote //.Add(gasCostInToken)
 	}
 
 	return v2rwvq, nil
@@ -106,20 +106,20 @@ func NewV3RouteWithValidQuote(param V3RouteWithValidQuoteParams) (*V3RouteWithVa
 		GasModel:                    param.GasModel,
 	}
 
-	gasEstimate, gasCostInToken, gasCostInUSD, err := v3rwvq.GasModel.EstimateGasCost(*v3rwvq)
-	if err != nil {
-		return nil, err
-	}
+	//gasEstimate, gasCostInToken, gasCostInUSD, err := v3rwvq.GasModel.EstimateGasCost(*v3rwvq)
+	//if err != nil {
+	//	return nil, err
+	//}
 
-	v3rwvq.GasCostInToken = gasCostInToken
-	v3rwvq.GasCostInUSD = gasCostInUSD
-	v3rwvq.GasEstimate = gasEstimate
+	//v3rwvq.GasCostInToken = gasCostInToken
+	//v3rwvq.GasCostInUSD = gasCostInUSD
+	//v3rwvq.GasEstimate = gasEstimate
 
 	// If its exact out, we need to request *more* of the input token to account for the gas.
 	if v3rwvq.TradeType == entities.ExactInput {
-		v3rwvq.QuoteAdjustedForGas = v3rwvq.Quote.Subtract(gasCostInToken)
+		v3rwvq.QuoteAdjustedForGas = v3rwvq.Quote //.Subtract(gasCostInToken)
 	} else {
-		v3rwvq.QuoteAdjustedForGas = v3rwvq.Quote.Add(gasCostInToken)
+		v3rwvq.QuoteAdjustedForGas = v3rwvq.Quote //.Add(gasCostInToken)
 	}
 
 	return v3rwvq, nil

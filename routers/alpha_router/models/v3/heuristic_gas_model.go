@@ -11,7 +11,6 @@ import (
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/config"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/models"
 	"github.com/daoleno/uniswap-sdk-core/entities"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
 	"math/big"
 	"regexp"
@@ -48,151 +47,153 @@ func (h *HeuristicGasModelFactory) BuildGasModel(
 	poolProvider v3.PoolProvider,
 	token *entities.Token,
 ) (gasModel models.GasModel[models.V3RouteWithValidQuote], err error) {
-	usdPool, err := h.getHighestLiquidityUSDPool(
-		chainId,
-		poolProvider,
-	)
-	if err != nil {
-		return gasModel, err
-	}
-
-	nativeCurrency, err := h.wNProvider.GetTokenByChain(chainId)
-	if err != nil {
-		return gasModel, err
-	}
+	//usdPool, err := h.getHighestLiquidityUSDPool(
+	//	chainId,
+	//	poolProvider,
+	//)
+	//if err != nil {
+	//	return gasModel, err
+	//}
+	//
+	//nativeCurrency, err := h.wNProvider.GetTokenByChain(chainId)
+	//if err != nil {
+	//	return gasModel, err
+	//}
 
 	gasModel.CalculateL1GasFeesFn = func(routes []models.V3RouteWithValidQuote) (*models.L1ToL2GasCosts, error) {
-		swapOptions := config.SwapOptions{
-			Recipient:         common.HexToAddress("0x0000000000000000000000000000000000000001"),
-			Deadline:          big.NewInt(100),
-			SlippageTolerance: entities.NewPercent(big.NewInt(5), big.NewInt(10_000)),
-		}
-		var l1Used, l1FeeInWei *big.Int
-		switch chainId {
-		case base_constant.OPTIMISM, base_constant.OPTIMISTIC_KOVAN:
-			gasData, err := v3.GetOptimismL2GasData(h.multiCallProvider, h.gasPriceAddress)
-			if err != nil {
-				return nil, err
-			}
-			l1Used, l1FeeInWei, err = h.calculateOptimismToL1SecurityFee(routes, swapOptions, gasData)
-		case base_constant.ARBITRUM_ONE, base_constant.ARBITRUM_RINKEBY:
-			gasData, err := v3.GetArbitrumL2GasData(h.multiCallProvider, h.gasPriceAddress)
-			if err != nil {
-				return nil, err
-			}
-			l1Used, l1FeeInWei, err = h.calculateArbitrumToL1SecurityFee(routes, swapOptions, gasData)
-		default:
-			l1Used, l1FeeInWei = big.NewInt(0), big.NewInt(0)
-		}
-		if err != nil {
-			return nil, err
-		}
-		// wrap fee to native currency
-		costNativeCurrency := entities.FromRawAmount(nativeCurrency, l1FeeInWei)
-
-		// convert fee into usd
-		var nativeTokenPrice *entities.Price
-		if usdPool.Token0().Address == nativeCurrency.Address {
-			nativeTokenPrice = usdPool.Token0Price()
-		} else {
-			nativeTokenPrice = usdPool.Token1Price()
-		}
-
-		gasCostL1USD, err := nativeTokenPrice.Quote(costNativeCurrency)
-		if err != nil {
-			return nil, err
-		}
-		gasCostL1QuoteToken := costNativeCurrency
-		if !token.Equal(nativeCurrency) {
-			nativePool, err := h.getHighestLiquidityNativePool(chainId, token, poolProvider)
-			if err != nil {
-				gasCostL1QuoteToken = entities.FromRawAmount(token, big.NewInt(0))
-			}
-			var nativeTokenPrice *entities.Price
-			if nativePool.Token0().Address == nativeCurrency.Address {
-				nativeTokenPrice = nativePool.Token0Price()
-			} else {
-				nativeTokenPrice = nativePool.Token1Price()
-			}
-			gasCostL1QuoteToken, err = nativeTokenPrice.Quote(costNativeCurrency)
-			if err != nil {
-				return nil, err
-			}
-		}
-		return &models.L1ToL2GasCosts{
-			GasUsedL1:           l1Used,
-			GasCostL1USD:        gasCostL1USD,
-			GasCostL1QuoteToken: gasCostL1QuoteToken,
-		}, nil
+		//swapOptions := config.SwapOptions{
+		//	Recipient:         common.HexToAddress("0x0000000000000000000000000000000000000001"),
+		//	Deadline:          big.NewInt(100),
+		//	SlippageTolerance: entities.NewPercent(big.NewInt(5), big.NewInt(10_000)),
+		//}
+		//var l1Used, l1FeeInWei *big.Int
+		//switch chainId {
+		//case base_constant.OPTIMISM, base_constant.OPTIMISTIC_KOVAN:
+		//	gasData, err := v3.GetOptimismL2GasData(h.multiCallProvider, h.gasPriceAddress)
+		//	if err != nil {
+		//		return nil, err
+		//	}
+		//	l1Used, l1FeeInWei, err = h.calculateOptimismToL1SecurityFee(routes, swapOptions, gasData)
+		//case base_constant.ARBITRUM_ONE, base_constant.ARBITRUM_RINKEBY:
+		//	gasData, err := v3.GetArbitrumL2GasData(h.multiCallProvider, h.gasPriceAddress)
+		//	if err != nil {
+		//		return nil, err
+		//	}
+		//	l1Used, l1FeeInWei, err = h.calculateArbitrumToL1SecurityFee(routes, swapOptions, gasData)
+		//default:
+		//	l1Used, l1FeeInWei = big.NewInt(0), big.NewInt(0)
+		//}
+		//if err != nil {
+		//	return nil, err
+		//}
+		//// wrap fee to native currency
+		//costNativeCurrency := entities.FromRawAmount(nativeCurrency, l1FeeInWei)
+		//
+		//// convert fee into usd
+		//var nativeTokenPrice *entities.Price
+		//if usdPool.Token0().Address == nativeCurrency.Address {
+		//	nativeTokenPrice = usdPool.Token0Price()
+		//} else {
+		//	nativeTokenPrice = usdPool.Token1Price()
+		//}
+		//
+		//gasCostL1USD, err := nativeTokenPrice.Quote(costNativeCurrency)
+		//if err != nil {
+		//	return nil, err
+		//}
+		//gasCostL1QuoteToken := costNativeCurrency
+		//if !token.Equal(nativeCurrency) {
+		//	nativePool, err := h.getHighestLiquidityNativePool(chainId, token, poolProvider)
+		//	if err != nil {
+		//		gasCostL1QuoteToken = entities.FromRawAmount(token, big.NewInt(0))
+		//	}
+		//	var nativeTokenPrice *entities.Price
+		//	if nativePool.Token0().Address == nativeCurrency.Address {
+		//		nativeTokenPrice = nativePool.Token0Price()
+		//	} else {
+		//		nativeTokenPrice = nativePool.Token1Price()
+		//	}
+		//	gasCostL1QuoteToken, err = nativeTokenPrice.Quote(costNativeCurrency)
+		//	if err != nil {
+		//		return nil, err
+		//	}
+		//}
+		//return &models.L1ToL2GasCosts{
+		//	GasUsedL1:           l1Used,
+		//	GasCostL1USD:        gasCostL1USD,
+		//	GasCostL1QuoteToken: gasCostL1QuoteToken,
+		//}, nil
+		return nil, nil
 	}
 
-	if token.Equal(nativeCurrency) {
-		gasModel.EstimateGasCostFn = func(routeWithValidQuote models.V3RouteWithValidQuote) (
-			gasEstimate *big.Int,
-			gasCostInToken, gasCostInUSD *entities.CurrencyAmount,
-			err error,
-		) {
-			totalGasCostNativeCurrency, _, baseGasUse, err := h.estimateGas(routeWithValidQuote, gasPriceWei, chainId)
-			if err != nil {
-				return nil, nil, nil, err
-			}
-			var nativeTokenPrice *entities.Price
-			if usdPool.Token0().Address == nativeCurrency.Address {
-				nativeTokenPrice = usdPool.Token0Price()
-			} else {
-				nativeTokenPrice = usdPool.Token1Price()
-			}
-			gasCostInTermsOfUSD, err := nativeTokenPrice.Quote(totalGasCostNativeCurrency)
-			if err != nil {
-				return nil, nil, nil, err
-			}
-			return baseGasUse, totalGasCostNativeCurrency, gasCostInTermsOfUSD, nil
-		}
-		return gasModel, nil
-	}
+	//if token.Equal(nativeCurrency) {
+	//	gasModel.EstimateGasCostFn = func(routeWithValidQuote models.V3RouteWithValidQuote) (
+	//		gasEstimate *big.Int,
+	//		gasCostInToken, gasCostInUSD *entities.CurrencyAmount,
+	//		err error,
+	//	) {
+	//		totalGasCostNativeCurrency, _, baseGasUse, err := h.estimateGas(routeWithValidQuote, gasPriceWei, chainId)
+	//		if err != nil {
+	//			return nil, nil, nil, err
+	//		}
+	//		var nativeTokenPrice *entities.Price
+	//		if usdPool.Token0().Address == nativeCurrency.Address {
+	//			nativeTokenPrice = usdPool.Token0Price()
+	//		} else {
+	//			nativeTokenPrice = usdPool.Token1Price()
+	//		}
+	//		gasCostInTermsOfUSD, err := nativeTokenPrice.Quote(totalGasCostNativeCurrency)
+	//		if err != nil {
+	//			return nil, nil, nil, err
+	//		}
+	//		return baseGasUse, totalGasCostNativeCurrency, gasCostInTermsOfUSD, nil
+	//	}
+	//	return gasModel, nil
+	//}
 	// If the quote token is not in the native currency, we convert the gas cost to be in terms of the quote token.
 	// We do this by getting the highest liquidity <quoteToken>/<nativeCurrency> pool. eg. <quoteToken>/ETH pool.
 
-	var usdToken *entities.Token
-	if usdPool.Token0().Address == nativeCurrency.Address {
-		usdToken = usdPool.Token1()
-	} else {
-		usdToken = usdPool.Token0()
-	}
-
-	nativePool, _ := h.getHighestLiquidityNativePool(chainId, token, poolProvider)
+	//var usdToken *entities.Token
+	//if usdPool.Token0().Address == nativeCurrency.Address {
+	//	usdToken = usdPool.Token1()
+	//} else {
+	//	usdToken = usdPool.Token0()
+	//}
+	//
+	//nativePool, _ := h.getHighestLiquidityNativePool(chainId, token, poolProvider)
 
 	gasModel.EstimateGasCostFn = func(routeWithValidQuote models.V3RouteWithValidQuote) (gasEstimate *big.Int, gasCostInToken, gasCostInUSD *entities.CurrencyAmount, err error) {
-		totalGasCostNativeCurrency, _, baseGasUse, err := h.estimateGas(routeWithValidQuote, gasPriceWei, chainId)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		if nativePool == nil {
-			return baseGasUse, entities.FromRawAmount(token, big.NewInt(0)), entities.FromRawAmount(usdToken, big.NewInt(0)), nil
-		}
-
-		var nativeTokenPrice *entities.Price
-		if nativePool.Token0().Address == nativeCurrency.Address {
-			nativeTokenPrice = nativePool.Token0Price()
-		} else {
-			nativeTokenPrice = nativePool.Token1Price()
-		}
-		gasCostInTermsOfQuoteToken, err := nativeTokenPrice.Quote(totalGasCostNativeCurrency)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		var nativeTokenPriceUSDPool *entities.Price
-		if usdPool.Token0().Address == nativeCurrency.Address {
-			nativeTokenPriceUSDPool = usdPool.Token0Price()
-		} else {
-			nativeTokenPriceUSDPool = usdPool.Token1Price()
-		}
-		gasCostInTermsOfUSD, err := nativeTokenPriceUSDPool.Quote(totalGasCostNativeCurrency)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		return baseGasUse, gasCostInTermsOfQuoteToken, gasCostInTermsOfUSD, nil
+		//totalGasCostNativeCurrency, _, baseGasUse, err := h.estimateGas(routeWithValidQuote, gasPriceWei, chainId)
+		//if err != nil {
+		//	return nil, nil, nil, err
+		//}
+		//if nativePool == nil {
+		//	return baseGasUse, entities.FromRawAmount(token, big.NewInt(0)), entities.FromRawAmount(usdToken, big.NewInt(0)), nil
+		//}
+		//
+		//var nativeTokenPrice *entities.Price
+		//if nativePool.Token0().Address == nativeCurrency.Address {
+		//	nativeTokenPrice = nativePool.Token0Price()
+		//} else {
+		//	nativeTokenPrice = nativePool.Token1Price()
+		//}
+		//gasCostInTermsOfQuoteToken, err := nativeTokenPrice.Quote(totalGasCostNativeCurrency)
+		//if err != nil {
+		//	return nil, nil, nil, err
+		//}
+		//
+		//var nativeTokenPriceUSDPool *entities.Price
+		//if usdPool.Token0().Address == nativeCurrency.Address {
+		//	nativeTokenPriceUSDPool = usdPool.Token0Price()
+		//} else {
+		//	nativeTokenPriceUSDPool = usdPool.Token1Price()
+		//}
+		//gasCostInTermsOfUSD, err := nativeTokenPriceUSDPool.Quote(totalGasCostNativeCurrency)
+		//if err != nil {
+		//	return nil, nil, nil, err
+		//}
+		//return baseGasUse, gasCostInTermsOfQuoteToken, gasCostInTermsOfUSD, nil
+		return nil, nil, nil, nil
 	}
 	return
 }

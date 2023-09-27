@@ -280,7 +280,7 @@ func getBestSwapRouteBy(
 	)
 	for _, bs := range bestSwap {
 		bestSwapAllGas = append(bestSwapAllGas, bs.GetBaseRouteWithValidQuote().QuoteAdjustedForGas)
-		estimatedGasUsed = estimatedGasUsed.Add(estimatedGasUsed, bs.GetBaseRouteWithValidQuote().GasEstimate)
+		//estimatedGasUsed = estimatedGasUsed.Add(estimatedGasUsed, bs.GetBaseRouteWithValidQuote().GasEstimate)
 	}
 	quoteGasAdjusted := sumFn(bestSwapAllGas)
 
@@ -295,7 +295,7 @@ func getBestSwapRouteBy(
 		return nil, fmt.Errorf("could not find a USD token for computing gas costs on %d", chainId)
 	}
 	usdToken := token[0]
-	usdTokenDecimals := usdToken.Decimals()
+	//usdTokenDecimals := usdToken.Decimals()
 
 	// if on L2, calculate the L1 security fee
 	gasCostsL1ToL2 := &models.L1ToL2GasCosts{
@@ -321,46 +321,46 @@ func getBestSwapRouteBy(
 		if gasModel == nil || len(bsV3) != len(bestSwap) {
 			return nil, errors.New("can't compute L1 gas fees")
 		}
-		var err error
-		gasCostsL1ToL2, err = gasModel.CalculateL1GasFees(bsV3)
-		if err != nil {
-			return nil, err
-		}
+		//var err error
+		//gasCostsL1ToL2, err = gasModel.CalculateL1GasFees(bsV3)
+		//if err != nil {
+		//	return nil, err
+		//}
 
 	}
 
 	var (
-		estimatedGasUsedUSDs, gasCostInToken, quotes []*entities.CurrencyAmount
+		quotes []*entities.CurrencyAmount //estimatedGasUsedUSDs, gasCostInToken,
 	)
 	for _, v := range bestSwap {
-		gasCostInToken = append(gasCostInToken, v.GetBaseRouteWithValidQuote().GasCostInToken)
+		//gasCostInToken = append(gasCostInToken, v.GetBaseRouteWithValidQuote().GasCostInToken)
 		quotes = append(quotes, v.GetBaseRouteWithValidQuote().Quote)
-		decimalsDiff := usdTokenDecimals - v.GetBaseRouteWithValidQuote().GasCostInUSD.Currency.Decimals()
-		if decimalsDiff == 0 {
-			estimatedGasUsedUSDs = append(estimatedGasUsedUSDs, entities.FromRawAmount(usdToken, v.GetBaseRouteWithValidQuote().GasCostInUSD.Quotient()))
-			continue
-		}
-		estimatedGasUsedUSDs = append(estimatedGasUsedUSDs, entities.FromRawAmount(
-			usdToken,
-			new(big.Int).Mul(v.GetBaseRouteWithValidQuote().GasCostInUSD.Quotient(), new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimalsDiff)), nil)),
-		))
+		//decimalsDiff := usdTokenDecimals - v.GetBaseRouteWithValidQuote().GasCostInUSD.Currency.Decimals()
+		//if decimalsDiff == 0 {
+		//	estimatedGasUsedUSDs = append(estimatedGasUsedUSDs, entities.FromRawAmount(usdToken, v.GetBaseRouteWithValidQuote().GasCostInUSD.Quotient()))
+		//	continue
+		//}
+		//estimatedGasUsedUSDs = append(estimatedGasUsedUSDs, entities.FromRawAmount(
+		//	usdToken,
+		//	new(big.Int).Mul(v.GetBaseRouteWithValidQuote().GasCostInUSD.Quotient(), new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimalsDiff)), nil)),
+		//))
 	}
-	estimatedGasUsedUSD := sumFn(estimatedGasUsedUSDs)
-
-	// if they are different usd pools, convert to the usdToken
-	if estimatedGasUsedUSD.Currency != gasCostsL1ToL2.GasCostL1USD.Currency {
-		decimalsDiff := usdTokenDecimals - gasCostsL1ToL2.GasCostL1USD.Currency.Decimals()
-		estimatedGasUsedUSD = estimatedGasUsedUSD.Add(
-			entities.FromRawAmount(
-				usdToken,
-				new(big.Int).Mul(gasCostsL1ToL2.GasCostL1USD.Quotient(), new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimalsDiff)), nil)),
-			),
-		)
-	} else {
-		estimatedGasUsedUSD = estimatedGasUsedUSD.Add(gasCostsL1ToL2.GasCostL1USD)
-	}
-
-	estimatedGasUsedQuoteToken := sumFn(gasCostInToken).Add(gasCostsL1ToL2.GasCostL1QuoteToken)
+	//estimatedGasUsedUSD := sumFn(estimatedGasUsedUSDs)
+	//
+	//// if they are different usd pools, convert to the usdToken
+	//if estimatedGasUsedUSD.Currency != gasCostsL1ToL2.GasCostL1USD.Currency {
+	//	decimalsDiff := usdTokenDecimals - gasCostsL1ToL2.GasCostL1USD.Currency.Decimals()
+	//	estimatedGasUsedUSD = estimatedGasUsedUSD.Add(
+	//		entities.FromRawAmount(
+	//			usdToken,
+	//			new(big.Int).Mul(gasCostsL1ToL2.GasCostL1USD.Quotient(), new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimalsDiff)), nil)),
+	//		),
+	//	)
+	//} else {
+	//	estimatedGasUsedUSD = estimatedGasUsedUSD.Add(gasCostsL1ToL2.GasCostL1USD)
+	//}
+	//
+	//estimatedGasUsedQuoteToken := sumFn(gasCostInToken).Add(gasCostsL1ToL2.GasCostL1QuoteToken)
 	quote := sumFn(quotes)
 
 	// Adjust the quoteGasAdjusted for the l1 fee
@@ -375,12 +375,12 @@ func getBestSwapRouteBy(
 	})
 
 	return &BestRouteResult{
-		Quote:                      quote,
-		QuoteGasAdjusted:           quoteGasAdjusted,
-		EstimatedGasUsed:           estimatedGasUsed,
-		EstimatedGasUsedQuoteToken: estimatedGasUsedUSD,
-		EstimatedGasUsedUSD:        estimatedGasUsedQuoteToken,
-		Routes:                     bestSwap,
+		Quote:            quote,
+		QuoteGasAdjusted: quoteGasAdjusted,
+		EstimatedGasUsed: estimatedGasUsed,
+		//EstimatedGasUsedQuoteToken: estimatedGasUsedUSD,
+		//EstimatedGasUsedUSD:        estimatedGasUsedQuoteToken,
+		Routes: bestSwap,
 	}, nil
 }
 
