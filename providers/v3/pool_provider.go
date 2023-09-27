@@ -310,7 +310,6 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 			!liquidityResults.ReturnData[i].Success ||
 			slot0Results.ReturnData[i].Data.SqrtPriceX96.Cmp(big.NewInt(0)) == 0 ||
 			!tickInfoResult.ReturnData[tickInfoResultIndex].Success {
-			//TODO log err
 			continue
 		}
 		// create tick data provider
@@ -320,16 +319,23 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 		ticks[tickInfoResultIndex][1].LiquidityGross = tickInfoResult.ReturnData[tickInfoResultIndex].Data.LiquidityGross
 		p, err := entitiesV3.NewTickListDataProvider(ticks[tickInfoResultIndex], constants.TickSpacings[sortedPool[i].FeeAmount])
 		if err != nil {
-			//TODO log err
 			continue
+		}
+		sqrtPriceX96 := slot0Results.ReturnData[i].Data.SqrtPriceX96
+		liquidity := liquidityResults.ReturnData[i].Data
+		if sqrtPriceX96 == nil {
+			sqrtPriceX96 = big.NewInt(0)
+		}
+		if liquidity == nil {
+			liquidity = big.NewInt(0)
 		}
 
 		v3pool, err := entitiesV3.NewPool(
 			sortedPool[i].Token0,
 			sortedPool[i].Token1,
 			sortedPool[i].FeeAmount,
-			slot0Results.ReturnData[i].Data.SqrtPriceX96,
-			liquidityResults.ReturnData[i].Data,
+			sqrtPriceX96,
+			liquidity,
 			int(slot0Results.ReturnData[i].Data.Tick.Int64()),
 			p,
 		)
