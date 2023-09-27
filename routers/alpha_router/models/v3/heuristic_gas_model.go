@@ -246,6 +246,7 @@ func (h *HeuristicGasModelFactory) getHighestLiquidityUSDPool(
 			FeeAmount:      pool.FeeTier,
 			PairAddress:    pool.Id,
 			RouterAddress:  pool.RouterAddress,
+			QuoteAddress:   pool.QuoteAddress,
 			FactoryAddress: pool.FactoryAddress,
 		})
 	}
@@ -433,6 +434,7 @@ func (h *HeuristicGasModelFactory) getHighestLiquidityNativePool(
 			Token1:         token1,
 			FeeAmount:      pool.FeeTier,
 			PairAddress:    pool.Id,
+			QuoteAddress:   pool.QuoteAddress,
 			RouterAddress:  pool.RouterAddress,
 			FactoryAddress: pool.FactoryAddress,
 		})
