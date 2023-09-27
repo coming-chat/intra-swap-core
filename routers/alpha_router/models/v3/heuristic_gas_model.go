@@ -11,7 +11,6 @@ import (
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/config"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/models"
 	"github.com/daoleno/uniswap-sdk-core/entities"
-	"github.com/daoleno/uniswapv3-sdk/constants"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
 	"math/big"
@@ -23,12 +22,14 @@ import (
 // Cost for crossing an uninitialized tick.
 var costPerUninitTick = big.NewInt(0)
 
-func NewHeuristicGasModelFactory(baseProvider rpc.Provider, multiCallCore rpc.MultiCallProviderCore, gasPriceAddress string, wNProvider providers.WrappedNativeCurrencyProvider) *HeuristicGasModelFactory {
+func NewHeuristicGasModelFactory(baseProvider rpc.Provider, multiCallCore rpc.MultiCallProviderCore, gasPriceAddress string, poolIndexer v3.IndexerProvider, tokenProvider providers.TokenProvider, wNProvider providers.WrappedNativeCurrencyProvider) *HeuristicGasModelFactory {
 	return &HeuristicGasModelFactory{
 		provider:          baseProvider,
 		multiCallProvider: multiCallCore,
 		gasPriceAddress:   gasPriceAddress,
 		wNProvider:        wNProvider,
+		poolIndexer:       poolIndexer,
+		tokenProvider:     tokenProvider,
 	}
 }
 
@@ -37,6 +38,8 @@ type HeuristicGasModelFactory struct {
 	multiCallProvider rpc.MultiCallProviderCore
 	gasPriceAddress   string
 	wNProvider        providers.WrappedNativeCurrencyProvider
+	poolIndexer       v3.IndexerProvider
+	tokenProvider     providers.TokenProvider
 }
 
 func (h *HeuristicGasModelFactory) BuildGasModel(
@@ -206,39 +209,84 @@ func (h *HeuristicGasModelFactory) getHighestLiquidityUSDPool(
 	if err != nil {
 		return nil, err
 	}
-	var tokenPairs []v3.TokenPairs
-	feeAmounts := []constants.FeeAmount{
-		constants.FeeLowest,
-		constants.FeeLow,
-		constants.FeeMedium,
-		constants.FeeHigh,
+
+	indexPools, err := h.poolIndexer.GetPools(chainId, usdTokens[0], wrappedCurrency, nil)
+	if err != nil {
+		return nil, err
 	}
-	for _, f := range feeAmounts {
-		for _, u := range usdTokens {
-			tokenPairs = append(
-				tokenPairs,
-				v3.TokenPairs{
-					Token0:    wrappedCurrency,
-					Token1:    u,
-					FeeAmount: f,
-				},
-			)
+	var (
+		tokenAddresses    []string
+		tokenAddressesMap = make(map[string]struct{})
+	)
+	for _, pool := range indexPools {
+		if _, has := tokenAddressesMap[pool.Token0.Id]; !has {
+			tokenAddressesMap[pool.Token0.Id] = struct{}{}
+			tokenAddresses = append(tokenAddresses, pool.Token0.Id)
 		}
+		if _, has := tokenAddressesMap[pool.Token1.Id]; !has {
+			tokenAddressesMap[pool.Token1.Id] = struct{}{}
+			tokenAddresses = append(tokenAddresses, pool.Token1.Id)
+		}
+	}
+
+	var tokenPairs []v3.TokenPairs
+	tokenAccessor, err := h.tokenProvider.GetTokens(chainId, tokenAddresses, nil)
+	if err != nil {
+		return nil, err
+	}
+	for _, pool := range indexPools {
+		token0 := tokenAccessor.GetTokenByAddress(pool.Token0.Id)
+		token1 := tokenAccessor.GetTokenByAddress(pool.Token1.Id)
+		if token0 == nil || token1 == nil {
+			continue
+		}
+		tokenPairs = append(tokenPairs, v3.TokenPairs{
+			Token0:         token0,
+			Token1:         token1,
+			PairAddress:    pool.Id,
+			RouterAddress:  pool.RouterAddress,
+			FactoryAddress: pool.FactoryAddress,
+		})
 	}
 	poolAccessor, err := poolProvider.GetPools(tokenPairs, nil)
 	if err != nil {
 		return nil, err
 	}
-	var pools []*base_entities.V3Pool
-	for _, f := range feeAmounts {
-		for _, u := range usdTokens {
-			pool, err := poolAccessor.GetPool(wrappedCurrency, u, f)
-			if err != nil {
-				return nil, err
-			}
-			pools = append(pools, pool)
-		}
-	}
+	pools := poolAccessor.GetAllPools()
+
+	//var tokenPairs []v3.TokenPairs
+	//feeAmounts := []constants.FeeAmount{
+	//	constants.FeeLowest,
+	//	constants.FeeLow,
+	//	constants.FeeMedium,
+	//	constants.FeeHigh,
+	//}
+	//for _, f := range feeAmounts {
+	//	for _, u := range usdTokens {
+	//		tokenPairs = append(
+	//			tokenPairs,
+	//			v3.TokenPairs{
+	//				Token0:    wrappedCurrency,
+	//				Token1:    u,
+	//				FeeAmount: f,
+	//			},
+	//		)
+	//	}
+	//}
+	//poolAccessor, err := poolProvider.GetPools(tokenPairs, nil)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//var pools []*base_entities.V3Pool
+	//for _, f := range feeAmounts {
+	//	for _, u := range usdTokens {
+	//		pool, err := poolAccessor.GetPool(wrappedCurrency, u, f)
+	//		if err != nil {
+	//			return nil, err
+	//		}
+	//		pools = append(pools, pool)
+	//	}
+	//}
 	if len(pools) == 0 {
 		return nil, fmt.Errorf("can not found USD/%s pool for computing gas costs", wrappedCurrency.Symbol())
 	}
@@ -349,34 +397,83 @@ func (h *HeuristicGasModelFactory) getHighestLiquidityNativePool(
 		return nil, err
 	}
 
-	var (
-		nativePools []v3.TokenPairs
-		feeAmounts  = []constants.FeeAmount{
-			constants.FeeHigh,
-			constants.FeeMedium,
-			constants.FeeLow,
-		}
-	)
-	for _, v := range feeAmounts {
-		nativePools = append(nativePools, v3.TokenPairs{
-			Token0:    nativeCurrency,
-			Token1:    token,
-			FeeAmount: v,
-		})
-	}
-
-	poolAccessor, err := poolProvider.GetPools(nativePools, nil)
+	indexPools, err := h.poolIndexer.GetPools(chainId, token, nativeCurrency, nil)
 	if err != nil {
 		return nil, err
 	}
-	var pools []*base_entities.V3Pool
-	for _, f := range feeAmounts {
-		pool, err := poolAccessor.GetPool(nativeCurrency, token, f)
-		if err != nil {
-			return nil, err
+	var (
+		tokenAddresses    []string
+		tokenAddressesMap = make(map[string]struct{})
+	)
+	for _, pool := range indexPools {
+		if _, has := tokenAddressesMap[pool.Token0.Id]; !has {
+			tokenAddressesMap[pool.Token0.Id] = struct{}{}
+			tokenAddresses = append(tokenAddresses, pool.Token0.Id)
 		}
-		pools = append(pools, pool)
+		if _, has := tokenAddressesMap[pool.Token1.Id]; !has {
+			tokenAddressesMap[pool.Token1.Id] = struct{}{}
+			tokenAddresses = append(tokenAddresses, pool.Token1.Id)
+		}
 	}
+
+	var tokenPairs []v3.TokenPairs
+	tokenAccessor, err := h.tokenProvider.GetTokens(chainId, tokenAddresses, nil)
+	if err != nil {
+		return nil, err
+	}
+	for _, pool := range indexPools {
+		token0 := tokenAccessor.GetTokenByAddress(pool.Token0.Id)
+		token1 := tokenAccessor.GetTokenByAddress(pool.Token1.Id)
+		if token0 == nil || token1 == nil {
+			continue
+		}
+		tokenPairs = append(tokenPairs, v3.TokenPairs{
+			Token0:         token0,
+			Token1:         token1,
+			PairAddress:    pool.Id,
+			RouterAddress:  pool.RouterAddress,
+			FactoryAddress: pool.FactoryAddress,
+		})
+	}
+	poolAccessor, err := poolProvider.GetPools(tokenPairs, nil)
+	if err != nil {
+		return nil, err
+	}
+	pools := poolAccessor.GetAllPools()
+
+	//var (
+	//	nativePools []v3.TokenPairs
+	//	feeAmounts  = []constants.FeeAmount{
+	//		constants.FeeHigh,
+	//		constants.FeeMedium,
+	//		constants.FeeLow,
+	//	}
+	//)
+	//for _, v := range feeAmounts {
+	//	nativePools = append(nativePools, v3.TokenPairs{
+	//		Token0:    nativeCurrency,
+	//		Token1:    token,
+	//		FeeAmount: v,
+	//	})
+	//}
+	//nativePools = []v3.TokenPairs{
+	//	{
+	//		Token0: common.HexToAddress(""),
+	//	},
+	//}
+
+	//poolAccessor, err := poolProvider.GetPools(nativePools, nil)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//var pools []*base_entities.V3Pool
+	//for _, f := range feeAmounts {
+	//	pool, err := poolAccessor.GetPool(nativeCurrency, token, f)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	pools = append(pools, pool)
+	//}
 	if len(pools) == 0 {
 		return nil, fmt.Errorf("could not find a %s pool with %s for computing gas costs", nativeCurrency.Symbol(), token.Symbol())
 	}

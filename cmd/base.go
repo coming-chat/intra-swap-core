@@ -26,19 +26,21 @@ func Ready(chainId base_entities.ChainId, v2Dex, v3Dex string) (*alpha_router.Al
 		return nil, err
 	}
 	wNCProvider := &providers.BaseWrappedNativeCurrencyProvider{}
+	v3Indexer := v3.NewGeckoTerminalProvider(v3Dex)
+	tokenP := providers.NewBaseTokenProvider(uniswapMultiCallCore)
 	router := alpha_router.NewAlphaRouter(alpha_router.AlphaRouterParams{
 		ChainId:                       chainId,
 		Provider:                      rpcProvider,
 		MultiCall2ProviderCore:        uniswapMultiCallCore,
-		V3IndexerProvider:             v3.NewGeckoTerminalProvider(v3Dex),
+		V3IndexerProvider:             v3Indexer,
 		V3PoolProvider:                v3.NewBasePoolProvider(chainId, map[string]string{}, uniswapMultiCallCore, nil),
 		V3QuoteProvider:               v3.NewBaseQuoteProvider(context.TODO(), chainId, rpcProvider, uniswapMultiCallCore, nil, false, nil),
 		V2IndexerProvider:             v2.NewGeckoTerminalProvider(v2Dex),
 		V2PoolProvider:                v2.NewBasePoolProvider(chainId, map[string]string{}, uniswapMultiCallCore, nil),
 		V2QuoteProvider:               v2.NewBaseQuoteProvider(context.TODO(), chainId, rpcProvider, uniswapMultiCallCore, false, nil),
-		TokenProvider:                 providers.NewBaseTokenProvider(uniswapMultiCallCore),
+		TokenProvider:                 tokenP,
 		GasPriceProvider:              gas.NewBaseGasPriceProvider(context.TODO(), rpcProvider),
-		V3GasModelFactory:             gasModelsV3.NewHeuristicGasModelFactory(rpcProvider, uniswapMultiCallCore, "", wNCProvider),
+		V3GasModelFactory:             gasModelsV3.NewHeuristicGasModelFactory(rpcProvider, uniswapMultiCallCore, "", v3Indexer, tokenP, wNCProvider),
 		V2GasModelFactory:             gasModelsV2.NewHeuristicGasModelFactory(wNCProvider),
 		BlockedTokenListProvider:      nil,
 		WrappedNativeCurrencyProvider: wNCProvider,
