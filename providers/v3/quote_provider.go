@@ -148,12 +148,18 @@ func (b *BaseQuoteProvider) getQuotesManyDataOnline(
 	}
 
 	for i := 0; i < maxHop; i++ {
-		var multiCallParams []rpc.MultiCallSingleParam
+		var (
+			multiCallParams []rpc.MultiCallSingleParam
+			params          []struct {
+				routeIndex  int
+				amountIndex int
+			}
+		)
 		for ri, route := range routes {
 			if len(route.Pools) <= i {
 				continue
 			}
-			for _, a := range syncAmounts[ri] {
+			for ai, a := range syncAmounts[ri] {
 				if a.EqualTo(base_constant.ZeroFraction) {
 					continue
 				}
@@ -162,6 +168,10 @@ func (b *BaseQuoteProvider) getQuotesManyDataOnline(
 					return nil, 0, err
 				}
 				multiCallParams = append(multiCallParams, call)
+				params = append(params, struct {
+					routeIndex  int
+					amountIndex int
+				}{routeIndex: ri, amountIndex: ai})
 				if i == 0 {
 					result[ri].AmountQuotes = append(result[ri].AmountQuotes, AmountQuote{
 						Amount:      entities.FromRawAmount(a.Currency, a.Quotient()),
@@ -177,31 +187,45 @@ func (b *BaseQuoteProvider) getQuotesManyDataOnline(
 		if err != nil {
 			return nil, 0, err
 		}
-		callDataIndex := 0
-		for ri, route := range routes {
-			if len(route.Pools) <= i {
+		for pi, param := range params {
+			if !callResult.ReturnData[pi].Success {
+				result[param.routeIndex].AmountQuotes[param.amountIndex].Quote = big.NewInt(0)
+				syncAmounts[param.routeIndex][param.amountIndex] = entities.FromRawAmount(syncAmounts[param.routeIndex][param.amountIndex].Currency, result[param.routeIndex].AmountQuotes[param.amountIndex].Quote)
+				result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList = append(result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList, result[param.routeIndex].AmountQuotes[param.amountIndex].Quote)
 				continue
 			}
-			for ra, a := range syncAmounts[ri] {
-				if a.EqualTo(base_constant.ZeroFraction) {
-					continue
-				}
-				quoteData := callResult.ReturnData[callDataIndex]
-				if !quoteData.Success {
-					result[ri].AmountQuotes[ra].Quote = big.NewInt(0)
-					syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, result[ri].AmountQuotes[ra].Quote)
-					result[ri].AmountQuotes[ra].QuoteList = append(result[ri].AmountQuotes[ra].QuoteList, result[ri].AmountQuotes[ra].Quote)
-				} else {
-					syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, quoteData.Data.AmountOut)
-					result[ri].AmountQuotes[ra].Quote = quoteData.Data.AmountOut
-					result[ri].AmountQuotes[ra].QuoteList = append(result[ri].AmountQuotes[ra].QuoteList, quoteData.Data.AmountOut)
-					result[ri].AmountQuotes[ra].SqrtPriceX96AfterList = append(result[ri].AmountQuotes[ra].SqrtPriceX96AfterList, quoteData.Data.SqrtPriceX96AfterList...)
-					result[ri].AmountQuotes[ra].InitializedTicksCrossedList = append(result[ri].AmountQuotes[ra].InitializedTicksCrossedList, quoteData.Data.InitializedTicksCrossedList...)
-					result[ri].AmountQuotes[ra].GasEstimate.Add(result[ri].AmountQuotes[ra].GasEstimate, quoteData.Data.GasEstimate)
-				}
-				callDataIndex++
-			}
+			syncAmounts[param.routeIndex][param.amountIndex] = entities.FromRawAmount(syncAmounts[param.routeIndex][param.amountIndex].Currency, callResult.ReturnData[pi].Data.AmountOut)
+			result[param.routeIndex].AmountQuotes[param.amountIndex].Quote = callResult.ReturnData[pi].Data.AmountOut
+			result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList = append(result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList, callResult.ReturnData[pi].Data.AmountOut)
+			result[param.routeIndex].AmountQuotes[param.amountIndex].SqrtPriceX96AfterList = append(result[param.routeIndex].AmountQuotes[param.amountIndex].SqrtPriceX96AfterList, callResult.ReturnData[pi].Data.SqrtPriceX96AfterList...)
+			result[param.routeIndex].AmountQuotes[param.amountIndex].InitializedTicksCrossedList = append(result[param.routeIndex].AmountQuotes[param.amountIndex].InitializedTicksCrossedList, callResult.ReturnData[pi].Data.InitializedTicksCrossedList...)
+			result[param.routeIndex].AmountQuotes[param.amountIndex].GasEstimate.Add(result[param.routeIndex].AmountQuotes[param.amountIndex].GasEstimate, callResult.ReturnData[pi].Data.GasEstimate)
 		}
+		//callDataIndex := 0
+		//for ri, route := range routes {
+		//	if len(route.Pools) <= i {
+		//		continue
+		//	}
+		//	for ra, a := range syncAmounts[ri] {
+		//		if a.EqualTo(base_constant.ZeroFraction) {
+		//			continue
+		//		}
+		//		quoteData := callResult.ReturnData[callDataIndex]
+		//		if !quoteData.Success {
+		//			result[ri].AmountQuotes[ra].Quote = big.NewInt(0)
+		//			syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, result[ri].AmountQuotes[ra].Quote)
+		//			result[ri].AmountQuotes[ra].QuoteList = append(result[ri].AmountQuotes[ra].QuoteList, result[ri].AmountQuotes[ra].Quote)
+		//		} else {
+		//			syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, quoteData.Data.AmountOut)
+		//			result[ri].AmountQuotes[ra].Quote = quoteData.Data.AmountOut
+		//			result[ri].AmountQuotes[ra].QuoteList = append(result[ri].AmountQuotes[ra].QuoteList, quoteData.Data.AmountOut)
+		//			result[ri].AmountQuotes[ra].SqrtPriceX96AfterList = append(result[ri].AmountQuotes[ra].SqrtPriceX96AfterList, quoteData.Data.SqrtPriceX96AfterList...)
+		//			result[ri].AmountQuotes[ra].InitializedTicksCrossedList = append(result[ri].AmountQuotes[ra].InitializedTicksCrossedList, quoteData.Data.InitializedTicksCrossedList...)
+		//			result[ri].AmountQuotes[ra].GasEstimate.Add(result[ri].AmountQuotes[ra].GasEstimate, quoteData.Data.GasEstimate)
+		//		}
+		//		callDataIndex++
+		//	}
+		//}
 	}
 
 	return result, 0, nil

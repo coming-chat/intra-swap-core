@@ -99,12 +99,18 @@ func (b *BaseQuoteProvider) getQuotesOnline(amounts []*entities.CurrencyAmount,
 		copy(syncAmounts[i], amounts)
 	}
 	for i := 0; i < maxHop; i++ {
-		var multiCallParams []rpc.MultiCallSingleParam
+		var (
+			multiCallParams []rpc.MultiCallSingleParam
+			params          []struct {
+				routeIndex  int
+				amountIndex int
+			}
+		)
 		for ri, route := range routes {
 			if len(route.Pools) <= i {
 				continue
 			}
-			for _, a := range syncAmounts[ri] {
+			for ai, a := range syncAmounts[ri] {
 				if a.EqualTo(base_constant.ZeroFraction) {
 					continue
 				}
@@ -113,6 +119,10 @@ func (b *BaseQuoteProvider) getQuotesOnline(amounts []*entities.CurrencyAmount,
 					return nil, err
 				}
 				multiCallParams = append(multiCallParams, call)
+				params = append(params, struct {
+					routeIndex  int
+					amountIndex int
+				}{routeIndex: ri, amountIndex: ai})
 				if i == 0 {
 					result[ri].AmountQuotes = append(result[ri].AmountQuotes, AmountQuote{
 						Amount: entities.FromRawAmount(a.Currency, a.Quotient()),
@@ -127,28 +137,39 @@ func (b *BaseQuoteProvider) getQuotesOnline(amounts []*entities.CurrencyAmount,
 		if err != nil {
 			return nil, err
 		}
-		callDataIndex := 0
-		for ri, route := range routes {
-			if len(route.Pools) <= i {
+		for pi, param := range params {
+			if !callResult.ReturnData[pi].Success {
+				result[param.routeIndex].AmountQuotes[param.amountIndex].Quote = big.NewInt(0)
+				syncAmounts[param.routeIndex][param.amountIndex] = entities.FromRawAmount(syncAmounts[param.routeIndex][param.amountIndex].Currency, result[param.routeIndex].AmountQuotes[param.amountIndex].Quote)
+				result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList = append(result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList, result[param.routeIndex].AmountQuotes[param.amountIndex].Quote)
 				continue
 			}
-			for ra, a := range syncAmounts[ri] {
-				if a.EqualTo(base_constant.ZeroFraction) {
-					continue
-				}
-				quoteData := callResult.ReturnData[callDataIndex]
-				if !quoteData.Success {
-					result[ri].AmountQuotes[ra].Quote = big.NewInt(0)
-					result[ri].AmountQuotes[ra].QuoteList = append(result[ri].AmountQuotes[ra].QuoteList, result[ri].AmountQuotes[ra].Quote)
-					syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, result[ri].AmountQuotes[ra].Quote)
-				} else {
-					syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, quoteData.Data[len(quoteData.Data)-1])
-					result[ri].AmountQuotes[ra].QuoteList = append(result[ri].AmountQuotes[ra].QuoteList, quoteData.Data[len(quoteData.Data)-1])
-					result[ri].AmountQuotes[ra].Quote = quoteData.Data[len(quoteData.Data)-1]
-				}
-				callDataIndex++
-			}
+			syncAmounts[param.routeIndex][param.amountIndex] = entities.FromRawAmount(syncAmounts[param.routeIndex][param.amountIndex].Currency, callResult.ReturnData[pi].Data[len(callResult.ReturnData[pi].Data)-1])
+			result[param.routeIndex].AmountQuotes[param.amountIndex].Quote = callResult.ReturnData[pi].Data[len(callResult.ReturnData[pi].Data)-1]
+			result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList = append(result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList, callResult.ReturnData[pi].Data[len(callResult.ReturnData[pi].Data)-1])
 		}
+		//callDataIndex := 0
+		//for ri, route := range routes {
+		//	if len(route.Pools) <= i {
+		//		continue
+		//	}
+		//	for ra, a := range syncAmounts[ri] {
+		//		if a.EqualTo(base_constant.ZeroFraction) {
+		//			continue
+		//		}
+		//		quoteData := callResult.ReturnData[callDataIndex]
+		//		if !quoteData.Success {
+		//			result[ri].AmountQuotes[ra].Quote = big.NewInt(0)
+		//			result[ri].AmountQuotes[ra].QuoteList = append(result[ri].AmountQuotes[ra].QuoteList, result[ri].AmountQuotes[ra].Quote)
+		//			syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, result[ri].AmountQuotes[ra].Quote)
+		//		} else {
+		//			syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, quoteData.Data[len(quoteData.Data)-1])
+		//			result[ri].AmountQuotes[ra].QuoteList = append(result[ri].AmountQuotes[ra].QuoteList, quoteData.Data[len(quoteData.Data)-1])
+		//			result[ri].AmountQuotes[ra].Quote = quoteData.Data[len(quoteData.Data)-1]
+		//		}
+		//		callDataIndex++
+		//	}
+		//}
 	}
 
 	return result, nil
