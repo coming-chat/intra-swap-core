@@ -13,6 +13,7 @@ import (
 type AmountQuote struct {
 	Amount                      *entities.CurrencyAmount
 	Quote                       *big.Int
+	QuoteList                   []*big.Int
 	SqrtPriceX96AfterList       []*big.Int
 	InitializedTicksCrossedList []uint32
 	GasEstimate                 *big.Int
@@ -188,9 +189,12 @@ func (b *BaseQuoteProvider) getQuotesManyDataOnline(
 				quoteData := callResult.ReturnData[callDataIndex]
 				if !quoteData.Success {
 					result[ri].AmountQuotes[ra].Quote = big.NewInt(0)
+					syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, result[ri].AmountQuotes[ra].Quote)
+					result[ri].AmountQuotes[ra].QuoteList = append(result[ri].AmountQuotes[ra].QuoteList, result[ri].AmountQuotes[ra].Quote)
 				} else {
 					syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, quoteData.Data.AmountOut)
 					result[ri].AmountQuotes[ra].Quote = quoteData.Data.AmountOut
+					result[ri].AmountQuotes[ra].QuoteList = append(result[ri].AmountQuotes[ra].QuoteList, quoteData.Data.AmountOut)
 					result[ri].AmountQuotes[ra].SqrtPriceX96AfterList = append(result[ri].AmountQuotes[ra].SqrtPriceX96AfterList, quoteData.Data.SqrtPriceX96AfterList...)
 					result[ri].AmountQuotes[ra].InitializedTicksCrossedList = append(result[ri].AmountQuotes[ra].InitializedTicksCrossedList, quoteData.Data.InitializedTicksCrossedList...)
 					result[ri].AmountQuotes[ra].GasEstimate.Add(result[ri].AmountQuotes[ra].GasEstimate, quoteData.Data.GasEstimate)

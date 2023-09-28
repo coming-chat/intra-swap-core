@@ -594,6 +594,7 @@ func (a *AlphaRouter) getV3Quotes(
 				GasModel:                    gasModel,
 				QuoteToken:                  quoteToken,
 				TradeType:                   swapType,
+				QuoteList:                   amountQuote.QuoteList,
 			})
 			if err != nil {
 				return nil, err
@@ -709,6 +710,7 @@ func (a *AlphaRouter) getV2Quotes(
 				GasModel:   gasModel,
 				QuoteToken: quoteToken,
 				TradeType:  swapType,
+				QuoteList:  amountQuote.QuoteList,
 			})
 
 			if err != nil {

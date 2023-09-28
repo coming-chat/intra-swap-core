@@ -12,8 +12,9 @@ import (
 )
 
 type AmountQuote struct {
-	Amount *entities.CurrencyAmount
-	Quote  *big.Int
+	Amount    *entities.CurrencyAmount
+	Quote     *big.Int
+	QuoteList []*big.Int
 }
 
 type RouteWithQuotes struct {
@@ -138,8 +139,11 @@ func (b *BaseQuoteProvider) getQuotesOnline(amounts []*entities.CurrencyAmount,
 				quoteData := callResult.ReturnData[callDataIndex]
 				if !quoteData.Success {
 					result[ri].AmountQuotes[ra].Quote = big.NewInt(0)
+					result[ri].AmountQuotes[ra].QuoteList = append(result[ri].AmountQuotes[ra].QuoteList, result[ri].AmountQuotes[ra].Quote)
+					syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, result[ri].AmountQuotes[ra].Quote)
 				} else {
 					syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, quoteData.Data[len(quoteData.Data)-1])
+					result[ri].AmountQuotes[ra].QuoteList = append(result[ri].AmountQuotes[ra].QuoteList, quoteData.Data[len(quoteData.Data)-1])
 					result[ri].AmountQuotes[ra].Quote = quoteData.Data[len(quoteData.Data)-1]
 				}
 				callDataIndex++

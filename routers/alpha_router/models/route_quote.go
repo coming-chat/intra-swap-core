@@ -28,6 +28,7 @@ type V2RouteWithValidQuoteParams struct {
 	GasModel   GasModel[V2RouteWithValidQuote]
 	QuoteToken *entities.Token
 	TradeType  entities.TradeType
+	QuoteList  []*big.Int
 }
 
 func NewV2RouteWithValidQuote(param V2RouteWithValidQuoteParams) (*V2RouteWithValidQuote, error) {
@@ -40,6 +41,7 @@ func NewV2RouteWithValidQuote(param V2RouteWithValidQuoteParams) (*V2RouteWithVa
 			QuoteToken: param.QuoteToken,
 			TradeType:  param.TradeType,
 			Route:      param.Route,
+			QuoteList:  param.QuoteList,
 		},
 		GasModel: param.GasModel,
 	}
@@ -82,6 +84,7 @@ func (v V3RouteWithValidQuote) GetBaseRouteWithValidQuote() *routers.BaseRouteWi
 type V3RouteWithValidQuoteParams struct {
 	Amount                      *entities.CurrencyAmount
 	RawQuote                    *big.Int
+	QuoteList                   []*big.Int
 	SqrtPriceX96AfterList       []*big.Int
 	InitializedTicksCrossedList []uint32
 	QuoterGasEstimate           *big.Int
@@ -102,6 +105,7 @@ func NewV3RouteWithValidQuote(param V3RouteWithValidQuoteParams) (*V3RouteWithVa
 			QuoteToken: param.QuoteToken,
 			TradeType:  param.TradeType,
 			Route:      param.Route,
+			QuoteList:  param.QuoteList,
 		},
 		SqrtPriceX96AfterList:       param.SqrtPriceX96AfterList,
 		InitializedTicksCrossedList: param.InitializedTicksCrossedList,
