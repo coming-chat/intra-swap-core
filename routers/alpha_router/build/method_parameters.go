@@ -8,6 +8,7 @@ import (
 	"github.com/coming-chat/intra-swap-core/routers"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/config"
 	"github.com/daoleno/uniswap-sdk-core/entities"
+	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 )
 
@@ -89,12 +90,15 @@ func BuildOmniSwapMethodParameters(
 			swapData := omni_swap.LibSwapNormalizedSwapData{
 				CallTo:           pool.RouterAddress().Bytes(),
 				ApproveTo:        pool.RouterAddress().Bytes(),
-				SendingAssetId:   swap.Route.Path[i].Wrapped().Address.Bytes(),
+				SendingAssetId:   swap.Route.Path[i].Address.Bytes(),
 				ReceivingAssetId: swap.Route.Path[i+1].Wrapped().Address.Bytes(),
 			}
 			swapData.FromAmount = big.NewInt(0)
 			if i == 0 {
 				swapData.FromAmount = swap.InputAmount.Quotient()
+				if swap.InputAmount.Currency.IsNative() {
+					swapData.SendingAssetId = common.HexToAddress(base_constant.EtherAddress).Bytes()
+				}
 			}
 			swapData.CallData, err = packedCallData(chainId, trade, swap, i, swapConfig)
 			if err != nil {
