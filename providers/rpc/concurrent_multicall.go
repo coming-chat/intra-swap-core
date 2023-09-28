@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"errors"
+	"fmt"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"math"
 	"sync"
@@ -92,13 +93,24 @@ func ConcurrentMultiCall[T any](chainId base_entities.ChainId, core MultiCallPro
 		}(i)
 	}
 	syncGroup.Wait()
-	if totalSuccess.Load() == 0 {
-		return rInfo, errors.New("no success multicall req")
-	}
+	var multiErrs []error
 	for _, r := range successResults {
 		rInfo.ReturnData = append(rInfo.ReturnData, r.ReturnData...)
 		rInfo.BlockHash = r.BlockHash
 		rInfo.BlockNumber = r.BlockNumber
+		for _, rData := range r.ReturnData {
+			if rData.Success {
+				continue
+			}
+			multiErrs = append(multiErrs, rData.Err)
+		}
+	}
+
+	if totalSuccess.Load() == 0 {
+		allErrs := errors.Join(multiErrs...)
+		if allErrs != nil {
+			return rInfo, fmt.Errorf("all multicall failed with errors [%w]", allErrs)
+		}
 	}
 
 	if len(multiCallParams) != len(rInfo.ReturnData) {
