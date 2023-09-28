@@ -56,7 +56,7 @@ var (
 var (
 	//v3
 	ArbitrumUniswapV3Router = common.HexToAddress("0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45")
-	ArbitrumUniswapV3Quoter = common.HexToAddress("0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6")
+	ArbitrumUniswapV3Quoter = common.HexToAddress("0x61fFE014bA17989E743c5F6cB21bF9697530B21e")
 
 	//v2
 	ArbitrumCamelotRouter = common.HexToAddress("0xc873fEcbd354f5A56E00E710B90EF4201db2448d")
