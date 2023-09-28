@@ -51,6 +51,9 @@ func NewV2RouteWithValidQuote(param V2RouteWithValidQuoteParams) (*V2RouteWithVa
 	//v2rwvq.GasCostInUSD = gasCostInUSD
 	//v2rwvq.GasEstimate = gasEstimate
 
+	for _, pool := range param.Route.Pools {
+		v2rwvq.BaseRouteWithValidQuote.PoolAddresses = append(v2rwvq.PoolAddresses, pool.PoolAddress().String())
+	}
 	if v2rwvq.TradeType == entities.ExactInput {
 		v2rwvq.QuoteAdjustedForGas = v2rwvq.Quote //.Subtract(gasCostInToken)
 	} else {
@@ -110,7 +113,9 @@ func NewV3RouteWithValidQuote(param V3RouteWithValidQuoteParams) (*V3RouteWithVa
 	//if err != nil {
 	//	return nil, err
 	//}
-
+	for _, pool := range param.Route.Pools {
+		v3rwvq.BaseRouteWithValidQuote.PoolAddresses = append(v3rwvq.PoolAddresses, pool.PoolAddress().String())
+	}
 	//v3rwvq.GasCostInToken = gasCostInToken
 	//v3rwvq.GasCostInUSD = gasCostInUSD
 	//v3rwvq.GasEstimate = gasEstimate
