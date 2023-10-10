@@ -91,6 +91,41 @@ var WrappedNativeCurrency = map[base_entities.ChainId]*entities.Token{
 		"WETH",
 		"Wrapped Ether",
 	),
+	ZKSYNC_ERA: entities.NewToken(
+		ZKSYNC_ERA,
+		common.HexToAddress("0x000000000000000000000000000000000000800A"),
+		18,
+		"ETH",
+		"Ether",
+	),
+	ZKSYNC_ERA_TEST: entities.NewToken(
+		ZKSYNC_ERA_TEST,
+		common.HexToAddress("0x000000000000000000000000000000000000800A"),
+		18,
+		"ETH",
+		"Ether",
+	),
+}
+
+var UsdGasTokensByChain = map[base_entities.ChainId][]*entities.Token{
+	MAINNET:      {DAI_MAINNET, USDC_MAINNET, USDT_MAINNET},
+	RINKEBY:      {DAI_RINKEBY_1, DAI_RINKEBY_2},
+	ARBITRUM_ONE: {DAI_ARBITRUM, USDC_ARBITRUM, USDT_ARBITRUM},
+	OPTIMISM:     {DAI_OPTIMISM, USDC_OPTIMISM, USDT_OPTIMISM},
+	OPTIMISTIC_KOVAN: {
+		DAI_OPTIMISTIC_KOVAN,
+		USDC_OPTIMISTIC_KOVAN,
+		USDT_OPTIMISTIC_KOVAN,
+	},
+	ARBITRUM_RINKEBY: {DAI_ARBITRUM_RINKEBY, USDT_ARBITRUM_RINKEBY},
+	KOVAN:            {DAI_KOVAN, USDC_KOVAN, USDT_KOVAN},
+	GÖRLI:            {DAI_GÖRLI, USDC_GÖRLI, USDT_GÖRLI, WBTC_GÖRLI},
+	ROPSTEN:          {DAI_ROPSTEN, USDC_ROPSTEN, USDT_ROPSTEN},
+	POLYGON:          {USDC_POLYGON},
+	POLYGON_MUMBAI:   {DAI_POLYGON_MUMBAI},
+	BASE:             {USDC_BASE_MAINNET},
+	ZKSYNC_ERA:       {USDC_ZKSYNC_MAINNET},
+	ZKSYNC_ERA_TEST:  {USDC_ZKSYNC_TEST},
 }
 
 // Some well known tokens on each chain for seeding cache / testing.
@@ -479,4 +514,20 @@ var USDC_BASE_MAINNET = entities.NewToken(
 	6,
 	"USDbC",
 	"USD base Coin",
+)
+
+var USDC_ZKSYNC_MAINNET = entities.NewToken(
+	ZKSYNC_ERA,
+	common.HexToAddress("0x3355df6D4c9C3035724Fd0e3914dE96A5a83aaf4"),
+	6,
+	"USDC",
+	"USD Coin",
+)
+
+var USDC_ZKSYNC_TEST = entities.NewToken(
+	ZKSYNC_ERA_TEST,
+	common.HexToAddress("0x0faF6df7054946141266420b43783387A78d82A9"),
+	6,
+	"USDC",
+	"USD Coin",
 )
