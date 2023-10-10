@@ -16,6 +16,8 @@ const (
 	POLYGON_MUMBAI   base_entities.ChainId = 80001
 	BASE             base_entities.ChainId = 8453
 	BaseGoerli       base_entities.ChainId = 84531
+	ZksyncEra        base_entities.ChainId = 324
+	ZksyncEraTest    base_entities.ChainId = 280
 )
 
 var (
