@@ -26,6 +26,7 @@ func Ready(chainId base_entities.ChainId, v2Dex, v3Dex string) (*alpha_router.Al
 		return nil, err
 	}
 	wNCProvider := &providers.BaseWrappedNativeCurrencyProvider{}
+	usdGasToken := &providers.BaseUsdGasTokenProvider{}
 	v3Indexer := v3.NewGeckoTerminalProvider(v3Dex)
 	tokenP := providers.NewBaseTokenProvider(uniswapMultiCallCore)
 	router := alpha_router.NewAlphaRouter(alpha_router.AlphaRouterParams{
@@ -40,10 +41,11 @@ func Ready(chainId base_entities.ChainId, v2Dex, v3Dex string) (*alpha_router.Al
 		V2QuoteProvider:               v2.NewBaseQuoteProvider(context.TODO(), chainId, rpcProvider, uniswapMultiCallCore, false, nil),
 		TokenProvider:                 tokenP,
 		GasPriceProvider:              gas.NewBaseGasPriceProvider(context.TODO(), rpcProvider),
-		V3GasModelFactory:             gasModelsV3.NewHeuristicGasModelFactory(rpcProvider, uniswapMultiCallCore, "", v3Indexer, tokenP, wNCProvider),
-		V2GasModelFactory:             gasModelsV2.NewHeuristicGasModelFactory(wNCProvider),
+		V3GasModelFactory:             gasModelsV3.NewHeuristicGasModelFactory(rpcProvider, uniswapMultiCallCore, "", v3Indexer, tokenP, wNCProvider, usdGasToken),
+		V2GasModelFactory:             gasModelsV2.NewHeuristicGasModelFactory(wNCProvider, usdGasToken),
 		BlockedTokenListProvider:      nil,
 		WrappedNativeCurrencyProvider: wNCProvider,
+		UsdGasTokensProvider:          usdGasToken,
 	}, context.TODO())
 	return router, nil
 }

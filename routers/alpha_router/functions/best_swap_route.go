@@ -2,9 +2,9 @@ package functions
 
 import (
 	"errors"
-	"fmt"
 	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
+	"github.com/coming-chat/intra-swap-core/providers"
 	"github.com/coming-chat/intra-swap-core/routers"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/config"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/models"
@@ -30,6 +30,7 @@ func GetBestSwapRoute(
 	chainId base_entities.ChainId,
 	routingConfig config.AlphaRouterConfig,
 	gasModel *models.GasModel[models.V3RouteWithValidQuote],
+	usdGasTokens providers.UsdGasTokensProvider,
 ) (*BestRouteResult, error) {
 	percentToQuotes := make(map[int][]routers.RouteWithValidQuote)
 	for _, v := range routesWithValidQuotes {
@@ -45,6 +46,7 @@ func GetBestSwapRoute(
 		},
 		routingConfig,
 		gasModel,
+		usdGasTokens,
 	)
 	if err != nil {
 		return nil, err
@@ -70,6 +72,7 @@ func getBestSwapRouteBy(
 	by func(routeQuote routers.RouteWithValidQuote) *entities.CurrencyAmount,
 	routingConfig config.AlphaRouterConfig,
 	gasModel *models.GasModel[models.V3RouteWithValidQuote],
+	usdGasTokens providers.UsdGasTokensProvider,
 ) (*BestRouteResult, error) {
 	for _, v := range percentToQuotes {
 		sort.Slice(v, func(i, j int) bool {
@@ -287,12 +290,12 @@ func getBestSwapRouteBy(
 	// this calculates the base gas used
 	// if on L1, its the estimated gas used based on hops and ticks across all the routes
 	// if on L2, its the gas used on the L2 based on hops and ticks across all the routes
-	token, ok := base_constant.UsdGasTokensByChain[chainId]
-	if !ok || len(token) == 0 {
+	token, err := usdGasTokens.GetTokensByChain(chainId)
+	if err != nil {
 		// Each route can use a different stablecoin to account its gas costs.
 		// They should all be pegged, and this is just an estimate, so we do a merge
 		// to an arbitrary stable.
-		return nil, fmt.Errorf("could not find a USD token for computing gas costs on %d", chainId)
+		return nil, err
 	}
 	usdToken := token[0]
 	//usdTokenDecimals := usdToken.Decimals()

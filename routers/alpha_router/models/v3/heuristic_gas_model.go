@@ -3,7 +3,6 @@ package v3
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/providers"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
@@ -21,7 +20,15 @@ import (
 // Cost for crossing an uninitialized tick.
 var costPerUninitTick = big.NewInt(0)
 
-func NewHeuristicGasModelFactory(baseProvider rpc.Provider, multiCallCore rpc.MultiCallProviderCore, gasPriceAddress string, poolIndexer v3.IndexerProvider, tokenProvider providers.TokenProvider, wNProvider providers.WrappedNativeCurrencyProvider) *HeuristicGasModelFactory {
+func NewHeuristicGasModelFactory(
+	baseProvider rpc.Provider,
+	multiCallCore rpc.MultiCallProviderCore,
+	gasPriceAddress string,
+	poolIndexer v3.IndexerProvider,
+	tokenProvider providers.TokenProvider,
+	wNProvider providers.WrappedNativeCurrencyProvider,
+	usdGasTokens providers.UsdGasTokensProvider,
+) *HeuristicGasModelFactory {
 	return &HeuristicGasModelFactory{
 		provider:          baseProvider,
 		multiCallProvider: multiCallCore,
@@ -29,6 +36,7 @@ func NewHeuristicGasModelFactory(baseProvider rpc.Provider, multiCallCore rpc.Mu
 		wNProvider:        wNProvider,
 		poolIndexer:       poolIndexer,
 		tokenProvider:     tokenProvider,
+		usdGasTokens:      usdGasTokens,
 	}
 }
 
@@ -37,6 +45,7 @@ type HeuristicGasModelFactory struct {
 	multiCallProvider rpc.MultiCallProviderCore
 	gasPriceAddress   string
 	wNProvider        providers.WrappedNativeCurrencyProvider
+	usdGasTokens      providers.UsdGasTokensProvider
 	poolIndexer       v3.IndexerProvider
 	tokenProvider     providers.TokenProvider
 }
@@ -202,9 +211,9 @@ func (h *HeuristicGasModelFactory) getHighestLiquidityUSDPool(
 	chainId base_entities.ChainId,
 	poolProvider v3.PoolProvider,
 ) (*base_entities.V3Pool, error) {
-	usdTokens, ok := base_constant.UsdGasTokensByChain[chainId]
-	if !ok {
-		return nil, fmt.Errorf("could not find a USD token for computing gas costs on %d", chainId)
+	usdTokens, err := h.usdGasTokens.GetTokensByChain(chainId)
+	if err != nil {
+		return nil, err
 	}
 	wrappedCurrency, err := h.wNProvider.GetTokenByChain(chainId)
 	if err != nil {

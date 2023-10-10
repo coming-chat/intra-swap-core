@@ -21,14 +21,16 @@ var (
 	costPerExtraHop = big.NewInt(20000)
 )
 
-func NewHeuristicGasModelFactory(wNProvider providers.WrappedNativeCurrencyProvider) *HeuristicGasModelFactory {
+func NewHeuristicGasModelFactory(wNProvider providers.WrappedNativeCurrencyProvider, usdGasTokens providers.UsdGasTokensProvider) *HeuristicGasModelFactory {
 	return &HeuristicGasModelFactory{
-		wNProvider: wNProvider,
+		wNProvider:   wNProvider,
+		usdGasTokens: usdGasTokens,
 	}
 }
 
 type HeuristicGasModelFactory struct {
-	wNProvider providers.WrappedNativeCurrencyProvider
+	wNProvider   providers.WrappedNativeCurrencyProvider
+	usdGasTokens providers.UsdGasTokensProvider
 }
 
 func (h *HeuristicGasModelFactory) BuildGasModel(
@@ -172,10 +174,10 @@ func (h *HeuristicGasModelFactory) getHighestLiquidityUSDPool(
 	chainId base_entities.ChainId,
 	poolProvider v2.PoolProvider,
 ) (*base_entities.V2Pool, error) {
-	usdTokens, ok := base_constant.UsdGasTokensByChain[chainId]
+	usdTokens, err := h.usdGasTokens.GetTokensByChain(chainId)
 
-	if !ok {
-		return nil, fmt.Errorf("could not find a USD token for computing gas costs on chain_id[%d]", chainId)
+	if err != nil {
+		return nil, err
 	}
 
 	wrappedNativeToken, err := h.wNProvider.GetTokenByChain(chainId)

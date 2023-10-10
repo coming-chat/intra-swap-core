@@ -95,6 +95,8 @@ type AlphaRouterParams struct {
 
 	WrappedNativeCurrencyProvider providers.WrappedNativeCurrencyProvider
 
+	UsdGasTokensProvider providers.UsdGasTokensProvider
+
 	/**
 	 * Calls lens function on SwapRouter02 to determine ERC20 approval types for
 	 * LP position tokens.
@@ -134,6 +136,7 @@ func NewAlphaRouter(params AlphaRouterParams, ctx context.Context) *AlphaRouter 
 		V2GasModelFactory:             params.V2GasModelFactory,
 		BlockedTokenListProvider:      params.BlockedTokenListProvider,
 		WrappedNativeCurrencyProvider: params.WrappedNativeCurrencyProvider,
+		UsdGasTokensProvider:          params.UsdGasTokensProvider,
 		Ctx:                           ctx,
 		log:                           logrus.WithField("Router", "AlphaRouter"),
 	}
@@ -158,6 +161,7 @@ type AlphaRouter struct {
 	//TokenValidatorProvider   TokenValidatorProvider
 	BlockedTokenListProvider      providers.TokenListProvider
 	WrappedNativeCurrencyProvider providers.WrappedNativeCurrencyProvider
+	UsdGasTokensProvider          providers.UsdGasTokensProvider
 	Ctx                           context.Context
 	log                           *logrus.Entry
 }
@@ -293,6 +297,7 @@ func (a *AlphaRouter) Route(
 		a.ChainId,
 		routingConfig,
 		&gasModel,
+		a.UsdGasTokensProvider,
 	)
 	if err != nil {
 		return nil, err
