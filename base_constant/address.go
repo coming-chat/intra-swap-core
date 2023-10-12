@@ -1,6 +1,7 @@
 package base_constant
 
 import (
+	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -8,8 +9,6 @@ const (
 	EtherAddress       = "0x0000000000000000000000000000000000000000"
 	OvmGasPriceAddress = "0x420000000000000000000000000000000000000F"
 	ArbGasInfoAddress  = "0x000000000000000000000000000000000000006C"
-
-	MultiCall3Address = "0xcA11bde05977b3631167028862bE2a173976CA11"
 )
 
 // BASE Chain
@@ -70,5 +69,26 @@ var (
 )
 
 var (
-	MultiCallAddress = common.HexToAddress(MultiCall3Address)
+	ZkSyncMuteRouter = common.HexToAddress("0x8B791913eB07C32779a16750e3868aA8495F5964")
+	ZkSyncMuteQuoter = common.HexToAddress("0x8B791913eB07C32779a16750e3868aA8495F5964")
+
+	ZkSyncMaverickRouter = common.HexToAddress("0x39E098A153Ad69834a9Dac32f0FCa92066aD03f4")
+	ZkSyncMaverickQuoter = common.HexToAddress("0x57D47F505EdaA8Ae1eFD807A860A79A28bE06449")
+
+	ZkSynciZiSwapRouter = common.HexToAddress("0x943ac2310D9BC703d6AB5e5e76876e212100f894")
+	ZkSynciZiSwapQuoter = common.HexToAddress("0x30C089574551516e5F1169C32C6D429C92bf3CD7")
 )
+
+var (
+	defaultMultiCallAddr   = common.HexToAddress("0xcA11bde05977b3631167028862bE2a173976CA11")
+	zksyncEraMultiCallAddr = common.HexToAddress("0xF9cda624FBC7e059355ce98a31693d299FACd963")
+)
+
+func MultiCallAddress(chainId base_entities.ChainId) *common.Address {
+	switch chainId {
+	case ZKSYNC_ERA:
+		return &zksyncEraMultiCallAddr
+	default:
+		return &defaultMultiCallAddr
+	}
+}

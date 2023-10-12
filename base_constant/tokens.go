@@ -93,10 +93,10 @@ var WrappedNativeCurrency = map[base_entities.ChainId]*entities.Token{
 	),
 	ZKSYNC_ERA: entities.NewToken(
 		ZKSYNC_ERA,
-		common.HexToAddress("0x000000000000000000000000000000000000800A"),
+		common.HexToAddress("0x5AEa5775959fBC2557Cc8789bC1bf90A239D9a91"),
 		18,
-		"ETH",
-		"Ether",
+		"WETH",
+		"Wrapped Ether",
 	),
 	ZKSYNC_ERA_TEST: entities.NewToken(
 		ZKSYNC_ERA_TEST,
