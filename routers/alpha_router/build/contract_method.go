@@ -66,16 +66,6 @@ func baseUniswapV2(
 	return
 }
 
-//func baseUniswapV3[exactInput any, exactOutput any](
-//	tradeType entities.TradeType,
-//	tokenIn, tokenOut *entities.Token,
-//	pool *base_entities.V3Pool,
-//	amountIn, amountOut *big.Int,
-//	swapConfig config.SwapOptions,
-//) (callData []byte, err error) {
-//
-//}
-
 func iSwapRouter02(
 	tradeType entities.TradeType,
 	tokenIn, tokenOut *entities.Token,
@@ -253,57 +243,28 @@ func iVelodromeRouter(
 	return
 }
 
-func iLBRouter(
+func iMuteRouter(
 	tradeType entities.TradeType,
 	tokenIn, tokenOut *entities.Token,
 	amountIn, amountOut *entities.CurrencyAmount,
+	pool base_entities.Pool,
 	swapConfig config.SwapOptions,
 ) (callData []byte, err error) {
-	if tokenIn.IsNative() && tokenOut.IsNative() {
-		return nil, router.ErrEtherInOut
+	method, args, err := baseUniswapV2(tradeType, tokenIn, tokenOut, amountIn, amountOut, swapConfig)
+	if err != nil {
+		return nil, err
 	}
-	path := []common.Address{tokenIn.Address, tokenOut.Address}
-
-	deadline := swapConfig.Deadline
-	if swapConfig.Deadline == nil {
-		deadline = big.NewInt(time.Now().Add(5 * time.Minute).Unix())
-	}
-	var (
-		args       []any
-		methodName string
-	)
-	switch tradeType {
-	case entities.ExactInput:
-		if amountIn.Currency.IsNative() {
-			args = []any{amountOut.Quotient(), path, swapConfig.Recipient, deadline}
-			methodName = "swapExactETHForTokens"
-			// TODO handle the FeeOnTransfer
-			//methodName = "swapExactETHForTokensSupportingFeeOnTransferTokens"
-		} else if amountOut.Currency.IsNative() {
-			// TODO handle the FeeOnTransfer
-			args = []any{amountIn.Quotient(), amountOut.Quotient(), path, swapConfig.Recipient, deadline}
-			methodName = "swapExactTokensForETH"
-			//methodName = "swapExactTokensForETHSupportingFeeOnTransferTokens"
-		} else {
-			args = []any{amountIn.Quotient(), amountOut.Quotient(), path, swapConfig.Recipient, deadline}
-			methodName = "swapExactTokensForTokens"
-			// TODO handle the FeeOnTransfer
-			//methodName = "swapExactTokensForTokensSupportingFeeOnTransferTokens"
-		}
-	case entities.ExactOutput:
-		if amountIn.Currency.IsNative() {
-			methodName = "swapETHForExactTokens"
-			args = []any{amountOut.Quotient(), path, swapConfig.Recipient, deadline}
-		} else if amountOut.Currency.IsNative() {
-			methodName = "swapTokensForExactETH"
-			args = []any{amountOut.Quotient(), amountIn.Quotient(), path, swapConfig.Recipient, deadline}
-		} else {
-			methodName = "swapTokensForExactTokens"
-			args = []any{amountOut.Quotient(), amountIn.Quotient(), path, swapConfig.Recipient, deadline}
-		}
-	default:
-		return nil, errors.New("unsupported tradeType")
-	}
-	callData, err = contracts.ILBRouterAbi.Pack(methodName, args...)
-	return
+	args = append(args, []bool{pool.Stable()})
+	return contracts.IMuteRouterAbi.Pack(method, args)
 }
+
+//
+//func iiZiSwapPool(
+//	tradeType entities.TradeType,
+//	tokenIn, tokenOut *entities.Token,
+//	amountIn, amountOut *entities.CurrencyAmount,
+//	pool base_entities.Pool,
+//	swapConfig config.SwapOptions,
+//) (callData []byte, err error) {
+//	contracts.IiZiSwapPoolAbi.Pack()
+//}

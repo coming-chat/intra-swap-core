@@ -153,7 +153,8 @@ func packedCallData(
 			swapConfig,
 		)
 	case base_constant.BaseSwapBasedV3Router,
-		base_constant.BaseSushiswapV3Router:
+		base_constant.BaseSushiswapV3Router,
+		base_constant.ZkSyncMaverickRouter:
 		return iSwapRouter(
 			trade.TradeType,
 			swap.Route.Path[poolIndex],
@@ -188,6 +189,16 @@ func packedCallData(
 		)
 	case base_constant.OptimismVelodromeV2Router:
 		return iVelodromeRouter(
+			trade.TradeType,
+			swap.Route.Path[poolIndex],
+			swap.Route.Path[poolIndex+1],
+			amountIn,
+			amountOut,
+			swap.Route.Pools[poolIndex],
+			swapConfig,
+		)
+	case base_constant.ZkSyncMuteRouter:
+		return iMuteRouter(
 			trade.TradeType,
 			swap.Route.Path[poolIndex],
 			swap.Route.Path[poolIndex+1],
