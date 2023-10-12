@@ -44,7 +44,8 @@ func QuoteMultiCall(
 	case base_constant.BaseUniswapV3Quoter,
 		base_constant.BaseSushiswapV3Quoter,
 		base_constant.OptimismUniswapV3Quoter,
-		base_constant.ArbitrumUniswapV3Quoter:
+		base_constant.ArbitrumUniswapV3Quoter,
+		base_constant.PolygonUniswapV3Quoter:
 		param.Contract = contracts.IQuoterV2Abi
 		param.CallResult.Data = BaseUniswapV3QuoteData{}
 	case base_constant.BaseSwapBasedV3Quoter:
@@ -74,7 +75,9 @@ func QuoteMultiCall(
 			},
 		}
 		param.CallResult.Data = IiZiSwapQuote{}
-
+	case base_constant.PolygonQuickSwapV3Quoter:
+		param.Contract = contracts.IQuickQuoterAbi
+		param.CallResult.Data = QuickSwapQuoteData{}
 	default:
 		return rpc.MultiCallSingle[providers.QuoteResult]{}, errors.New("unsupported quote")
 	}
@@ -107,4 +110,13 @@ type IiZiSwapQuote struct {
 
 func (i IiZiSwapQuote) QuoteAmount() *big.Int {
 	return i.Acquire
+}
+
+type QuickSwapQuoteData struct {
+	AmountOut *big.Int
+	Fees      []uint16
+}
+
+func (q QuickSwapQuoteData) QuoteAmount() *big.Int {
+	return q.AmountOut
 }

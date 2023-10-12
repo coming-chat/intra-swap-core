@@ -8,24 +8,34 @@ import (
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/config"
 	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/daoleno/uniswap-sdk-core/entities"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/vaulverin/uniswapv2-sdk/router"
 	"math/big"
 	"time"
 )
 
-type contractMethod func(trade *base_entities.MTrade, swapIndex int, amountIn, amountOut *big.Int, swapConfig config.SwapOptions) (callData []byte, err error)
+type packMethod func(
+	tradeType entities.TradeType,
+	tokenIn, tokenOut *entities.Token,
+	amountIn, amountOut *entities.CurrencyAmount,
+	pool base_entities.Pool,
+	swapConfig config.SwapOptions,
+) (callData []byte, err error)
 
 func baseUniswapV2(
 	tradeType entities.TradeType,
 	tokenIn, tokenOut *entities.Token,
 	amountIn, amountOut *entities.CurrencyAmount,
+	pool base_entities.Pool,
 	swapConfig config.SwapOptions,
+	withStable bool,
 ) (methodName string, args []any, err error) {
 	if tokenIn.IsNative() && tokenOut.IsNative() {
 		return "", nil, router.ErrEtherInOut
 	}
-	path := []common.Address{tokenIn.Address, tokenOut.Address}
+	path := []any{tokenIn.Address, tokenOut.Address}
+	if withStable {
+		path = append(path, pool.Stable())
+	}
 
 	deadline := swapConfig.Deadline
 	if swapConfig.Deadline == nil {
@@ -69,8 +79,8 @@ func baseUniswapV2(
 func iSwapRouter02(
 	tradeType entities.TradeType,
 	tokenIn, tokenOut *entities.Token,
-	pool *base_entities.V3Pool,
 	amountIn, amountOut *entities.CurrencyAmount,
+	pool base_entities.Pool,
 	swapConfig config.SwapOptions,
 ) (callData []byte, err error) {
 	path, err := util.EncodeRouteToPath([]base_entities.Pool{pool}, tokenIn, tradeType == entities.ExactOutput)
@@ -103,8 +113,8 @@ func iSwapRouter02(
 func iSwapRouter(
 	tradeType entities.TradeType,
 	tokenIn, tokenOut *entities.Token,
-	pool *base_entities.V3Pool,
 	amountIn, amountOut *entities.CurrencyAmount,
+	pool base_entities.Pool,
 	swapConfig config.SwapOptions,
 ) (callData []byte, err error) {
 	path, err := util.EncodeRouteToPath([]base_entities.Pool{pool}, tokenIn, tradeType == entities.ExactOutput)
@@ -138,9 +148,10 @@ func iUniswapV2Router02(
 	tradeType entities.TradeType,
 	tokenIn, tokenOut *entities.Token,
 	amountIn, amountOut *entities.CurrencyAmount,
+	pool base_entities.Pool,
 	swapConfig config.SwapOptions,
 ) (callData []byte, err error) {
-	methodName, args, err := baseUniswapV2(tradeType, tokenIn, tokenOut, amountIn, amountOut, swapConfig)
+	methodName, args, err := baseUniswapV2(tradeType, tokenIn, tokenOut, amountIn, amountOut, pool, swapConfig, false)
 	if err != nil {
 		return nil, err
 	}
@@ -250,12 +261,62 @@ func iMuteRouter(
 	pool base_entities.Pool,
 	swapConfig config.SwapOptions,
 ) (callData []byte, err error) {
-	method, args, err := baseUniswapV2(tradeType, tokenIn, tokenOut, amountIn, amountOut, swapConfig)
+	method, args, err := baseUniswapV2(tradeType, tokenIn, tokenOut, amountIn, amountOut, pool, swapConfig, true)
 	if err != nil {
 		return nil, err
 	}
-	args = append(args, []bool{pool.Stable()})
 	return contracts.IMuteRouterAbi.Pack(method, args)
+}
+
+func iQuickSwapRouter(
+	tradeType entities.TradeType,
+	tokenIn, tokenOut *entities.Token,
+	amountIn, amountOut *entities.CurrencyAmount,
+	pool base_entities.Pool,
+	swapConfig config.SwapOptions,
+) (callData []byte, err error) {
+	path, err := util.EncodeRouteToPath([]base_entities.Pool{pool}, tokenIn, tradeType == entities.ExactOutput)
+	if err != nil {
+		return nil, err
+	}
+	switch tradeType {
+	case entities.ExactInput:
+		callData, err = contracts.IQuickSwapRouterAbi.Pack("exactInput", omni_swap.IQuickSwapRouterExactInputParams{
+			Path:             path,
+			Recipient:        swapConfig.Recipient,
+			AmountIn:         amountIn.Quotient(),
+			AmountOutMinimum: amountOut.Quotient(),
+			Deadline:         swapConfig.Deadline,
+		})
+	case entities.ExactOutput:
+		callData, err = contracts.ISwapRouterAbi.Pack("exactOutput", omni_swap.IQuickSwapRouterExactOutputParams{
+			Path:            path,
+			Recipient:       swapConfig.Recipient,
+			AmountInMaximum: amountIn.Quotient(),
+			AmountOut:       amountOut.Quotient(),
+			Deadline:        swapConfig.Deadline,
+		})
+	default:
+		return nil, errors.New("unsupported tradeType")
+	}
+	return
+}
+
+func iPearlRouter(
+	tradeType entities.TradeType,
+	tokenIn, tokenOut *entities.Token,
+	amountIn, amountOut *entities.CurrencyAmount,
+	pool base_entities.Pool,
+	swapConfig config.SwapOptions,
+) (callData []byte, err error) {
+	if tradeType == entities.ExactOutput {
+		return nil, errors.New("dex contract not support exactOutput")
+	}
+	method, args, err := baseUniswapV2(tradeType, tokenIn, tokenOut, amountIn, amountOut, pool, swapConfig, true)
+	if err != nil {
+		return nil, err
+	}
+	return contracts.IPearlRouterAbi.Pack(method, args...)
 }
 
 //

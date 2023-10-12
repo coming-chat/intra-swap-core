@@ -1,7 +1,6 @@
 package build
 
 import (
-	"fmt"
 	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/contracts/omni_swap"
@@ -139,78 +138,44 @@ func packedCallData(
 			amountOut = swap.InputAmount
 		}
 	}
-	switch swap.Route.Pools[poolIndex].RouterAddress() {
+	return packFuncSelector(swap.Route.Pools[poolIndex].RouterAddress())(trade.TradeType,
+		swap.Route.Path[poolIndex],
+		swap.Route.Path[poolIndex+1],
+		amountIn,
+		amountOut,
+		swap.Route.Pools[poolIndex],
+		swapConfig)
+}
+
+func packFuncSelector(routerAddress common.Address) packMethod {
+	switch routerAddress {
 	case base_constant.BaseUniswapV3Router,
 		base_constant.OptimismUniswapV3Router,
-		base_constant.ArbitrumUniswapV3Router:
-		return iSwapRouter02(
-			trade.TradeType,
-			swap.Route.Path[poolIndex],
-			swap.Route.Path[poolIndex+1],
-			swap.Route.Pools[poolIndex].(*base_entities.V3Pool),
-			amountIn,
-			amountOut,
-			swapConfig,
-		)
+		base_constant.ArbitrumUniswapV3Router,
+		base_constant.PolygonUniswapV3Router:
+		return iSwapRouter02
 	case base_constant.BaseSwapBasedV3Router,
 		base_constant.BaseSushiswapV3Router,
 		base_constant.ZkSyncMaverickRouter:
-		return iSwapRouter(
-			trade.TradeType,
-			swap.Route.Path[poolIndex],
-			swap.Route.Path[poolIndex+1],
-			swap.Route.Pools[poolIndex].(*base_entities.V3Pool),
-			amountIn,
-			amountOut,
-			swapConfig,
-		)
+		return iSwapRouter
 	case base_constant.BaseAlienbaseV2Router,
 		base_constant.BaseSwapBasedV2Router,
 		base_constant.BaseBaseswapV2Router,
 		base_constant.ArbitrumCamelotRouter,
-		base_constant.ArbitrumSushiRouter:
-		return iUniswapV2Router02(
-			trade.TradeType,
-			swap.Route.Path[poolIndex],
-			swap.Route.Path[poolIndex+1],
-			amountIn,
-			amountOut,
-			swapConfig,
-		)
+		base_constant.ArbitrumSushiRouter,
+		base_constant.PolygonQuickSwapV2Router:
+		return iUniswapV2Router02
 	case base_constant.BaseAerodromerouter:
-		return iAerodromeRouter(
-			trade.TradeType,
-			swap.Route.Path[poolIndex],
-			swap.Route.Path[poolIndex+1],
-			amountIn,
-			amountOut,
-			swap.Route.Pools[poolIndex],
-			swapConfig,
-		)
+		return iAerodromeRouter
 	case base_constant.OptimismVelodromeV2Router:
-		return iVelodromeRouter(
-			trade.TradeType,
-			swap.Route.Path[poolIndex],
-			swap.Route.Path[poolIndex+1],
-			amountIn,
-			amountOut,
-			swap.Route.Pools[poolIndex],
-			swapConfig,
-		)
+		return iVelodromeRouter
 	case base_constant.ZkSyncMuteRouter:
-		return iMuteRouter(
-			trade.TradeType,
-			swap.Route.Path[poolIndex],
-			swap.Route.Path[poolIndex+1],
-			amountIn,
-			amountOut,
-			swap.Route.Pools[poolIndex],
-			swapConfig,
-		)
-	// TODO support in the feature
-	//case base_constant.ArbitrumTraderJoeRouter:
-	//	return iLBRouter()
+		return iMuteRouter
+	case base_constant.PolygonQuickSwapV3Router:
+		return iQuickSwapRouter
+	case base_constant.PolygonPearlFiRouter:
+		return iPearlRouter
 	default:
-		return nil, fmt.Errorf("unsupported router [%s]", swap.Route.Pools[poolIndex].RouterAddress().String())
+		panic("not found pack func for router " + routerAddress.String())
 	}
 }

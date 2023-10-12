@@ -33,15 +33,18 @@ func QuoteMultiCall(
 		},
 		ContractAddress: route.Pools[index].QuoterAddress(),
 		FunctionName:    name,
+		CallResult: rpc.MultiCallResult[providers.QuoteResult]{
+			Data: BaseAmounts{},
+		},
 	}
 	switch route.Pools[index].QuoterAddress() {
 	case base_constant.BaseAlienbaseV2Quoter,
 		base_constant.BaseSwapBasedV2Quoter,
 		base_constant.BaseBaseswapV2Quoter,
 		base_constant.ArbitrumCamelotQuoter,
-		base_constant.ArbitrumSushiQuoter:
+		base_constant.ArbitrumSushiQuoter,
+		base_constant.PolygonQuickSwapV2Quoter:
 		param.Contract = contracts.IUniswapV2Router02Abi
-		param.CallResult.Data = BaseAmounts{}
 	case base_constant.BaseAerodromeQuoter:
 		param.Contract = contracts.IAerodromeAbi
 		param.FunctionName = "getAmountsOut"
@@ -56,7 +59,6 @@ func QuoteMultiCall(
 				},
 			},
 		}
-		param.CallResult.Data = BaseAmounts{}
 	case base_constant.OptimismVelodromeV2Quoter:
 		param.Contract = contracts.IVelodromeAbi
 		param.FunctionName = "getAmountsOut"
@@ -71,7 +73,6 @@ func QuoteMultiCall(
 				},
 			},
 		}
-		param.CallResult.Data = BaseAmounts{}
 	case base_constant.ZkSyncMuteQuoter:
 		param.Contract = contracts.IMuteRouterAbi
 		param.FunctionName = "getAmountsOut"
@@ -81,10 +82,21 @@ func QuoteMultiCall(
 				route.Path[index].Address,
 				route.Path[index+1].Address,
 			},
-			route.Pools[index].Stable(),
+			[]bool{route.Pools[index].Stable()},
 		}
 		param.CallResult.Data = MuteQuoteAmount{}
-
+	case base_constant.PolygonPearlFiQuoter:
+		param.Contract = contracts.IPearlRouterAbi
+		param.FunctionParams = []any{
+			amount.Quotient(),
+			[]contracts.IPearlRouterroute{
+				{
+					route.Path[index].Address,
+					route.Path[index+1].Address,
+					route.Pools[index].Stable(),
+				},
+			},
+		}
 	//case base_constant.ArbitrumTraderJoeQuoter:
 	//	param.Contract = contracts.ILBRouterAbi
 	default:
