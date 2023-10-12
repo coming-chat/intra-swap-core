@@ -584,22 +584,22 @@ func (a *AlphaRouter) getV3Quotes(
 			percent := percents[i]
 			amountQuote := routeWithQuote.AmountQuotes[i]
 
-			if amountQuote.Quote == nil || amountQuote.SqrtPriceX96AfterList == nil || amountQuote.InitializedTicksCrossedList == nil || amountQuote.GasEstimate == nil {
+			if amountQuote.Quote == nil { //|| amountQuote.SqrtPriceX96AfterList == nil || amountQuote.InitializedTicksCrossedList == nil || amountQuote.GasEstimate == nil
 				continue
 			}
 
 			routeWithValidQuote, err := models.NewV3RouteWithValidQuote(models.V3RouteWithValidQuoteParams{
-				Route:                       routeWithQuote.Route,
-				RawQuote:                    amountQuote.Quote,
-				Amount:                      amountQuote.Amount,
-				Percent:                     percent,
-				SqrtPriceX96AfterList:       amountQuote.SqrtPriceX96AfterList,
-				InitializedTicksCrossedList: amountQuote.InitializedTicksCrossedList,
-				QuoterGasEstimate:           amountQuote.GasEstimate,
-				GasModel:                    gasModel,
-				QuoteToken:                  quoteToken,
-				TradeType:                   swapType,
-				QuoteList:                   amountQuote.QuoteList,
+				Route:    routeWithQuote.Route,
+				RawQuote: amountQuote.Quote,
+				Amount:   amountQuote.Amount,
+				Percent:  percent,
+				//SqrtPriceX96AfterList:       amountQuote.SqrtPriceX96AfterList,
+				//InitializedTicksCrossedList: amountQuote.InitializedTicksCrossedList,
+				//QuoterGasEstimate:           amountQuote.GasEstimate,
+				GasModel:   gasModel,
+				QuoteToken: quoteToken,
+				TradeType:  swapType,
+				QuoteList:  amountQuote.QuoteList,
 			})
 			if err != nil {
 				return nil, err

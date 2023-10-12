@@ -67,10 +67,10 @@ func NewV2RouteWithValidQuote(param V2RouteWithValidQuoteParams) (*V2RouteWithVa
 
 type V3RouteWithValidQuote struct {
 	*routers.BaseRouteWithValidQuote
-	SqrtPriceX96AfterList       []*big.Int
-	InitializedTicksCrossedList []uint32
-	QuoterGasEstimate           *big.Int
-	GasModel                    GasModel[V3RouteWithValidQuote]
+	//SqrtPriceX96AfterList       []*big.Int
+	//InitializedTicksCrossedList []uint32
+	//QuoterGasEstimate           *big.Int
+	GasModel GasModel[V3RouteWithValidQuote]
 }
 
 func (v V3RouteWithValidQuote) Protocol() base_entities.Protocol {
@@ -82,17 +82,17 @@ func (v V3RouteWithValidQuote) GetBaseRouteWithValidQuote() *routers.BaseRouteWi
 }
 
 type V3RouteWithValidQuoteParams struct {
-	Amount                      *entities.CurrencyAmount
-	RawQuote                    *big.Int
-	QuoteList                   []*big.Int
-	SqrtPriceX96AfterList       []*big.Int
-	InitializedTicksCrossedList []uint32
-	QuoterGasEstimate           *big.Int
-	Percent                     int
-	Route                       *base_entities.MRoute
-	GasModel                    GasModel[V3RouteWithValidQuote]
-	QuoteToken                  *entities.Token
-	TradeType                   entities.TradeType
+	Amount    *entities.CurrencyAmount
+	RawQuote  *big.Int
+	QuoteList []*big.Int
+	//SqrtPriceX96AfterList       []*big.Int
+	//InitializedTicksCrossedList []uint32
+	//QuoterGasEstimate           *big.Int
+	Percent    int
+	Route      *base_entities.MRoute
+	GasModel   GasModel[V3RouteWithValidQuote]
+	QuoteToken *entities.Token
+	TradeType  entities.TradeType
 }
 
 func NewV3RouteWithValidQuote(param V3RouteWithValidQuoteParams) (*V3RouteWithValidQuote, error) {
@@ -107,10 +107,10 @@ func NewV3RouteWithValidQuote(param V3RouteWithValidQuoteParams) (*V3RouteWithVa
 			Route:      param.Route,
 			QuoteList:  param.QuoteList,
 		},
-		SqrtPriceX96AfterList:       param.SqrtPriceX96AfterList,
-		InitializedTicksCrossedList: param.InitializedTicksCrossedList,
-		QuoterGasEstimate:           param.QuoterGasEstimate,
-		GasModel:                    param.GasModel,
+		//SqrtPriceX96AfterList:       param.SqrtPriceX96AfterList,
+		//InitializedTicksCrossedList: param.InitializedTicksCrossedList,
+		//QuoterGasEstimate:           param.QuoterGasEstimate,
+		GasModel: param.GasModel,
 	}
 
 	//gasEstimate, gasCostInToken, gasCostInUSD, err := v3rwvq.GasModel.EstimateGasCost(*v3rwvq)

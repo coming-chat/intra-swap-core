@@ -10,7 +10,6 @@ import (
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/config"
 	"github.com/coming-chat/intra-swap-core/routers/alpha_router/models"
 	"github.com/daoleno/uniswap-sdk-core/entities"
-	"github.com/ethereum/go-ethereum/common/math"
 	"math/big"
 	"regexp"
 	"sort"
@@ -368,36 +367,36 @@ func (h *HeuristicGasModelFactory) calculateArbitrumToL1SecurityFee(
 	return l1GasUsed, l1Fee, nil
 }
 
-func (h *HeuristicGasModelFactory) estimateGas(
-	routeWithValidQuote models.V3RouteWithValidQuote,
-	gasPriceWei *big.Int,
-	chainId base_entities.ChainId,
-) (*entities.CurrencyAmount, *big.Int, *big.Int, error) {
-	initializedTicksCrossedSum := new(big.Int)
-	for _, v := range routeWithValidQuote.InitializedTicksCrossedList {
-		initializedTicksCrossedSum.Add(initializedTicksCrossedSum, big.NewInt(int64(v)))
-	}
-	totalInitializedTicksCrossed := math.BigMax(big.NewInt(1), initializedTicksCrossedSum)
-	totalHops := big.NewInt(int64(len(routeWithValidQuote.Route.Pools)))
-
-	hopsGasUse := new(big.Int).Mul(COST_PER_HOP(chainId), totalHops)
-	tickGasUse := new(big.Int).Mul(COST_PER_INIT_TICK(chainId), totalInitializedTicksCrossed)
-	uninitializedTickGasUse := new(big.Int).Mul(costPerUninitTick, big.NewInt(0))
-
-	// base estimate gas used based on chainId estimates for hops and ticks gas useage
-	baseGasUse := new(big.Int).Add(BASE_SWAP_COST(chainId), hopsGasUse)
-	baseGasUse = baseGasUse.Add(baseGasUse, tickGasUse).Add(baseGasUse, uninitializedTickGasUse)
-
-	baseGasCostWei := new(big.Int).Mul(gasPriceWei, baseGasUse)
-
-	wrappedCurrency, err := h.wNProvider.GetTokenByChain(chainId)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	totalGasCostNativeCurrency := entities.FromRawAmount(wrappedCurrency, baseGasCostWei)
-	return totalGasCostNativeCurrency, totalInitializedTicksCrossed, baseGasUse, nil
-}
+//func (h *HeuristicGasModelFactory) estimateGas(
+//	routeWithValidQuote models.V3RouteWithValidQuote,
+//	gasPriceWei *big.Int,
+//	chainId base_entities.ChainId,
+//) (*entities.CurrencyAmount, *big.Int, *big.Int, error) {
+//	initializedTicksCrossedSum := new(big.Int)
+//	for _, v := range routeWithValidQuote.InitializedTicksCrossedList {
+//		initializedTicksCrossedSum.Add(initializedTicksCrossedSum, big.NewInt(int64(v)))
+//	}
+//	totalInitializedTicksCrossed := math.BigMax(big.NewInt(1), initializedTicksCrossedSum)
+//	totalHops := big.NewInt(int64(len(routeWithValidQuote.Route.Pools)))
+//
+//	hopsGasUse := new(big.Int).Mul(COST_PER_HOP(chainId), totalHops)
+//	tickGasUse := new(big.Int).Mul(COST_PER_INIT_TICK(chainId), totalInitializedTicksCrossed)
+//	uninitializedTickGasUse := new(big.Int).Mul(costPerUninitTick, big.NewInt(0))
+//
+//	// base estimate gas used based on chainId estimates for hops and ticks gas useage
+//	baseGasUse := new(big.Int).Add(BASE_SWAP_COST(chainId), hopsGasUse)
+//	baseGasUse = baseGasUse.Add(baseGasUse, tickGasUse).Add(baseGasUse, uninitializedTickGasUse)
+//
+//	baseGasCostWei := new(big.Int).Mul(gasPriceWei, baseGasUse)
+//
+//	wrappedCurrency, err := h.wNProvider.GetTokenByChain(chainId)
+//	if err != nil {
+//		return nil, nil, nil, err
+//	}
+//
+//	totalGasCostNativeCurrency := entities.FromRawAmount(wrappedCurrency, baseGasCostWei)
+//	return totalGasCostNativeCurrency, totalInitializedTicksCrossed, baseGasUse, nil
+//}
 
 func (h *HeuristicGasModelFactory) getHighestLiquidityNativePool(
 	chainId base_entities.ChainId,
