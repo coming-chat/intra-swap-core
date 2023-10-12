@@ -23,7 +23,7 @@ gen_omni_swap:
 	  if [ "$$abi_content" = "" ]; then \
       	abi_content=$$(cat $$i) ; \
 	  fi; \
-	  echo $$abi_content | make OmniSwapAbi PACKAGE=omni_swap NAME=$${filename_no_ext} OUT=${CONTRACT_PATH}$${filename_no_ext}.go; \
+	  echo $$abi_content | make gen_abi PACKAGE=omni_swap NAME=$${filename_no_ext} OUT=${CONTRACT_PATH}$${filename_no_ext}.go; \
 	done
 
 gen_other_abi:
