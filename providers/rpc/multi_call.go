@@ -14,23 +14,15 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"math/big"
+	"reflect"
 )
 
-func NewMultiCallV3(backend *ethclient.Client) (*contracts.Multicall3Raw, error) {
-	mc3, err := contracts.NewMulticall3(common.HexToAddress(base_constant.MultiCall3Address), backend)
-	if err != nil {
-		return nil, err
-	}
-	return &contracts.Multicall3Raw{
-		Contract: mc3,
-	}, nil
-}
-
-type MultiCallSingleParam struct {
+type MultiCallSingle[T any] struct {
 	Contract        *abi.ABI
 	FunctionParams  []any
 	ContractAddress common.Address
 	FunctionName    string
+	CallResult      MultiCallResult[T]
 }
 
 type MultiCallResult[T any] struct {
@@ -47,9 +39,10 @@ type MultiCallResultWithInfo[T any] struct {
 
 type MultiCallProvider[MultiCallConfig any, T any] interface {
 	MultiCall(
-		chainId base_entities.ChainId, multiCallData []MultiCallSingleParam, providerConfig *config.Config,
+		chainId base_entities.ChainId, multiCallData []MultiCallSingle[T], providerConfig *config.Config,
 	) (
-		result MultiCallResultWithInfo[T],
+		blockNumber *big.Int,
+		blockHash common.Hash,
 		err error,
 	)
 }
@@ -64,7 +57,17 @@ func GetMultiCallProvider[T any](core MultiCallProviderCore) *BaseMultiCallProvi
 	}
 }
 
-func (b *BaseMultiCallProvider[T]) MultiCall(chainId base_entities.ChainId, multiCallData []MultiCallSingleParam, gas uint64, requireSuccess bool, providerConfig *config.Config) (result MultiCallResultWithInfo[T], err error) {
+func (b *BaseMultiCallProvider[T]) MultiCall(
+	chainId base_entities.ChainId,
+	multiCallData []MultiCallSingle[T],
+	gas uint64,
+	requireSuccess bool,
+	providerConfig *config.Config,
+) (
+	blockNumber *big.Int,
+	blockHash common.Hash,
+	err error,
+) {
 	callOpts := &bind.CallOpts{}
 	if providerConfig != nil {
 		callOpts.BlockNumber = big.NewInt(int64(providerConfig.BlockNumber))
@@ -74,7 +77,7 @@ func (b *BaseMultiCallProvider[T]) MultiCall(chainId base_entities.ChainId, mult
 	for _, param := range multiCallData {
 		callData, err := param.Contract.Pack(param.FunctionName, param.FunctionParams...)
 		if err != nil {
-			return result, err
+			return blockNumber, blockHash, err
 		}
 
 		calls = append(calls, contracts.Multicall3Call{
@@ -90,59 +93,66 @@ func (b *BaseMultiCallProvider[T]) MultiCall(chainId base_entities.ChainId, mult
 	}{}
 	client, err := b.core.GetMultiCallContract(chainId)
 	if err != nil {
-		return result, err
+		return blockNumber, blockHash, err
 	}
 	method := "tryBlockAndAggregate"
 
 	// Pack the input, call and unpack the results
 	input, err := contracts.MultiCallABi.Pack(method, requireSuccess, calls)
 	if err != nil {
-		return result, err
+		return blockNumber, blockHash, err
 	}
 	var (
 		msg = ethereum.CallMsg{
 			From: common.Address{},
-			To:   &base_constant.MultiCallAddress,
+			To:   base_constant.MultiCallAddress(chainId),
 			Data: input,
 			Gas:  gas,
 		}
 	)
 	resp, err := client.CallContract(context.Background(), msg, callOpts.BlockNumber)
 	if err != nil {
-		return result, err
+		return blockNumber, blockHash, err
 	}
 	results := &[]any{&decodeResults}
 	if len(resp) == 0 {
 		// Make sure we have a contract to operate on, and bail out otherwise.
-		if code, err := client.CodeAt(context.Background(), base_constant.MultiCallAddress, callOpts.BlockNumber); err != nil {
-			return result, err
+		if code, err := client.CodeAt(context.Background(), *base_constant.MultiCallAddress(chainId), callOpts.BlockNumber); err != nil {
+			return blockNumber, blockHash, err
 		} else if len(code) == 0 {
-			return result, errors.New("error code")
+			return blockNumber, blockHash, errors.New("error code")
 		}
 	}
 	res := *results
 	err = contracts.MultiCallABi.UnpackIntoInterface(res[0], method, resp)
 	if err != nil {
-		return result, err
+		return blockNumber, blockHash, err
 	}
 
-	result.BlockHash = decodeResults.BlockHash
-	result.BlockNumber = decodeResults.BlockNumber
+	blockHash = decodeResults.BlockHash
+	blockNumber = decodeResults.BlockNumber
 
-	for i, data := range decodeResults.ReturnData {
-		output := MultiCallResult[T]{}
-		if data.Success {
-			decodeErr := multiCallData[i].Contract.UnpackIntoInterface(
-				&output.Data,
-				multiCallData[i].FunctionName,
-				data.ReturnData,
-			)
-			output.Err = decodeErr
-			if output.Err == nil {
-				output.Success = true
-			}
+	for i := range multiCallData {
+		if !decodeResults.ReturnData[i].Success {
+			continue
 		}
-		result.ReturnData = append(result.ReturnData, output)
+
+		rv := reflect.ValueOf(multiCallData[i].CallResult.Data)
+		if !rv.IsValid() {
+			return blockNumber, blockHash, errors.New("callResult data is not an valid type")
+		}
+		if rv.Kind() == reflect.Pointer && rv.IsNil() {
+			rv.Set(reflect.New(rv.Type().Elem()))
+		}
+
+		multiCallData[i].CallResult.Err = multiCallData[i].Contract.UnpackIntoInterface(
+			&multiCallData[i].CallResult.Data,
+			multiCallData[i].FunctionName,
+			decodeResults.ReturnData[i].ReturnData,
+		)
+		if multiCallData[i].CallResult.Err == nil {
+			multiCallData[i].CallResult.Success = true
+		}
 	}
 	return
 }

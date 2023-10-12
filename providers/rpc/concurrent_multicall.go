@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/coming-chat/intra-swap-core/base_entities"
-	"math"
 	"sync"
 	"sync/atomic"
 )
@@ -28,7 +27,12 @@ type MultiCallConfig struct {
 	RequireSuccess   bool
 }
 
-func ConcurrentMultiCall[T any](chainId base_entities.ChainId, core MultiCallProviderCore, multiCallParams []MultiCallSingleParam, c *MultiCallConfig) (rInfo MultiCallResultWithInfo[T], err error) {
+func ConcurrentMultiCall[T any](
+	chainId base_entities.ChainId,
+	core MultiCallProviderCore,
+	multiCallParams []MultiCallSingle[T],
+	c *MultiCallConfig,
+) error {
 	if c == nil {
 		c = &MultiCallConfig{
 			RetryOptions: RetryOptions{
@@ -43,11 +47,8 @@ func ConcurrentMultiCall[T any](chainId base_entities.ChainId, core MultiCallPro
 		}
 	}
 	var (
-		split          = math.Ceil(float64(len(multiCallParams)) / float64(c.BatchParams.MultiCallChunk))
 		syncGroup      = sync.WaitGroup{}
-		rwLock         = sync.Mutex{}
 		totalSuccess   = atomic.Uint32{}
-		successResults = make([]MultiCallResultWithInfo[T], int(split))
 		concurrentPool = make(chan struct{}, c.MaxConcurrentNum)
 	)
 
@@ -64,58 +65,45 @@ func ConcurrentMultiCall[T any](chainId base_entities.ChainId, core MultiCallPro
 				if index+c.BatchParams.MultiCallChunk > len(multiCallParams) {
 					endIndex = len(multiCallParams)
 				}
-				returnData, errReq := GetMultiCallProvider[T](core).MultiCall(chainId, multiCallParams[index:endIndex], c.BatchParams.GasLimitPerCall, c.RequireSuccess, nil)
+				_, _, errReq := GetMultiCallProvider[T](core).MultiCall(chainId, multiCallParams[index:endIndex], c.BatchParams.GasLimitPerCall, c.RequireSuccess, nil)
 				if errReq != nil && try+1 < c.RetryOptions.Retries {
 					continue
 				}
 				successResult := 0
-				for _, result := range returnData.ReturnData {
-					if result.Success {
+				for _, result := range multiCallParams[index:endIndex] {
+					if result.CallResult.Success {
 						successResult++
 						totalSuccess.Add(1)
 					}
 				}
-				if errReq != nil && len(returnData.ReturnData) == 0 {
-					for range multiCallParams[index:endIndex] {
-						returnData.ReturnData = append(returnData.ReturnData, MultiCallResult[T]{
+				if errReq != nil && successResult == 0 {
+					for j := range multiCallParams[index:endIndex] {
+						multiCallParams[index+j].CallResult = MultiCallResult[T]{
 							Success: false,
 							Err:     errReq,
-						})
+						}
 					}
 				}
-				if float64(successResult/len(returnData.ReturnData)) < c.BatchParams.MinSuccessRate && try+1 < c.RetryOptions.Retries {
+				if float64(successResult/(endIndex-index)) < c.BatchParams.MinSuccessRate && try+1 < c.RetryOptions.Retries {
 					continue
 				}
-				rwLock.Lock()
-				successResults[index/c.BatchParams.MultiCallChunk] = returnData
-				rwLock.Unlock()
 			}
 		}(i)
 	}
 	syncGroup.Wait()
 	var multiErrs []error
-	for _, r := range successResults {
-		rInfo.ReturnData = append(rInfo.ReturnData, r.ReturnData...)
-		rInfo.BlockHash = r.BlockHash
-		rInfo.BlockNumber = r.BlockNumber
-		for _, rData := range r.ReturnData {
-			if rData.Success {
-				continue
-			}
-			multiErrs = append(multiErrs, rData.Err)
+	for _, r := range multiCallParams {
+		if r.CallResult.Success {
+			continue
 		}
+		multiErrs = append(multiErrs, r.CallResult.Err)
 	}
 
 	if totalSuccess.Load() == 0 {
 		allErrs := errors.Join(multiErrs...)
 		if allErrs != nil {
-			return rInfo, fmt.Errorf("all multicall failed with errors [%w]", allErrs)
+			return fmt.Errorf("all multicall failed with errors [%w]", allErrs)
 		}
 	}
-
-	if len(multiCallParams) != len(rInfo.ReturnData) {
-		return rInfo, errors.New("concurrent result length not equal to req params length")
-	}
-
-	return
+	return nil
 }
