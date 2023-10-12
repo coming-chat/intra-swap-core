@@ -68,6 +68,7 @@ var (
 	ArbitrumTraderJoeQuoter = common.HexToAddress("0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30")
 )
 
+// zkSync
 var (
 	ZkSyncMuteRouter = common.HexToAddress("0x8B791913eB07C32779a16750e3868aA8495F5964")
 	ZkSyncMuteQuoter = common.HexToAddress("0x8B791913eB07C32779a16750e3868aA8495F5964")
@@ -79,9 +80,24 @@ var (
 	ZkSynciZiSwapQuoter = common.HexToAddress("0x30C089574551516e5F1169C32C6D429C92bf3CD7")
 )
 
+// Polygon
+var (
+	PolygonQuickSwapV3Router = common.HexToAddress("0xf5b509bB0909a69B1c207E495f687a596C168E12")
+	PolygonQuickSwapV3Quoter = common.HexToAddress("0xa15F0D7377B2A0C0c10db057f641beD21028FC89")
+
+	PolygonQuickSwapV2Router = common.HexToAddress("0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff")
+	PolygonQuickSwapV2Quoter = common.HexToAddress("0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff")
+
+	PolygonUniswapV3Router = common.HexToAddress("0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45")
+	PolygonUniswapV3Quoter = common.HexToAddress("0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff")
+
+	PolygonPearlFiRouter = common.HexToAddress("0xcC25C0FD84737F44a7d38649b69491BBf0c7f083")
+	PolygonPearlFiQuoter = common.HexToAddress("0xcC25C0FD84737F44a7d38649b69491BBf0c7f083")
+)
+
 var (
 	defaultMultiCallAddr   = common.HexToAddress("0xcA11bde05977b3631167028862bE2a173976CA11")
-	zksyncEraMultiCallAddr = common.HexToAddress("0xF9cda624FBC7e059355ce98a31693d299FACd963")
+	zksyncEraMultiCallAddr = common.HexToAddress("0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6")
 )
 
 func MultiCallAddress(chainId base_entities.ChainId) *common.Address {

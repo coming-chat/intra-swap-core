@@ -16,12 +16,15 @@ var (
 	ILBRouterAbi, _          = omni_swap.ILBRouterMetaData.GetAbi()
 	IMuteRouterAbi, _        = omni_swap.IMuteRouterMetaData.GetAbi()
 	IiZiSwapPoolAbi, _       = omni_swap.IiZiSwapPoolMetaData.GetAbi()
+	IQuickSwapRouterAbi, _   = omni_swap.IQuickSwapRouterMetaData.GetAbi()
+	IPearlRouterAbi, _       = IPearlRouterMetaData.GetAbi()
 
 	//Quoter
 	IQuoterV2Abi, _         = omni_swap.IQuoterV2MetaData.GetAbi()
 	IQuoterAbi, _           = omni_swap.IQuoterMetaData.GetAbi()
 	IiZiSwapQuoterAbi, _    = omni_swap.IiZiSwapQuoterMetaData.GetAbi()
 	IPoolIInformationAbi, _ = omni_swap.IPoolInformationMetaData.GetAbi()
+	IQuickQuoterAbi, _      = omni_swap.IQuickQuoterMetaData.GetAbi()
 
 	//Factory
 	IUniswapV3FactoryAbi, _ = uniswap_v3.FactoryMetaData.GetAbi()
@@ -35,5 +38,5 @@ var (
 	Erc20Abi, _ = Erc20MetaData.GetAbi()
 
 	//multicall
-	MultiCallABi, _ = Multicall3MetaData.GetAbi()
+	MultiCallABi, _ = IMulticall3MetaData.GetAbi()
 )
