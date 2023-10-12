@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
+	"github.com/coming-chat/intra-swap-core/providers"
 	"github.com/coming-chat/intra-swap-core/providers/config"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	"github.com/daoleno/uniswap-sdk-core/entities"
@@ -11,12 +12,12 @@ import (
 )
 
 type AmountQuote struct {
-	Amount                      *entities.CurrencyAmount
-	Quote                       *big.Int
-	QuoteList                   []*big.Int
-	SqrtPriceX96AfterList       []*big.Int
-	InitializedTicksCrossedList []uint32
-	GasEstimate                 *big.Int
+	Amount    *entities.CurrencyAmount
+	Quote     *big.Int
+	QuoteList []*big.Int
+	//SqrtPriceX96AfterList       []*big.Int
+	//InitializedTicksCrossedList []uint32
+	//GasEstimate *big.Int
 }
 
 type RouteWithQuotes struct {
@@ -36,13 +37,6 @@ type QuoteProvider interface {
 type BlockNumberConfig struct {
 	BaseBlockOffset uint64
 	Rollback        bool
-}
-
-type QuoteData struct {
-	AmountOut                   *big.Int
-	SqrtPriceX96AfterList       []*big.Int
-	InitializedTicksCrossedList []uint32
-	GasEstimate                 *big.Int
 }
 
 type BaseQuoteProvider struct {
@@ -149,7 +143,7 @@ func (b *BaseQuoteProvider) getQuotesManyDataOnline(
 
 	for i := 0; i < maxHop; i++ {
 		var (
-			multiCallParams []rpc.MultiCallSingleParam
+			multiCallParams []rpc.MultiCallSingle[providers.QuoteResult]
 			params          []struct {
 				routeIndex  int
 				amountIndex int
@@ -174,8 +168,8 @@ func (b *BaseQuoteProvider) getQuotesManyDataOnline(
 				}{routeIndex: ri, amountIndex: ai})
 				if i == 0 {
 					result[ri].AmountQuotes = append(result[ri].AmountQuotes, AmountQuote{
-						Amount:      entities.FromRawAmount(a.Currency, a.Quotient()),
-						GasEstimate: big.NewInt(0),
+						Amount: entities.FromRawAmount(a.Currency, a.Quotient()),
+						//GasEstimate: big.NewInt(0),
 					})
 				}
 			}
@@ -183,23 +177,23 @@ func (b *BaseQuoteProvider) getQuotesManyDataOnline(
 		if len(multiCallParams) == 0 {
 			continue
 		}
-		callResult, err := rpc.ConcurrentMultiCall[QuoteData](b.ChainId, b.MultiCall2Provider, multiCallParams, b.MultiCallConfig)
+		err = rpc.ConcurrentMultiCall[providers.QuoteResult](b.ChainId, b.MultiCall2Provider, multiCallParams, b.MultiCallConfig)
 		if err != nil {
 			return nil, 0, err
 		}
 		for pi, param := range params {
-			if !callResult.ReturnData[pi].Success {
+			if !multiCallParams[pi].CallResult.Success {
 				result[param.routeIndex].AmountQuotes[param.amountIndex].Quote = big.NewInt(0)
 				syncAmounts[param.routeIndex][param.amountIndex] = entities.FromRawAmount(syncAmounts[param.routeIndex][param.amountIndex].Currency, result[param.routeIndex].AmountQuotes[param.amountIndex].Quote)
 				result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList = append(result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList, result[param.routeIndex].AmountQuotes[param.amountIndex].Quote)
 				continue
 			}
-			syncAmounts[param.routeIndex][param.amountIndex] = entities.FromRawAmount(syncAmounts[param.routeIndex][param.amountIndex].Currency, callResult.ReturnData[pi].Data.AmountOut)
-			result[param.routeIndex].AmountQuotes[param.amountIndex].Quote = callResult.ReturnData[pi].Data.AmountOut
-			result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList = append(result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList, callResult.ReturnData[pi].Data.AmountOut)
-			result[param.routeIndex].AmountQuotes[param.amountIndex].SqrtPriceX96AfterList = append(result[param.routeIndex].AmountQuotes[param.amountIndex].SqrtPriceX96AfterList, callResult.ReturnData[pi].Data.SqrtPriceX96AfterList...)
-			result[param.routeIndex].AmountQuotes[param.amountIndex].InitializedTicksCrossedList = append(result[param.routeIndex].AmountQuotes[param.amountIndex].InitializedTicksCrossedList, callResult.ReturnData[pi].Data.InitializedTicksCrossedList...)
-			result[param.routeIndex].AmountQuotes[param.amountIndex].GasEstimate.Add(result[param.routeIndex].AmountQuotes[param.amountIndex].GasEstimate, callResult.ReturnData[pi].Data.GasEstimate)
+			syncAmounts[param.routeIndex][param.amountIndex] = entities.FromRawAmount(syncAmounts[param.routeIndex][param.amountIndex].Currency, multiCallParams[pi].CallResult.Data.QuoteAmount())
+			result[param.routeIndex].AmountQuotes[param.amountIndex].Quote = multiCallParams[pi].CallResult.Data.QuoteAmount()
+			result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList = append(result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList, multiCallParams[pi].CallResult.Data.QuoteAmount())
+			//result[param.routeIndex].AmountQuotes[param.amountIndex].SqrtPriceX96AfterList = append(result[param.routeIndex].AmountQuotes[param.amountIndex].SqrtPriceX96AfterList, callResult.ReturnData[pi].Data.SqrtPriceX96AfterList...)
+			//result[param.routeIndex].AmountQuotes[param.amountIndex].InitializedTicksCrossedList = append(result[param.routeIndex].AmountQuotes[param.amountIndex].InitializedTicksCrossedList, callResult.ReturnData[pi].Data.InitializedTicksCrossedList...)
+			//result[param.routeIndex].AmountQuotes[param.amountIndex].GasEstimate.Add(result[param.routeIndex].AmountQuotes[param.amountIndex].GasEstimate, callResult.ReturnData[pi].Data.GasEstimate)
 		}
 		//callDataIndex := 0
 		//for ri, route := range routes {

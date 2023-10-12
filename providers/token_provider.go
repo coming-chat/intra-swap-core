@@ -54,16 +54,16 @@ func (o *BaseTokenProvider) GetTokens(chainId base_entities.ChainId, addresses [
 	var tokens []*entities.Token
 
 	var (
-		multiCallSymbol   []rpc.MultiCallSingleParam
-		multiCallDecimals []rpc.MultiCallSingleParam
+		multiCallSymbol   []rpc.MultiCallSingle[string]
+		multiCallDecimals []rpc.MultiCallSingle[uint8]
 	)
 	for _, address := range addresses {
-		multiCallSymbol = append(multiCallSymbol, rpc.MultiCallSingleParam{
+		multiCallSymbol = append(multiCallSymbol, rpc.MultiCallSingle[string]{
 			Contract:        contracts.Erc20Abi,
 			FunctionName:    "symbol",
 			ContractAddress: common.HexToAddress(address),
 		})
-		multiCallDecimals = append(multiCallDecimals, rpc.MultiCallSingleParam{
+		multiCallDecimals = append(multiCallDecimals, rpc.MultiCallSingle[uint8]{
 			Contract:        contracts.Erc20Abi,
 			FunctionName:    "decimals",
 			ContractAddress: common.HexToAddress(address),
@@ -72,19 +72,17 @@ func (o *BaseTokenProvider) GetTokens(chainId base_entities.ChainId, addresses [
 	syncGroup := sync.WaitGroup{}
 	syncGroup.Add(2)
 	var (
-		symbolsResults         rpc.MultiCallResultWithInfo[string]
-		decimalsResults        rpc.MultiCallResultWithInfo[uint8]
 		errSymbol, errDecimals error
 	)
 
 	go func() {
 		defer syncGroup.Done()
-		symbolsResults, errSymbol = rpc.GetMultiCallProvider[string](o.MultiCallProviderCore).MultiCall(chainId, multiCallSymbol, 0, false, providerConfig)
+		_, _, errSymbol = rpc.GetMultiCallProvider[string](o.MultiCallProviderCore).MultiCall(chainId, multiCallSymbol, 0, false, providerConfig)
 	}()
 
 	go func() {
 		defer syncGroup.Done()
-		decimalsResults, errDecimals = rpc.GetMultiCallProvider[uint8](o.MultiCallProviderCore).MultiCall(chainId, multiCallDecimals, 0, false, providerConfig)
+		_, _, errDecimals = rpc.GetMultiCallProvider[uint8](o.MultiCallProviderCore).MultiCall(chainId, multiCallDecimals, 0, false, providerConfig)
 	}()
 
 	syncGroup.Wait()
@@ -96,17 +94,17 @@ func (o *BaseTokenProvider) GetTokens(chainId base_entities.ChainId, addresses [
 	}
 
 	for i, address := range addresses {
-		if !symbolsResults.ReturnData[i].Success || !decimalsResults.ReturnData[i].Success {
+		if !multiCallSymbol[i].CallResult.Success || !multiCallDecimals[i].CallResult.Success {
 			continue
 		}
 		addressToToken[address] = entities.NewToken(
 			chainId,
 			common.HexToAddress(address),
-			uint(decimalsResults.ReturnData[i].Data),
-			symbolsResults.ReturnData[i].Data,
-			symbolsResults.ReturnData[i].Data,
+			uint(multiCallDecimals[i].CallResult.Data),
+			multiCallSymbol[i].CallResult.Data,
+			multiCallSymbol[i].CallResult.Data,
 		)
-		symbolToToken[symbolsResults.ReturnData[i].Data] = addressToToken[address]
+		symbolToToken[multiCallSymbol[i].CallResult.Data] = addressToToken[address]
 		tokens = append(tokens, addressToToken[address])
 	}
 	baseTokenAccessor := BaseTokenAccessor{}

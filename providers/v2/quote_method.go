@@ -6,9 +6,11 @@ import (
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/contracts"
 	"github.com/coming-chat/intra-swap-core/contracts/omni_swap"
+	"github.com/coming-chat/intra-swap-core/providers"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"github.com/ethereum/go-ethereum/common"
+	"math/big"
 )
 
 func QuoteMultiCall(
@@ -16,12 +18,12 @@ func QuoteMultiCall(
 	index int,
 	tradeType entities.TradeType,
 	amount *entities.CurrencyAmount,
-) (rpc.MultiCallSingleParam, error) {
+) (rpc.MultiCallSingle[providers.QuoteResult], error) {
 	name := "getAmountsOut"
 	if tradeType == entities.ExactOutput {
 		name = "getAmountsIn"
 	}
-	param := rpc.MultiCallSingleParam{
+	param := rpc.MultiCallSingle[providers.QuoteResult]{
 		FunctionParams: []any{
 			amount.Quotient(),
 			[]common.Address{
@@ -39,6 +41,7 @@ func QuoteMultiCall(
 		base_constant.ArbitrumCamelotQuoter,
 		base_constant.ArbitrumSushiQuoter:
 		param.Contract = contracts.IUniswapV2Router02Abi
+		param.CallResult.Data = BaseAmounts{}
 	case base_constant.BaseAerodromeQuoter:
 		param.Contract = contracts.IAerodromeAbi
 		param.FunctionName = "getAmountsOut"
@@ -53,6 +56,7 @@ func QuoteMultiCall(
 				},
 			},
 		}
+		param.CallResult.Data = BaseAmounts{}
 	case base_constant.OptimismVelodromeV2Quoter:
 		param.Contract = contracts.IVelodromeAbi
 		param.FunctionName = "getAmountsOut"
@@ -67,10 +71,42 @@ func QuoteMultiCall(
 				},
 			},
 		}
+		param.CallResult.Data = BaseAmounts{}
+	case base_constant.ZkSyncMuteQuoter:
+		param.Contract = contracts.IMuteRouterAbi
+		param.FunctionName = "getAmountsOut"
+		param.FunctionParams = []any{
+			amount.Quotient(),
+			[]common.Address{
+				route.Path[index].Address,
+				route.Path[index+1].Address,
+			},
+			route.Pools[index].Stable(),
+		}
+		param.CallResult.Data = MuteQuoteAmount{}
+
 	//case base_constant.ArbitrumTraderJoeQuoter:
 	//	param.Contract = contracts.ILBRouterAbi
 	default:
-		return rpc.MultiCallSingleParam{}, errors.New("unsupported quote")
+		return rpc.MultiCallSingle[providers.QuoteResult]{}, errors.New("unsupported quote")
 	}
 	return param, nil
+}
+
+type BaseAmounts struct {
+	Amounts []*big.Int
+}
+
+func (b BaseAmounts) QuoteAmount() *big.Int {
+	return b.Amounts[len(b.Amounts)-1]
+}
+
+type MuteQuoteAmount struct {
+	Amounts []*big.Int
+	Stable  []bool
+	Fees    []*big.Int
+}
+
+func (m MuteQuoteAmount) QuoteAmount() *big.Int {
+	return m.Amounts[len(m.Amounts)-1]
 }

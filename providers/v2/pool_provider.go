@@ -127,7 +127,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 			Token1 *entities.Token
 		}
 		sortedPoolAddresses []string
-		multiCallData       []rpc.MultiCallSingleParam
+		multiCallData       []rpc.MultiCallSingle[IReserves]
 		err                 error
 	)
 	for _, pair := range tokenPairs {
@@ -157,14 +157,14 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 		}{Token0: token0, Token1: token1})
 		sortedPoolAddresses = append(sortedPoolAddresses, pair.PairAddress)
 
-		multiCallData = append(multiCallData, rpc.MultiCallSingleParam{
+		multiCallData = append(multiCallData, rpc.MultiCallSingle[IReserves]{
 			FunctionName:    "getReserves",
 			Contract:        contracts.IUniswapV2PoolAbi,
 			ContractAddress: common.HexToAddress(pair.PairAddress),
 		})
 	}
 
-	reservesResults, err := rpc.GetMultiCallProvider[IReserves](b.MultiCallProvider).MultiCall(b.ChainId, multiCallData, 0, false, nil)
+	_, _, err = rpc.GetMultiCallProvider[IReserves](b.MultiCallProvider).MultiCall(b.ChainId, multiCallData, 0, false, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -173,14 +173,14 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 		subPoolMap:        make(map[*entitiesV2.Pair]*base_entities.V2Pool),
 		getPool:           b.GetPoolAddress,
 	}
-	for i, result := range reservesResults.ReturnData {
-		if !result.Success {
+	for i, result := range multiCallData {
+		if !result.CallResult.Success {
 			continue
 		}
 		poolAddress := common.HexToAddress(sortedPoolAddresses[i])
 		pair, err := entitiesV2.NewPair(
-			entities.FromRawAmount(sortedTokenPairs[i].Token0, result.Data.Reserve0),
-			entities.FromRawAmount(sortedTokenPairs[i].Token1, result.Data.Reserve1),
+			entities.FromRawAmount(sortedTokenPairs[i].Token0, result.CallResult.Data.Reserve0),
+			entities.FromRawAmount(sortedTokenPairs[i].Token1, result.CallResult.Data.Reserve1),
 			&entitiesV2.PairOptions{
 				Address: &poolAddress,
 			})

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
+	"github.com/coming-chat/intra-swap-core/providers"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"math/big"
@@ -100,7 +101,7 @@ func (b *BaseQuoteProvider) getQuotesOnline(amounts []*entities.CurrencyAmount,
 	}
 	for i := 0; i < maxHop; i++ {
 		var (
-			multiCallParams []rpc.MultiCallSingleParam
+			multiCallParams []rpc.MultiCallSingle[providers.QuoteResult]
 			params          []struct {
 				routeIndex  int
 				amountIndex int
@@ -133,20 +134,20 @@ func (b *BaseQuoteProvider) getQuotesOnline(amounts []*entities.CurrencyAmount,
 		if len(multiCallParams) == 0 {
 			continue
 		}
-		callResult, err := rpc.ConcurrentMultiCall[[]*big.Int](b.ChainId, b.MultiCall2Provider, multiCallParams, b.MultiCallConfig)
+		err = rpc.ConcurrentMultiCall[providers.QuoteResult](b.ChainId, b.MultiCall2Provider, multiCallParams, b.MultiCallConfig)
 		if err != nil {
 			return nil, err
 		}
 		for pi, param := range params {
-			if !callResult.ReturnData[pi].Success {
+			if !multiCallParams[pi].CallResult.Success {
 				result[param.routeIndex].AmountQuotes[param.amountIndex].Quote = big.NewInt(0)
 				syncAmounts[param.routeIndex][param.amountIndex] = entities.FromRawAmount(syncAmounts[param.routeIndex][param.amountIndex].Currency, result[param.routeIndex].AmountQuotes[param.amountIndex].Quote)
 				result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList = append(result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList, result[param.routeIndex].AmountQuotes[param.amountIndex].Quote)
 				continue
 			}
-			syncAmounts[param.routeIndex][param.amountIndex] = entities.FromRawAmount(syncAmounts[param.routeIndex][param.amountIndex].Currency, callResult.ReturnData[pi].Data[len(callResult.ReturnData[pi].Data)-1])
-			result[param.routeIndex].AmountQuotes[param.amountIndex].Quote = callResult.ReturnData[pi].Data[len(callResult.ReturnData[pi].Data)-1]
-			result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList = append(result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList, callResult.ReturnData[pi].Data[len(callResult.ReturnData[pi].Data)-1])
+			syncAmounts[param.routeIndex][param.amountIndex] = entities.FromRawAmount(syncAmounts[param.routeIndex][param.amountIndex].Currency, multiCallParams[pi].CallResult.Data.QuoteAmount())
+			result[param.routeIndex].AmountQuotes[param.amountIndex].Quote = multiCallParams[pi].CallResult.Data.QuoteAmount()
+			result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList = append(result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList, multiCallParams[pi].CallResult.Data.QuoteAmount())
 		}
 		//callDataIndex := 0
 		//for ri, route := range routes {
