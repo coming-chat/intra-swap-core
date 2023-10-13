@@ -6,7 +6,7 @@ import (
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/contracts"
 	"github.com/coming-chat/intra-swap-core/contracts/omni_swap"
-	"github.com/coming-chat/intra-swap-core/providers"
+	"github.com/coming-chat/intra-swap-core/dex"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	entitiesV3 "github.com/daoleno/uniswapv3-sdk/entities"
@@ -20,16 +20,16 @@ func QuoteMultiCall(
 	index int,
 	tradeType entities.TradeType,
 	amount *entities.CurrencyAmount,
-) (rpc.MultiCallSingle[providers.QuoteResult], error) {
+) (rpc.MultiCallSingle[dex.QuoteResult], error) {
 	stepRoute, err := entitiesV3.NewRoute([]*entitiesV3.Pool{route.Pools[index].(*base_entities.V3Pool).Pool}, route.Path[index], route.Path[index+1])
 	if err != nil {
-		return rpc.MultiCallSingle[providers.QuoteResult]{}, nil
+		return rpc.MultiCallSingle[dex.QuoteResult]{}, nil
 	}
 	encodedRoute, err := periphery.EncodeRouteToPath(stepRoute, tradeType == entities.ExactOutput)
 	if err != nil {
-		return rpc.MultiCallSingle[providers.QuoteResult]{}, nil
+		return rpc.MultiCallSingle[dex.QuoteResult]{}, nil
 	}
-	param := rpc.MultiCallSingle[providers.QuoteResult]{
+	param := rpc.MultiCallSingle[dex.QuoteResult]{
 		FunctionParams: []any{
 			encodedRoute,
 			amount.Quotient(),
@@ -79,7 +79,7 @@ func QuoteMultiCall(
 		param.Contract = contracts.IQuickQuoterAbi
 		param.CallResult.Data = QuickSwapQuoteData{}
 	default:
-		return rpc.MultiCallSingle[providers.QuoteResult]{}, errors.New("unsupported quote")
+		return rpc.MultiCallSingle[dex.QuoteResult]{}, errors.New("unsupported quote")
 	}
 	return param, nil
 }

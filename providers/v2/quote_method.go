@@ -6,7 +6,7 @@ import (
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/contracts"
 	"github.com/coming-chat/intra-swap-core/contracts/omni_swap"
-	"github.com/coming-chat/intra-swap-core/providers"
+	"github.com/coming-chat/intra-swap-core/dex"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"github.com/ethereum/go-ethereum/common"
@@ -18,12 +18,12 @@ func QuoteMultiCall(
 	index int,
 	tradeType entities.TradeType,
 	amount *entities.CurrencyAmount,
-) (rpc.MultiCallSingle[providers.QuoteResult], error) {
+) (rpc.MultiCallSingle[dex.QuoteResult], error) {
 	name := "getAmountsOut"
 	if tradeType == entities.ExactOutput {
 		name = "getAmountsIn"
 	}
-	param := rpc.MultiCallSingle[providers.QuoteResult]{
+	param := rpc.MultiCallSingle[dex.QuoteResult]{
 		FunctionParams: []any{
 			amount.Quotient(),
 			[]common.Address{
@@ -33,7 +33,7 @@ func QuoteMultiCall(
 		},
 		ContractAddress: route.Pools[index].QuoterAddress(),
 		FunctionName:    name,
-		CallResult: rpc.MultiCallResult[providers.QuoteResult]{
+		CallResult: rpc.MultiCallResult[dex.QuoteResult]{
 			Data: BaseAmounts{},
 		},
 	}
@@ -100,7 +100,7 @@ func QuoteMultiCall(
 	//case base_constant.ArbitrumTraderJoeQuoter:
 	//	param.Contract = contracts.ILBRouterAbi
 	default:
-		return rpc.MultiCallSingle[providers.QuoteResult]{}, errors.New("unsupported quote")
+		return rpc.MultiCallSingle[dex.QuoteResult]{}, errors.New("unsupported quote")
 	}
 	return param, nil
 }
