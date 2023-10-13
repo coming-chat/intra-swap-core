@@ -5,14 +5,15 @@ package uniswap_v2
 
 import (
 	"errors"
+	common2 "github.com/gkirito/go-ethereum/common"
 	"math/big"
 	"strings"
 
 	ethereum "github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/gkirito/go-ethereum/accounts/abi"
+	"github.com/gkirito/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/gkirito/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
 )
 
@@ -139,7 +140,7 @@ func bindPairFactory(address common.Address, caller bind.ContractCaller, transac
 	if err != nil {
 		return nil, err
 	}
-	return bind.NewBoundContract(address, *parsed, caller, transactor, filterer), nil
+	return bind.NewBoundContract(common2.Address(address), *parsed, caller, transactor, filterer), nil
 }
 
 // Call invokes the (constant) contract method with params as input values and
