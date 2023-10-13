@@ -97,7 +97,7 @@ var (
 
 var (
 	defaultMultiCallAddr   = common.HexToAddress("0xcA11bde05977b3631167028862bE2a173976CA11")
-	zksyncEraMultiCallAddr = common.HexToAddress("0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6")
+	zksyncEraMultiCallAddr = common.HexToAddress("0xF9cda624FBC7e059355ce98a31693d299FACd963")
 )
 
 func MultiCallAddress(chainId base_entities.ChainId) *common.Address {
