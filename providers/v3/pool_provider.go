@@ -191,8 +191,6 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 	}
 	var (
 		syncGroup              = sync.WaitGroup{}
-		slot0Results           rpc.MultiCallResultWithInfo[dex.ISlot0]
-		liquidityResults       rpc.MultiCallResultWithInfo[*big.Int]
 		errSlot0, errLiquidity error
 	)
 
@@ -253,9 +251,9 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 	)
 
 	for i, address := range sortedPoolAddresses {
-		if !slot0Results.ReturnData[i].Success ||
-			!liquidityResults.ReturnData[i].Success ||
-			slot0Results.ReturnData[i].Data.SqrtPriceX96.Cmp(big.NewInt(0)) == 0 {
+		if !slot0s[i].CallResult.Success ||
+			!liquiditys[i].CallResult.Success ||
+			slot0s[i].CallResult.Data.SqrtPriceX96.Cmp(big.NewInt(0)) == 0 {
 			continue
 		}
 
@@ -268,7 +266,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 			},
 		})
 
-		tickInfoParams = append(tickInfoParams, dex.RouterAddrDexMap[common.HexToAddress(sortedPool[i].RouterAddress)].GetPoolInfo().GetTicks(common.HexToAddress(address), slot0Results.ReturnData[i].Data.Tick))
+		tickInfoParams = append(tickInfoParams, dex.RouterAddrDexMap[common.HexToAddress(sortedPool[i].RouterAddress)].GetPoolInfo().GetTicks(common.HexToAddress(address), slot0s[i].CallResult.Data.Tick))
 		//tickInfoParams = append(tickInfoParams, rpc.MultiCallSingle[Tick]{
 		//	FunctionName:    "ticks",
 		//	ContractAddress: common.HexToAddress(address),
@@ -292,9 +290,9 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 
 	tickInfoResultIndex := 0
 	for i, address := range sortedPoolAddresses {
-		if !slot0Results.ReturnData[i].Success ||
-			!liquidityResults.ReturnData[i].Success ||
-			slot0Results.ReturnData[i].Data.SqrtPriceX96.Cmp(big.NewInt(0)) == 0 ||
+		if !slot0s[i].CallResult.Success ||
+			!liquiditys[i].CallResult.Success ||
+			slot0s[i].CallResult.Data.SqrtPriceX96.Cmp(big.NewInt(0)) == 0 ||
 			!tickInfoParams[tickInfoResultIndex].CallResult.Success {
 			continue
 		}
@@ -307,8 +305,8 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 		if err != nil {
 			continue
 		}
-		sqrtPriceX96 := slot0Results.ReturnData[i].Data.SqrtPriceX96
-		liquidity := liquidityResults.ReturnData[i].Data
+		sqrtPriceX96 := slot0s[i].CallResult.Data.SqrtPriceX96
+		liquidity := liquiditys[i].CallResult.Data
 		if sqrtPriceX96 == nil {
 			sqrtPriceX96 = big.NewInt(0)
 		}
@@ -322,7 +320,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 			sortedPool[i].FeeAmount,
 			sqrtPriceX96,
 			liquidity,
-			int(slot0Results.ReturnData[i].Data.Tick.Int64()),
+			int(slot0s[i].CallResult.Data.Tick.Int64()),
 			p,
 		)
 		if err != nil {

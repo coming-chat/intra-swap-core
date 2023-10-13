@@ -14,7 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"math/big"
-	"reflect"
 )
 
 type MultiCallSingle[T any] struct {
@@ -135,14 +134,6 @@ func (b *BaseMultiCallProvider[T]) MultiCall(
 	for i := range multiCallData {
 		if !decodeResults.ReturnData[i].Success {
 			continue
-		}
-
-		rv := reflect.ValueOf(multiCallData[i].CallResult.Data)
-		if !rv.IsValid() {
-			return blockNumber, blockHash, errors.New("callResult data is not an valid type")
-		}
-		if rv.Kind() == reflect.Pointer && rv.IsNil() {
-			rv.Set(reflect.New(rv.Type().Elem()))
 		}
 
 		multiCallData[i].CallResult.Err = multiCallData[i].Contract.UnpackIntoInterface(

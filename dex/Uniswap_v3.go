@@ -18,7 +18,7 @@ import (
 type BaseUniswapV3QuoteData struct {
 	AmountOut                   *big.Int
 	SqrtPriceX96AfterList       []*big.Int
-	InitializedTicksCrossedList []uint32
+	InitializedTicksCrossedList []*big.Int
 	GasEstimate                 *big.Int
 }
 
