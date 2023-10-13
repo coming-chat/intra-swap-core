@@ -15,7 +15,7 @@ var (
 	IVelodromeAbi, _         = omni_swap.IVelodromeMetaData.GetAbi()
 	ILBRouterAbi, _          = omni_swap.ILBRouterMetaData.GetAbi()
 	IMuteRouterAbi, _        = omni_swap.IMuteRouterMetaData.GetAbi()
-	IiZiSwapPoolAbi, _       = omni_swap.IiZiSwapPoolMetaData.GetAbi()
+	IiZiSwapAbi, _           = IiZiSwapMetaData.GetAbi()
 	IQuickSwapRouterAbi, _   = omni_swap.IQuickSwapRouterMetaData.GetAbi()
 	IPearlRouterAbi, _       = IPearlRouterMetaData.GetAbi()
 
@@ -29,6 +29,8 @@ var (
 	//Factory
 	IUniswapV3FactoryAbi, _ = uniswap_v3.FactoryMetaData.GetAbi()
 	IUniswapV2FactoryAbi, _ = uniswap_v2.PairFactoryMetaData.GetAbi()
+	MuteIoFatoryAbi, _      = MuteIoFactoryMetaData.GetAbi()
+	AerodromeFactoryAbi, _  = AerodromeFactoryMetaData.GetAbi()
 
 	//Pool
 	IUniswapV3PoolAbi, _ = uniswap_v3.PoolMetaData.GetAbi()

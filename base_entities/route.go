@@ -3,6 +3,9 @@ package base_entities
 import (
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	entitiesV3 "github.com/daoleno/uniswapv3-sdk/entities"
+	"github.com/daoleno/uniswapv3-sdk/periphery"
+	"github.com/ethereum/go-ethereum/common"
+	"math/big"
 )
 
 //type (
@@ -128,4 +131,14 @@ type SwapAndAddParameters struct {
 	InitialBalanceTokenOut *entities.CurrencyAmount
 	// position details needed to create a new Position with the known liquidity amounts
 	PreLiquidityPosition *entitiesV3.Position
+}
+
+type SwapOptions struct {
+	Recipient         common.Address
+	SlippageTolerance *entities.Percent
+	Deadline          *big.Int
+	InputTokenPermit  *periphery.PermitOptions
+
+	//V3
+	SqrtPriceLimitX96 *big.Int
 }
