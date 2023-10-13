@@ -42,7 +42,7 @@ func (m MaverickProtocol) GetQuote(route *base_entities.MRoute, index int, trade
 			tradeType == entities.ExactOutput,
 		},
 		CallResult: rpc.MultiCallResult[QuoteResult]{
-			Data: SingleAmountOut{},
+			Data: &SingleAmountOut{},
 		},
 	}, nil
 }

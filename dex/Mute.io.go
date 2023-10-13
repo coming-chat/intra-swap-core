@@ -53,7 +53,7 @@ func (m MuteIo) PackSwap(
 	if tokenIn.IsNative() && tokenOut.IsNative() {
 		return nil, router.ErrEtherInOut
 	}
-	path := []any{tokenIn.Address, tokenOut.Address}
+	path := []common.Address{tokenIn.Address, tokenOut.Address}
 
 	deadline := swapConfig.Deadline
 	if swapConfig.Deadline == nil {
@@ -80,5 +80,5 @@ func (m MuteIo) PackSwap(
 		// TODO handle the FeeOnTransfer
 		//methodName = "swapExactTokensForTokensSupportingFeeOnTransferTokens"
 	}
-	return m.RouterContract.Pack(methodName, args)
+	return m.RouterContract.Pack(methodName, args...)
 }

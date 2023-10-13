@@ -10,15 +10,15 @@ import (
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	entitiesV3 "github.com/daoleno/uniswapv3-sdk/entities"
 	"github.com/daoleno/uniswapv3-sdk/periphery"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/gkirito/go-ethereum/accounts/abi"
 	"math/big"
 )
 
 type BaseUniswapV3QuoteData struct {
 	AmountOut                   *big.Int
 	SqrtPriceX96AfterList       []*big.Int
-	InitializedTicksCrossedList []*big.Int
+	InitializedTicksCrossedList []uint32
 	GasEstimate                 *big.Int
 }
 
@@ -71,7 +71,7 @@ func (u UniswapV3) GetQuote(route *base_entities.MRoute, index int, tradeType en
 		ContractAddress: route.Pools[index].QuoterAddress(),
 		Contract:        u.QuoterAbi,
 		CallResult: rpc.MultiCallResult[QuoteResult]{
-			Data: BaseUniswapV3QuoteData{},
+			Data: &BaseUniswapV3QuoteData{},
 		},
 	}
 	param.FunctionName = "quoteExactInput"

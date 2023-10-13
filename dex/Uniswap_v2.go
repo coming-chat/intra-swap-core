@@ -6,8 +6,8 @@ import (
 	"github.com/coming-chat/intra-swap-core/contracts"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	"github.com/daoleno/uniswap-sdk-core/entities"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/gkirito/go-ethereum/accounts/abi"
 	"github.com/vaulverin/uniswapv2-sdk/router"
 	"math/big"
 	"time"
@@ -60,7 +60,7 @@ func (b UniswapV2) GetQuote(route *base_entities.MRoute, index int, tradeType en
 		ContractAddress: route.Pools[index].QuoterAddress(),
 		FunctionName:    name,
 		CallResult: rpc.MultiCallResult[QuoteResult]{
-			Data: BaseAmounts{},
+			Data: &BaseAmounts{},
 		},
 		Contract: b.RouterContract,
 	}
@@ -118,7 +118,7 @@ func (b UniswapV2) PackSwap(
 	if tokenIn.IsNative() && tokenOut.IsNative() {
 		return nil, router.ErrEtherInOut
 	}
-	path := []any{tokenIn.Address, tokenOut.Address}
+	path := []common.Address{tokenIn.Address, tokenOut.Address}
 
 	deadline := swapConfig.Deadline
 	if swapConfig.Deadline == nil {
@@ -161,5 +161,5 @@ func (b UniswapV2) PackSwap(
 	default:
 		return nil, errors.New("unsupported tradeType")
 	}
-	return b.RouterContract.Pack(methodName, args)
+	return b.RouterContract.Pack(methodName, args...)
 }
