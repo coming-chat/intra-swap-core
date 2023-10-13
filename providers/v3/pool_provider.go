@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
-	"github.com/coming-chat/intra-swap-core/contracts"
+	"github.com/coming-chat/intra-swap-core/dex"
 	"github.com/coming-chat/intra-swap-core/providers/config"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	"github.com/daoleno/uniswap-sdk-core/entities"
@@ -17,27 +17,6 @@ import (
 )
 
 const cacheKeyFormat = "%d:%s-%s/%d"
-
-type ISlot0 struct {
-	SqrtPriceX96               *big.Int
-	Tick                       *big.Int
-	ObservationIndex           uint16
-	ObservationCardinality     uint16
-	ObservationCardinalityNext uint16
-	FeeProtocol                uint8
-	Unlocked                   bool
-}
-
-type Tick struct {
-	LiquidityGross                 *big.Int
-	LiquidityNet                   *big.Int
-	FeeGrowthOutside0X128          *big.Int
-	FeeGrowthOutside1X128          *big.Int
-	TickCumulativeOutside          *big.Int
-	SecondsPerLiquidityOutsideX128 *big.Int
-	SecondsOutside                 uint32
-	Initialized                    bool
-}
 
 type TokenPairs struct {
 	Token0         *entities.Token
@@ -154,7 +133,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 			RouterAddress  string
 		}
 		sortedPoolAddresses []string
-		slot0s              []rpc.MultiCallSingle[ISlot0]
+		slot0s              []rpc.MultiCallSingle[dex.ISlot0]
 		liquiditys          []rpc.MultiCallSingle[*big.Int]
 	)
 
@@ -197,20 +176,22 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 			RouterAddress:  pair.RouterAddress,
 		})
 		sortedPoolAddresses = append(sortedPoolAddresses, pair.PairAddress)
-		slot0s = append(slot0s, rpc.MultiCallSingle[ISlot0]{
-			FunctionName:    "slot0",
-			Contract:        contracts.IUniswapV3PoolAbi,
-			ContractAddress: common.HexToAddress(pair.PairAddress),
-		})
-		liquiditys = append(liquiditys, rpc.MultiCallSingle[*big.Int]{
-			FunctionName:    "liquidity",
-			ContractAddress: common.HexToAddress(pair.PairAddress),
-			Contract:        contracts.IUniswapV3PoolAbi,
-		})
+		slot0s = append(slot0s, dex.RouterAddrDexMap[common.HexToAddress(pair.RouterAddress)].GetPoolInfo().GetSlot0(common.HexToAddress(pair.PairAddress)))
+		//slot0s = append(slot0s, rpc.MultiCallSingle[ISlot0]{
+		//	FunctionName:    "slot0",
+		//	Contract:        contracts.IUniswapV3PoolAbi,
+		//	ContractAddress: common.HexToAddress(pair.PairAddress),
+		//})
+		liquiditys = append(liquiditys, dex.RouterAddrDexMap[common.HexToAddress(pair.RouterAddress)].GetPoolInfo().GetLiquidity(common.HexToAddress(pair.PairAddress)))
+		//liquiditys = append(liquiditys, rpc.MultiCallSingle[*big.Int]{
+		//	FunctionName:    "liquidity",
+		//	ContractAddress: common.HexToAddress(pair.PairAddress),
+		//	Contract:        contracts.IUniswapV3PoolAbi,
+		//})
 	}
 	var (
 		syncGroup              = sync.WaitGroup{}
-		slot0Results           rpc.MultiCallResultWithInfo[ISlot0]
+		slot0Results           rpc.MultiCallResultWithInfo[dex.ISlot0]
 		liquidityResults       rpc.MultiCallResultWithInfo[*big.Int]
 		errSlot0, errLiquidity error
 	)
@@ -219,7 +200,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 	go func() {
 		defer syncGroup.Done()
 		for i := 0; i < b.RetryOptions.Retries; i++ {
-			_, _, errSlot0 = rpc.GetMultiCallProvider[ISlot0](b.MultiCallProvider).MultiCall(
+			_, _, errSlot0 = rpc.GetMultiCallProvider[dex.ISlot0](b.MultiCallProvider).MultiCall(
 				b.ChainId,
 				slot0s,
 				0,
@@ -267,7 +248,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 	}
 
 	var (
-		tickInfoParams []rpc.MultiCallSingle[Tick]
+		tickInfoParams []rpc.MultiCallSingle[dex.Tick]
 		ticks          [][]entitiesV3.Tick
 	)
 
@@ -287,17 +268,18 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 			},
 		})
 
-		tickInfoParams = append(tickInfoParams, rpc.MultiCallSingle[Tick]{
-			FunctionName:    "ticks",
-			ContractAddress: common.HexToAddress(address),
-			Contract:        contracts.IUniswapV3PoolAbi,
-			FunctionParams: []any{
-				slot0Results.ReturnData[i].Data.Tick,
-			},
-		})
+		tickInfoParams = append(tickInfoParams, dex.RouterAddrDexMap[common.HexToAddress(sortedPool[i].RouterAddress)].GetPoolInfo().GetTicks(common.HexToAddress(address), slot0Results.ReturnData[i].Data.Tick))
+		//tickInfoParams = append(tickInfoParams, rpc.MultiCallSingle[Tick]{
+		//	FunctionName:    "ticks",
+		//	ContractAddress: common.HexToAddress(address),
+		//	Contract:        contracts.IUniswapV3PoolAbi,
+		//	FunctionParams: []any{
+		//		slot0Results.ReturnData[i].Data.Tick,
+		//	},
+		//})
 	}
 
-	_, _, err = rpc.GetMultiCallProvider[Tick](b.MultiCallProvider).MultiCall(
+	_, _, err = rpc.GetMultiCallProvider[dex.Tick](b.MultiCallProvider).MultiCall(
 		b.ChainId,
 		tickInfoParams,
 		0,

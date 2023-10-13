@@ -4,8 +4,8 @@ import (
 	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/contracts/omni_swap"
+	"github.com/coming-chat/intra-swap-core/dex"
 	"github.com/coming-chat/intra-swap-core/routers"
-	"github.com/coming-chat/intra-swap-core/routers/alpha_router/config"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"github.com/ethereum/go-ethereum/common"
 	"math/big"
@@ -69,7 +69,7 @@ func BuildTrade(
 func BuildOmniSwapMethodParameters(
 	chainId base_entities.ChainId,
 	trade *base_entities.MTrade,
-	swapConfig config.SwapOptions,
+	swapConfig base_entities.SwapOptions,
 ) (omni_swap.ISoSoData, []omni_swap.LibSwapNormalizedSwapData, error) {
 	soData := omni_swap.ISoSoData{
 		Receiver:           swapConfig.Recipient,
@@ -114,7 +114,7 @@ func packedCallData(
 	trade *base_entities.MTrade,
 	swap *base_entities.Swap,
 	poolIndex int,
-	swapConfig config.SwapOptions,
+	swapConfig base_entities.SwapOptions,
 ) ([]byte, error) {
 	amountIn := entities.FromRawAmount(swap.Route.Path[poolIndex], big.NewInt(0))
 	amountOut := entities.FromRawAmount(swap.Route.Path[poolIndex+1], big.NewInt(0))
@@ -138,13 +138,22 @@ func packedCallData(
 			amountOut = swap.InputAmount
 		}
 	}
-	return packFuncSelector(swap.Route.Pools[poolIndex].RouterAddress())(trade.TradeType,
+	return dex.RouterAddrDexMap[swap.Route.Pools[poolIndex].RouterAddress()].PackSwap(
+		trade.TradeType,
 		swap.Route.Path[poolIndex],
 		swap.Route.Path[poolIndex+1],
 		amountIn,
 		amountOut,
 		swap.Route.Pools[poolIndex],
-		swapConfig)
+		swapConfig,
+	)
+	//return packFuncSelector(swap.Route.Pools[poolIndex].RouterAddress())(trade.TradeType,
+	//	swap.Route.Path[poolIndex],
+	//	swap.Route.Path[poolIndex+1],
+	//	amountIn,
+	//	amountOut,
+	//	swap.Route.Pools[poolIndex],
+	//	swapConfig)
 }
 
 func packFuncSelector(routerAddress common.Address) packMethod {
@@ -165,7 +174,7 @@ func packFuncSelector(routerAddress common.Address) packMethod {
 		base_constant.ArbitrumSushiRouter,
 		base_constant.PolygonQuickSwapV2Router:
 		return iUniswapV2Router02
-	case base_constant.BaseAerodromerouter:
+	case base_constant.BaseAerodromeRouter:
 		return iAerodromeRouter
 	case base_constant.OptimismVelodromeV2Router:
 		return iVelodromeRouter

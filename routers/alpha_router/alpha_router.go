@@ -170,7 +170,7 @@ func (a *AlphaRouter) Route(
 	amount *entities.CurrencyAmount,
 	quoteCurrency entities.Currency,
 	tradeType entities.TradeType,
-	swapConfig *config.SwapOptions,
+	swapConfig *base_entities.SwapOptions,
 	routingConfig config.AlphaRouterConfig,
 ) (*routers.SwapRoute, error) {
 	var err error

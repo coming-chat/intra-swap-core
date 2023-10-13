@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
-	"github.com/coming-chat/intra-swap-core/contracts"
+	"github.com/coming-chat/intra-swap-core/dex"
 	"github.com/coming-chat/intra-swap-core/providers/config"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"github.com/ethereum/go-ethereum/common"
 	entitiesV2 "github.com/vaulverin/uniswapv2-sdk/entities"
-	"math/big"
 )
 
 const cacheKeyFormat = "%d:%s-%s"
@@ -21,12 +20,6 @@ type TokenPairs struct {
 	PairAddress    string
 	FactoryAddress string
 	RouterAddress  string
-}
-
-type IReserves struct {
-	Reserve0           *big.Int
-	Reserve1           *big.Int
-	BlockTimestampLast uint32
 }
 
 type PoolProvider interface {
@@ -127,7 +120,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 			Token1 *entities.Token
 		}
 		sortedPoolAddresses []string
-		multiCallData       []rpc.MultiCallSingle[IReserves]
+		multiCallData       []rpc.MultiCallSingle[dex.IReserves]
 		err                 error
 	)
 	for _, pair := range tokenPairs {
@@ -156,15 +149,15 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 			Token1 *entities.Token
 		}{Token0: token0, Token1: token1})
 		sortedPoolAddresses = append(sortedPoolAddresses, pair.PairAddress)
-
-		multiCallData = append(multiCallData, rpc.MultiCallSingle[IReserves]{
-			FunctionName:    "getReserves",
-			Contract:        contracts.IUniswapV2PoolAbi,
-			ContractAddress: common.HexToAddress(pair.PairAddress),
-		})
+		multiCallData = append(multiCallData, dex.RouterAddrDexMap[common.HexToAddress(pair.RouterAddress)].GetPoolInfo().GetReserves(common.HexToAddress(pair.PairAddress)))
+		//multiCallData = append(multiCallData, rpc.MultiCallSingle[IReserves]{
+		//	FunctionName:    "getReserves",
+		//	Contract:        contracts.IUniswapV2PoolAbi,
+		//	ContractAddress: common.HexToAddress(pair.PairAddress),
+		//})
 	}
 
-	_, _, err = rpc.GetMultiCallProvider[IReserves](b.MultiCallProvider).MultiCall(b.ChainId, multiCallData, 0, false, nil)
+	_, _, err = rpc.GetMultiCallProvider[dex.IReserves](b.MultiCallProvider).MultiCall(b.ChainId, multiCallData, 0, false, nil)
 	if err != nil {
 		return nil, err
 	}

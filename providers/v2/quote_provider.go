@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/coming-chat/intra-swap-core/base_constant"
 	"github.com/coming-chat/intra-swap-core/base_entities"
-	"github.com/coming-chat/intra-swap-core/providers"
+	"github.com/coming-chat/intra-swap-core/dex"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"math/big"
@@ -101,7 +101,7 @@ func (b *BaseQuoteProvider) getQuotesOnline(amounts []*entities.CurrencyAmount,
 	}
 	for i := 0; i < maxHop; i++ {
 		var (
-			multiCallParams []rpc.MultiCallSingle[providers.QuoteResult]
+			multiCallParams []rpc.MultiCallSingle[dex.QuoteResult]
 			params          []struct {
 				routeIndex  int
 				amountIndex int
@@ -115,7 +115,8 @@ func (b *BaseQuoteProvider) getQuotesOnline(amounts []*entities.CurrencyAmount,
 				if a.EqualTo(base_constant.ZeroFraction) {
 					continue
 				}
-				call, err := QuoteMultiCall(route, i, tradeType, a)
+				//call, err := QuoteMultiCall(route, i, tradeType, a)
+				call, err := dex.RouterAddrDexMap[route.Pools[i].RouterAddress()].GetQuote(route, i, tradeType, a)
 				if err != nil {
 					return nil, err
 				}
@@ -134,7 +135,7 @@ func (b *BaseQuoteProvider) getQuotesOnline(amounts []*entities.CurrencyAmount,
 		if len(multiCallParams) == 0 {
 			continue
 		}
-		err = rpc.ConcurrentMultiCall[providers.QuoteResult](b.ChainId, b.MultiCall2Provider, multiCallParams, b.MultiCallConfig)
+		err = rpc.ConcurrentMultiCall[dex.QuoteResult](b.ChainId, b.MultiCall2Provider, multiCallParams, b.MultiCallConfig)
 		if err != nil {
 			return nil, err
 		}
