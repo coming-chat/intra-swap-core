@@ -12,6 +12,16 @@ import (
 	"time"
 )
 
+type MuteIoQuoteResult struct {
+	Amounts []*big.Int
+	Stable  []bool
+	Fees    []*big.Int
+}
+
+func (m MuteIoQuoteResult) QuoteAmount() *big.Int {
+	return m.Amounts[len(m.Amounts)-1]
+}
+
 type MuteIo struct {
 	UniswapV2
 }
@@ -37,6 +47,7 @@ func (m MuteIo) GetQuote(route *base_entities.MRoute, index int, tradeType entit
 		return rpc.MultiCallSingle[QuoteResult]{}, err
 	}
 	param.FunctionParams = append(param.FunctionParams, []bool{route.Pools[index].Stable()})
+	param.CallResult.Data = &MuteIoQuoteResult{}
 	return param, nil
 }
 
