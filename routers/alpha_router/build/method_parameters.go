@@ -99,6 +99,9 @@ func BuildOmniSwapMethodParameters(
 					swapData.SendingAssetId = common.HexToAddress(base_constant.EtherAddress).Bytes()
 				}
 			}
+			if i == len(swap.Route.Pools)-1 && swap.OutputAmount.Currency.IsNative() {
+				swapData.ReceivingAssetId = common.HexToAddress(base_constant.EtherAddress).Bytes()
+			}
 			swapData.CallData, err = packedCallData(chainId, trade, swap, i, swapConfig)
 			if err != nil {
 				return soData, nil, err
