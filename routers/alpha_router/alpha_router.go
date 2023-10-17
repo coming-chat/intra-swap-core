@@ -567,9 +567,7 @@ func (a *AlphaRouter) getV3Quotes(
 	}
 
 	if len(routes) == 0 {
-		return &routesWithValidQuotesAndPool{
-			CandidatePools: candidatePools,
-		}, nil
+		return nil, errors.New("path not found")
 	}
 
 	// For all our routes, and all the fractional amounts, fetch quotes on-chain.
@@ -679,9 +677,7 @@ func (a *AlphaRouter) getV2Quotes(
 		return nil, err
 	}
 	if len(routes) == 0 {
-		return &routesWithValidQuotesAndPool{
-			CandidatePools: candidatePools,
-		}, nil
+		return nil, errors.New("path not found")
 	}
 
 	routesWithQuotes, err := a.V2QuoteProvider.GetQuotesMany(amounts, routes, swapType)
