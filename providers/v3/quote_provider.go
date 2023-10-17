@@ -157,7 +157,6 @@ func (b *BaseQuoteProvider) getQuotesManyDataOnline(
 				if a.EqualTo(base_constant.ZeroFraction) {
 					continue
 				}
-				//call, err := QuoteMultiCall(route, i, tradeType, a)
 				call, err := dex.RouterAddrDexMap[route.Pools[i].RouterAddress()].GetQuote(route, i, tradeType, a)
 				if err != nil {
 					return nil, 0, err
@@ -192,35 +191,7 @@ func (b *BaseQuoteProvider) getQuotesManyDataOnline(
 			syncAmounts[param.routeIndex][param.amountIndex] = entities.FromRawAmount(syncAmounts[param.routeIndex][param.amountIndex].Currency, multiCallParams[pi].CallResult.Data.QuoteAmount())
 			result[param.routeIndex].AmountQuotes[param.amountIndex].Quote = multiCallParams[pi].CallResult.Data.QuoteAmount()
 			result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList = append(result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList, multiCallParams[pi].CallResult.Data.QuoteAmount())
-			//result[param.routeIndex].AmountQuotes[param.amountIndex].SqrtPriceX96AfterList = append(result[param.routeIndex].AmountQuotes[param.amountIndex].SqrtPriceX96AfterList, callResult.ReturnData[pi].Data.SqrtPriceX96AfterList...)
-			//result[param.routeIndex].AmountQuotes[param.amountIndex].InitializedTicksCrossedList = append(result[param.routeIndex].AmountQuotes[param.amountIndex].InitializedTicksCrossedList, callResult.ReturnData[pi].Data.InitializedTicksCrossedList...)
-			//result[param.routeIndex].AmountQuotes[param.amountIndex].GasEstimate.Add(result[param.routeIndex].AmountQuotes[param.amountIndex].GasEstimate, callResult.ReturnData[pi].Data.GasEstimate)
 		}
-		//callDataIndex := 0
-		//for ri, route := range routes {
-		//	if len(route.Pools) <= i {
-		//		continue
-		//	}
-		//	for ra, a := range syncAmounts[ri] {
-		//		if a.EqualTo(base_constant.ZeroFraction) {
-		//			continue
-		//		}
-		//		quoteData := callResult.ReturnData[callDataIndex]
-		//		if !quoteData.Success {
-		//			result[ri].AmountQuotes[ra].Quote = big.NewInt(0)
-		//			syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, result[ri].AmountQuotes[ra].Quote)
-		//			result[ri].AmountQuotes[ra].QuoteList = append(result[ri].AmountQuotes[ra].QuoteList, result[ri].AmountQuotes[ra].Quote)
-		//		} else {
-		//			syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, quoteData.Data.AmountOut)
-		//			result[ri].AmountQuotes[ra].Quote = quoteData.Data.AmountOut
-		//			result[ri].AmountQuotes[ra].QuoteList = append(result[ri].AmountQuotes[ra].QuoteList, quoteData.Data.AmountOut)
-		//			result[ri].AmountQuotes[ra].SqrtPriceX96AfterList = append(result[ri].AmountQuotes[ra].SqrtPriceX96AfterList, quoteData.Data.SqrtPriceX96AfterList...)
-		//			result[ri].AmountQuotes[ra].InitializedTicksCrossedList = append(result[ri].AmountQuotes[ra].InitializedTicksCrossedList, quoteData.Data.InitializedTicksCrossedList...)
-		//			result[ri].AmountQuotes[ra].GasEstimate.Add(result[ri].AmountQuotes[ra].GasEstimate, quoteData.Data.GasEstimate)
-		//		}
-		//		callDataIndex++
-		//	}
-		//}
 	}
 
 	return result, 0, nil

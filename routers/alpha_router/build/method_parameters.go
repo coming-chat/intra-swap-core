@@ -8,6 +8,7 @@ import (
 	"github.com/coming-chat/intra-swap-core/routers"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"github.com/ethereum/go-ethereum/common"
+	selfCommon "github.com/gkirito/go-ethereum/common"
 	"math/big"
 )
 
@@ -72,12 +73,12 @@ func BuildOmniSwapMethodParameters(
 	swapConfig base_entities.SwapOptions,
 ) (omni_swap.ISoSoData, []omni_swap.LibSwapNormalizedSwapData, error) {
 	soData := omni_swap.ISoSoData{
-		Receiver:           swapConfig.Recipient,
-		SendingAssetId:     trade.Swaps[0].Route.Input.Wrapped().Address,
+		Receiver:           selfCommon.Address(swapConfig.Recipient),
+		SendingAssetId:     selfCommon.Address(trade.Swaps[0].Route.Input.Wrapped().Address),
 		SourceChainId:      uint16(trade.Swaps[0].Route.Path[0].ChainId()),
 		DestinationChainId: uint16(trade.Swaps[0].Route.Path[0].ChainId()),
 		Amount:             trade.InputAmount().Quotient(),
-		ReceivingAssetId:   trade.Swaps[0].Route.Output.Wrapped().Address,
+		ReceivingAssetId:   selfCommon.Address(trade.Swaps[0].Route.Output.Wrapped().Address),
 	}
 
 	var (
@@ -150,44 +151,4 @@ func packedCallData(
 		swap.Route.Pools[poolIndex],
 		swapConfig,
 	)
-	//return packFuncSelector(swap.Route.Pools[poolIndex].RouterAddress())(trade.TradeType,
-	//	swap.Route.Path[poolIndex],
-	//	swap.Route.Path[poolIndex+1],
-	//	amountIn,
-	//	amountOut,
-	//	swap.Route.Pools[poolIndex],
-	//	swapConfig)
-}
-
-func packFuncSelector(routerAddress common.Address) packMethod {
-	switch routerAddress {
-	case base_constant.BaseUniswapV3Router,
-		base_constant.OptimismUniswapV3Router,
-		base_constant.ArbitrumUniswapV3Router,
-		base_constant.PolygonUniswapV3Router:
-		return iSwapRouter02
-	case base_constant.BaseSwapBasedV3Router,
-		base_constant.BaseSushiswapV3Router,
-		base_constant.ZkSyncMaverickRouter:
-		return iSwapRouter
-	case base_constant.BaseAlienbaseV2Router,
-		base_constant.BaseSwapBasedV2Router,
-		base_constant.BaseBaseswapV2Router,
-		base_constant.ArbitrumCamelotRouter,
-		base_constant.ArbitrumSushiRouter,
-		base_constant.PolygonQuickSwapV2Router:
-		return iUniswapV2Router02
-	case base_constant.BaseAerodromeRouter:
-		return iAerodromeRouter
-	case base_constant.OptimismVelodromeV2Router:
-		return iVelodromeRouter
-	case base_constant.ZkSyncMuteRouter:
-		return iMuteRouter
-	case base_constant.PolygonQuickSwapV3Router:
-		return iQuickSwapRouter
-	case base_constant.PolygonPearlFiRouter:
-		return iPearlRouter
-	default:
-		panic("not found pack func for router " + routerAddress.String())
-	}
 }

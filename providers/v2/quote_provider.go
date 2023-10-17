@@ -115,7 +115,6 @@ func (b *BaseQuoteProvider) getQuotesOnline(amounts []*entities.CurrencyAmount,
 				if a.EqualTo(base_constant.ZeroFraction) {
 					continue
 				}
-				//call, err := QuoteMultiCall(route, i, tradeType, a)
 				call, err := dex.RouterAddrDexMap[route.Pools[i].RouterAddress()].GetQuote(route, i, tradeType, a)
 				if err != nil {
 					return nil, err
@@ -150,28 +149,6 @@ func (b *BaseQuoteProvider) getQuotesOnline(amounts []*entities.CurrencyAmount,
 			result[param.routeIndex].AmountQuotes[param.amountIndex].Quote = multiCallParams[pi].CallResult.Data.QuoteAmount()
 			result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList = append(result[param.routeIndex].AmountQuotes[param.amountIndex].QuoteList, multiCallParams[pi].CallResult.Data.QuoteAmount())
 		}
-		//callDataIndex := 0
-		//for ri, route := range routes {
-		//	if len(route.Pools) <= i {
-		//		continue
-		//	}
-		//	for ra, a := range syncAmounts[ri] {
-		//		if a.EqualTo(base_constant.ZeroFraction) {
-		//			continue
-		//		}
-		//		quoteData := callResult.ReturnData[callDataIndex]
-		//		if !quoteData.Success {
-		//			result[ri].AmountQuotes[ra].Quote = big.NewInt(0)
-		//			result[ri].AmountQuotes[ra].QuoteList = append(result[ri].AmountQuotes[ra].QuoteList, result[ri].AmountQuotes[ra].Quote)
-		//			syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, result[ri].AmountQuotes[ra].Quote)
-		//		} else {
-		//			syncAmounts[ri][ra] = entities.FromRawAmount(syncAmounts[ri][ra].Currency, quoteData.Data[len(quoteData.Data)-1])
-		//			result[ri].AmountQuotes[ra].QuoteList = append(result[ri].AmountQuotes[ra].QuoteList, quoteData.Data[len(quoteData.Data)-1])
-		//			result[ri].AmountQuotes[ra].Quote = quoteData.Data[len(quoteData.Data)-1]
-		//		}
-		//		callDataIndex++
-		//	}
-		//}
 	}
 
 	return result, nil
