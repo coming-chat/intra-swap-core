@@ -132,6 +132,9 @@ func (b *BaseMultiCallProvider[T]) MultiCall(
 	blockHash = decodeResults.BlockHash
 	blockNumber = decodeResults.BlockNumber
 
+	if len(decodeResults.ReturnData) != len(multiCallData) {
+		return blockNumber, blockHash, errors.New("result len not equal to request params")
+	}
 	for i := range multiCallData {
 		if !decodeResults.ReturnData[i].Success {
 			continue
