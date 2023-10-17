@@ -18,7 +18,7 @@ type PearlFi struct {
 func NewPearLFi() PearlFi {
 	return PearlFi{
 		MuteIo{
-			UniswapV2: NewUniswapV2(contracts.IPearlRouterAbi, nil, nil),
+			UniswapV2: NewUniswapV2(contracts.IPearlRouterAbi, contracts.MuteIoFatoryAbi, nil),
 		},
 	}
 }
