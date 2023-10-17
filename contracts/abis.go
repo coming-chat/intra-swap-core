@@ -15,9 +15,10 @@ var (
 	IVelodromeAbi, _         = omni_swap.IVelodromeMetaData.GetAbi()
 	ILBRouterAbi, _          = omni_swap.ILBRouterMetaData.GetAbi()
 	IMuteRouterAbi, _        = omni_swap.IMuteRouterMetaData.GetAbi()
-	IiZiSwapAbi, _           = IiZiSwapMetaData.GetAbi()
+	IiZiSwapAbi, _           = omni_swap.IiZiSwapMetaData.GetAbi()
 	IQuickSwapRouterAbi, _   = omni_swap.IQuickSwapRouterMetaData.GetAbi()
-	IPearlRouterAbi, _       = IPearlRouterMetaData.GetAbi()
+	IPearlRouterAbi, _       = omni_swap.IPearlRouterMetaData.GetAbi()
+	CamelotRouterAbi, _      = omni_swap.ICamelotRouterMetaData.GetAbi()
 
 	//Quoter
 	IQuoterV2Abi, _         = omni_swap.IQuoterV2MetaData.GetAbi()

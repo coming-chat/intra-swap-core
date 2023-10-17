@@ -8,6 +8,7 @@ import (
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	"github.com/coming-chat/intra-swap-core/util"
 	"github.com/daoleno/uniswap-sdk-core/entities"
+	"github.com/gkirito/go-ethereum/common"
 	"math/big"
 )
 
@@ -56,7 +57,7 @@ func (m MaverickProtocol) PackSwap(tradeType entities.TradeType, tokenIn, tokenO
 	case entities.ExactInput:
 		callData, err = m.RouterContract.Pack("exactInput", omni_swap.ISwapRouterExactInputParams{
 			Path:             path,
-			Recipient:        swapConfig.Recipient,
+			Recipient:        common.Address(swapConfig.Recipient),
 			AmountIn:         amountIn.Quotient(),
 			AmountOutMinimum: amountOut.Quotient(),
 			Deadline:         swapConfig.Deadline,
@@ -64,7 +65,7 @@ func (m MaverickProtocol) PackSwap(tradeType entities.TradeType, tokenIn, tokenO
 	case entities.ExactOutput:
 		callData, err = m.RouterContract.Pack("exactOutput", omni_swap.ISwapRouterExactOutputParams{
 			Path:            path,
-			Recipient:       swapConfig.Recipient,
+			Recipient:       common.Address(swapConfig.Recipient),
 			AmountInMaximum: amountIn.Quotient(),
 			AmountOut:       amountOut.Quotient(),
 			Deadline:        swapConfig.Deadline,

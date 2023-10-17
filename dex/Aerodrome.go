@@ -8,6 +8,7 @@ import (
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"github.com/ethereum/go-ethereum/common"
+	selfCommon "github.com/gkirito/go-ethereum/common"
 	"github.com/vaulverin/uniswapv2-sdk/router"
 	"math/big"
 	"time"
@@ -39,10 +40,10 @@ func (a Aerodrome) GetQuote(route *base_entities.MRoute, index int, tradeType en
 	multiParaQuote.FunctionName = "getAmountsOut"
 	multiParaQuote.FunctionParams[1] = []omni_swap.IAerodromeRoute{
 		{
-			From:    route.Path[index].Address,
-			To:      route.Path[index+1].Address,
+			From:    selfCommon.Address(route.Path[index].Address),
+			To:      selfCommon.Address(route.Path[index+1].Address),
 			Stable:  route.Pools[index].Stable(),
-			Factory: route.Pools[index].FactoryAddress(),
+			Factory: selfCommon.Address(route.Pools[index].FactoryAddress()),
 		},
 	}
 	return multiParaQuote, nil
@@ -72,10 +73,10 @@ func (a Aerodrome) PackSwap(
 	)
 	path := []omni_swap.IAerodromeRoute{
 		{
-			From:    tokenIn.Address,
-			To:      tokenOut.Address,
+			From:    selfCommon.Address(tokenIn.Address),
+			To:      selfCommon.Address(tokenOut.Address),
 			Stable:  pool.Stable(),
-			Factory: pool.FactoryAddress(),
+			Factory: selfCommon.Address(pool.FactoryAddress()),
 		},
 	}
 	if amountIn.Currency.IsNative() {

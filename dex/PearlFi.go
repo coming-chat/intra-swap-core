@@ -4,8 +4,10 @@ import (
 	"errors"
 	"github.com/coming-chat/intra-swap-core/base_entities"
 	"github.com/coming-chat/intra-swap-core/contracts"
+	"github.com/coming-chat/intra-swap-core/contracts/omni_swap"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	"github.com/daoleno/uniswap-sdk-core/entities"
+	"github.com/gkirito/go-ethereum/common"
 	"github.com/vaulverin/uniswapv2-sdk/router"
 	"math/big"
 	"time"
@@ -31,10 +33,10 @@ func (f PearlFi) GetQuote(route *base_entities.MRoute, index int, tradeType enti
 	if err != nil {
 		return rpc.MultiCallSingle[QuoteResult]{}, err
 	}
-	param.FunctionParams[1] = []contracts.IPearlRouterroute{
+	param.FunctionParams[1] = []omni_swap.IPearlRouterroute{
 		{
-			From:   route.Path[index].Address,
-			To:     route.Path[index+1].Address,
+			From:   common.Address(route.Path[index].Address),
+			To:     common.Address(route.Path[index+1].Address),
 			Stable: route.Pools[index].Stable(),
 		},
 	}
@@ -54,10 +56,10 @@ func (f PearlFi) PackSwap(
 	if tokenIn.IsNative() && tokenOut.IsNative() {
 		return nil, router.ErrEtherInOut
 	}
-	route := []contracts.IPearlRouterroute{
+	route := []omni_swap.IPearlRouterroute{
 		{
-			From:   tokenIn.Address,
-			To:     tokenOut.Address,
+			From:   common.Address(tokenIn.Address),
+			To:     common.Address(tokenOut.Address),
 			Stable: pool.Stable(),
 		},
 	}

@@ -12,6 +12,7 @@ import (
 	"github.com/daoleno/uniswapv3-sdk/periphery"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gkirito/go-ethereum/accounts/abi"
+	selfCommon "github.com/gkirito/go-ethereum/common"
 	"math/big"
 )
 
@@ -142,7 +143,7 @@ func (u UniswapV3) PackSwap(tradeType entities.TradeType, tokenIn, tokenOut *ent
 	case entities.ExactInput:
 		param := omni_swap.ISwapRouter02ExactInputParams{
 			Path:             path,
-			Recipient:        swapConfig.Recipient,
+			Recipient:        selfCommon.Address(swapConfig.Recipient),
 			AmountIn:         amountIn.Quotient(),
 			AmountOutMinimum: amountOut.Quotient(),
 		}
@@ -150,7 +151,7 @@ func (u UniswapV3) PackSwap(tradeType entities.TradeType, tokenIn, tokenOut *ent
 	case entities.ExactOutput:
 		param := omni_swap.ISwapRouter02ExactOutputParams{
 			Path:            path,
-			Recipient:       swapConfig.Recipient,
+			Recipient:       selfCommon.Address(swapConfig.Recipient),
 			AmountInMaximum: amountIn.Quotient(),
 			AmountOut:       amountOut.Quotient(),
 		}

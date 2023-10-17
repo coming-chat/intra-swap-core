@@ -5,16 +5,15 @@ package omni_swap
 
 import (
 	"errors"
-	common2 "github.com/gkirito/go-ethereum/common"
 	"math/big"
 	"strings"
 
-	ethereum "github.com/ethereum/go-ethereum"
+	ethereum "github.com/gkirito/go-ethereum"
 	"github.com/gkirito/go-ethereum/accounts/abi"
 	"github.com/gkirito/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/gkirito/go-ethereum/common"
 	"github.com/gkirito/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/event"
+	"github.com/gkirito/go-ethereum/event"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -155,7 +154,7 @@ func bindIStargate(address common.Address, caller bind.ContractCaller, transacto
 	if err != nil {
 		return nil, err
 	}
-	return bind.NewBoundContract(common2.Address(address), *parsed, caller, transactor, filterer), nil
+	return bind.NewBoundContract(address, *parsed, caller, transactor, filterer), nil
 }
 
 // Call invokes the (constant) contract method with params as input values and

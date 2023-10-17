@@ -7,6 +7,7 @@ import (
 	"github.com/coming-chat/intra-swap-core/contracts/omni_swap"
 	"github.com/coming-chat/intra-swap-core/providers/rpc"
 	"github.com/daoleno/uniswap-sdk-core/entities"
+	"github.com/gkirito/go-ethereum/common"
 	"github.com/vaulverin/uniswapv2-sdk/router"
 	"math/big"
 	"time"
@@ -34,10 +35,10 @@ func (v Velodrome) GetQuote(route *base_entities.MRoute, index int, tradeType en
 	}
 	multiParaQuote.FunctionParams[1] = []omni_swap.IVelodromeRoute{
 		{
-			From:    route.Path[index].Address,
-			To:      route.Path[index+1].Address,
+			From:    common.Address(route.Path[index].Address),
+			To:      common.Address(route.Path[index+1].Address),
 			Stable:  route.Pools[index].Stable(),
-			Factory: route.Pools[index].FactoryAddress(),
+			Factory: common.Address(route.Pools[index].FactoryAddress()),
 		},
 	}
 	return multiParaQuote, nil
@@ -67,10 +68,10 @@ func (v Velodrome) PackSwap(
 	)
 	path := []omni_swap.IVelodromeRoute{
 		{
-			From:    tokenIn.Address,
-			To:      tokenOut.Address,
+			From:    common.Address(tokenIn.Address),
+			To:      common.Address(tokenOut.Address),
 			Stable:  pool.Stable(),
-			Factory: pool.FactoryAddress(),
+			Factory: common.Address(pool.FactoryAddress()),
 		},
 	}
 
