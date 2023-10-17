@@ -11,7 +11,7 @@ import (
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	entitiesV3 "github.com/daoleno/uniswapv3-sdk/entities"
 	"github.com/daoleno/uniswapv3-sdk/periphery"
-	"github.com/ethereum/go-ethereum/common"
+	selfCommon "github.com/gkirito/go-ethereum/common"
 	"math/big"
 )
 
@@ -68,7 +68,7 @@ func QuoteMultiCall(
 		param.FunctionParams = []any{
 			omni_swap.IiZiSwapQuoterSwapAmountParams{
 				Path:        encodedRoute,
-				Recipient:   common.Address{},
+				Recipient:   selfCommon.Address{},
 				Amount:      amount.Quotient(),
 				MinAcquired: big.NewInt(0),
 				Deadline:    big.NewInt(10000000),

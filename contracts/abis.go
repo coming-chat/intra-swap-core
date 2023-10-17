@@ -26,16 +26,19 @@ var (
 	IiZiSwapQuoterAbi, _    = omni_swap.IiZiSwapQuoterMetaData.GetAbi()
 	IPoolIInformationAbi, _ = omni_swap.IPoolInformationMetaData.GetAbi()
 	IQuickQuoterAbi, _      = omni_swap.IQuickQuoterMetaData.GetAbi()
+	ISwapBasedQuoterAbi, _  = omni_swap.ISwapBasedQuoterMetaData.GetAbi()
 
 	//Factory
 	IUniswapV3FactoryAbi, _ = uniswap_v3.FactoryMetaData.GetAbi()
 	IUniswapV2FactoryAbi, _ = uniswap_v2.PairFactoryMetaData.GetAbi()
 	MuteIoFatoryAbi, _      = MuteIoFactoryMetaData.GetAbi()
 	AerodromeFactoryAbi, _  = AerodromeFactoryMetaData.GetAbi()
+	QuickSwapFactoryAbi, _  = QuickSwapFactoryMetaData.GetAbi()
 
 	//Pool
 	IUniswapV3PoolAbi, _ = uniswap_v3.PoolMetaData.GetAbi()
 	IUniswapV2PoolAbi, _ = uniswap_v2.PoolMetaData.GetAbi()
+	IQuickSwapPoolAbi, _ = IQuickPoolMetaData.GetAbi()
 
 	//Erc20
 	Erc20Abi, _ = Erc20MetaData.GetAbi()

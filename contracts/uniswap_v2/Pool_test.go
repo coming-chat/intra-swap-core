@@ -2,9 +2,9 @@ package uniswap_v2
 
 import (
 	"encoding/hex"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/gkirito/go-ethereum/common"
+	"github.com/gkirito/go-ethereum/crypto"
+	"github.com/gkirito/go-ethereum/ethclient"
 	"math/big"
 	"testing"
 )

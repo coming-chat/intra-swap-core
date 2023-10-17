@@ -2,9 +2,9 @@ package contracts
 
 import (
 	"context"
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/gkirito/go-ethereum"
+	"github.com/gkirito/go-ethereum/common"
+	"github.com/gkirito/go-ethereum/ethclient"
 	"math/big"
 	"testing"
 )

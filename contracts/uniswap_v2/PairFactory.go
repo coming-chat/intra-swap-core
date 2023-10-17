@@ -9,12 +9,12 @@ import (
 	"math/big"
 	"strings"
 
-	ethereum "github.com/ethereum/go-ethereum"
+	ethereum "github.com/gkirito/go-ethereum"
 	"github.com/gkirito/go-ethereum/accounts/abi"
 	"github.com/gkirito/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/gkirito/go-ethereum/common"
 	"github.com/gkirito/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/event"
+	"github.com/gkirito/go-ethereum/event"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

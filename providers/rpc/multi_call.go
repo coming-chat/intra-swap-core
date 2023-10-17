@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/gkirito/go-ethereum/accounts/abi"
 	"github.com/gkirito/go-ethereum/accounts/abi/bind"
+	selfCommon "github.com/gkirito/go-ethereum/common"
 	"math/big"
 )
 
@@ -80,7 +81,7 @@ func (b *BaseMultiCallProvider[T]) MultiCall(
 		}
 
 		calls = append(calls, contracts.Multicall3Call{
-			Target:   param.ContractAddress,
+			Target:   selfCommon.Address(param.ContractAddress),
 			CallData: callData,
 		})
 	}
