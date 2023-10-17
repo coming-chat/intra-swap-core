@@ -103,11 +103,14 @@ type UniswapV3PoolInfo struct {
 	PoolContract *abi.ABI
 }
 
-func (u UniswapV3PoolInfo) GetSlot0(poolAddr common.Address) rpc.MultiCallSingle[ISlot0] {
-	return rpc.MultiCallSingle[ISlot0]{
+func (u UniswapV3PoolInfo) GetSlot0(poolAddr common.Address) rpc.MultiCallSingle[IPoolState] {
+	return rpc.MultiCallSingle[IPoolState]{
 		FunctionName:    "slot0",
 		Contract:        u.PoolContract,
 		ContractAddress: poolAddr,
+		CallResult: rpc.MultiCallResult[IPoolState]{
+			Data: &ISlot0{},
+		},
 	}
 }
 
@@ -119,13 +122,16 @@ func (u UniswapV3PoolInfo) GetLiquidity(poolAddr common.Address) rpc.MultiCallSi
 	}
 }
 
-func (u UniswapV3PoolInfo) GetTicks(poolAddr common.Address, tick *big.Int) rpc.MultiCallSingle[Tick] {
-	return rpc.MultiCallSingle[Tick]{
+func (u UniswapV3PoolInfo) GetTicks(poolAddr common.Address, tick *big.Int) rpc.MultiCallSingle[PoolTick] {
+	return rpc.MultiCallSingle[PoolTick]{
 		FunctionName:    "ticks",
 		ContractAddress: poolAddr,
 		Contract:        u.PoolContract,
 		FunctionParams: []any{
 			tick,
+		},
+		CallResult: rpc.MultiCallResult[PoolTick]{
+			Data: &Tick{},
 		},
 	}
 }

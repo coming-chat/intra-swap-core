@@ -31,6 +31,24 @@ type ISlot0 struct {
 	Unlocked                   bool
 }
 
+func (I ISlot0) GetPrice() *big.Int {
+	return I.SqrtPriceX96
+}
+
+func (I ISlot0) GetTick() *big.Int {
+	return I.Tick
+}
+
+type IPoolState interface {
+	GetPrice() *big.Int
+	GetTick() *big.Int
+}
+
+type PoolTick interface {
+	GetLiquidityNet() *big.Int
+	GetLiquidityGross() *big.Int
+}
+
 type Tick struct {
 	LiquidityGross                 *big.Int
 	LiquidityNet                   *big.Int
@@ -40,6 +58,14 @@ type Tick struct {
 	SecondsPerLiquidityOutsideX128 *big.Int
 	SecondsOutside                 uint32
 	Initialized                    bool
+}
+
+func (t Tick) GetLiquidityNet() *big.Int {
+	return t.LiquidityNet
+}
+
+func (t Tick) GetLiquidityGross() *big.Int {
+	return t.LiquidityGross
 }
 
 type IReserves struct {
@@ -66,9 +92,9 @@ type Dex interface {
 }
 
 type PoolInfo interface {
-	GetSlot0(poolAddr common.Address) rpc.MultiCallSingle[ISlot0]
+	GetSlot0(poolAddr common.Address) rpc.MultiCallSingle[IPoolState]
 	GetLiquidity(poolAddr common.Address) rpc.MultiCallSingle[*big.Int]
-	GetTicks(poolAddr common.Address, tick *big.Int) rpc.MultiCallSingle[Tick]
+	GetTicks(poolAddr common.Address, tick *big.Int) rpc.MultiCallSingle[PoolTick]
 	GetReserves(poolAddr common.Address) rpc.MultiCallSingle[IReserves]
 }
 
@@ -94,4 +120,7 @@ var RouterAddrDexMap = map[common.Address]Dex{
 	base_constant.PolygonPearlFiRouter: NewPearLFi(),
 
 	base_constant.ArbitrumCamelotRouter: NewCamelot(),
+
+	base_constant.BaseSwapBasedV3Router:    NewSwapBasedV3(),
+	base_constant.PolygonQuickSwapV3Router: NewQuickSwapV3(),
 }

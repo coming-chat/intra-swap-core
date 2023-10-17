@@ -88,7 +88,7 @@ type UniswapV2PoolInfo struct {
 	PoolContract *abi.ABI
 }
 
-func (b UniswapV2PoolInfo) GetSlot0(poolAddr common.Address) rpc.MultiCallSingle[ISlot0] {
+func (b UniswapV2PoolInfo) GetSlot0(poolAddr common.Address) rpc.MultiCallSingle[IPoolState] {
 	panic("v2 pool not support v3 info")
 }
 
@@ -96,7 +96,7 @@ func (b UniswapV2PoolInfo) GetLiquidity(poolAddr common.Address) rpc.MultiCallSi
 	panic("v2 pool not support v3 info")
 }
 
-func (b UniswapV2PoolInfo) GetTicks(poolAddr common.Address, tick *big.Int) rpc.MultiCallSingle[Tick] {
+func (b UniswapV2PoolInfo) GetTicks(poolAddr common.Address, tick *big.Int) rpc.MultiCallSingle[PoolTick] {
 	panic("v2 pool not support v3 info")
 }
 
