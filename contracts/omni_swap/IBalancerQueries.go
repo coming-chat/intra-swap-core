@@ -29,32 +29,32 @@ var (
 	_ = abi.ConvertType
 )
 
-// IVaultBatchSwapStep is an auto generated low-level Go binding around an user-defined struct.
-type IVaultBatchSwapStep struct {
-	PoolId        [32]byte
-	AssetInIndex  *big.Int
-	AssetOutIndex *big.Int
-	Amount        *big.Int
-	UserData      []byte
-}
-
-// IVaultFundManagement is an auto generated low-level Go binding around an user-defined struct.
-type IVaultFundManagement struct {
-	Sender              common.Address
-	FromInternalBalance bool
-	Recipient           common.Address
-	ToInternalBalance   bool
-}
-
-// IVaultSingleSwap is an auto generated low-level Go binding around an user-defined struct.
-type IVaultSingleSwap struct {
-	PoolId   [32]byte
-	Kind     uint8
-	AssetIn  common.Address
-	AssetOut common.Address
-	Amount   *big.Int
-	UserData []byte
-}
+//// IVaultBatchSwapStep is an auto generated low-level Go binding around an user-defined struct.
+//type IVaultBatchSwapStep struct {
+//	PoolId        [32]byte
+//	AssetInIndex  *big.Int
+//	AssetOutIndex *big.Int
+//	Amount        *big.Int
+//	UserData      []byte
+//}
+//
+//// IVaultFundManagement is an auto generated low-level Go binding around an user-defined struct.
+//type IVaultFundManagement struct {
+//	Sender              common.Address
+//	FromInternalBalance bool
+//	Recipient           common.Address
+//	ToInternalBalance   bool
+//}
+//
+//// IVaultSingleSwap is an auto generated low-level Go binding around an user-defined struct.
+//type IVaultSingleSwap struct {
+//	PoolId   [32]byte
+//	Kind     uint8
+//	AssetIn  common.Address
+//	AssetOut common.Address
+//	Amount   *big.Int
+//	UserData []byte
+//}
 
 // IBalancerQueriesMetaData contains all meta data concerning the IBalancerQueries contract.
 var IBalancerQueriesMetaData = &bind.MetaData{
