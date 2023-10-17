@@ -92,4 +92,6 @@ var RouterAddrDexMap = map[common.Address]Dex{
 	base_constant.PolygonUniswapV3Router:   NewUniswapV3(nil, nil, nil, nil),
 
 	base_constant.PolygonPearlFiRouter: NewPearLFi(),
+
+	base_constant.ArbitrumCamelotRouter: NewCamelot(),
 }
