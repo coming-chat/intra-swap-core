@@ -76,18 +76,12 @@ func (f PearlFi) PackSwap(
 	if amountIn.Currency.IsNative() {
 		args = []any{amountOut.Quotient(), route, swapConfig.Recipient, deadline}
 		methodName = "swapExactETHForTokens"
-		// TODO handle the FeeOnTransfer
-		//methodName = "swapExactETHForTokensSupportingFeeOnTransferTokens"
 	} else if amountOut.Currency.IsNative() {
-		// TODO handle the FeeOnTransfer
 		args = []any{amountIn.Quotient(), amountOut.Quotient(), route, swapConfig.Recipient, deadline}
 		methodName = "swapExactTokensForETH"
-		//methodName = "swapExactTokensForETHSupportingFeeOnTransferTokens"
 	} else {
 		args = []any{amountIn.Quotient(), amountOut.Quotient(), route, swapConfig.Recipient, deadline}
 		methodName = "swapExactTokensForTokens"
-		// TODO handle the FeeOnTransfer
-		//methodName = "swapExactTokensForTokensSupportingFeeOnTransferTokens"
 	}
 	return f.RouterContract.Pack(methodName, args...)
 }

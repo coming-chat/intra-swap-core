@@ -134,28 +134,40 @@ func (b UniswapV2) PackSwap(
 		if amountIn.Currency.IsNative() {
 			args = []any{amountOut.Quotient(), path, swapConfig.Recipient, deadline}
 			methodName = "swapExactETHForTokens"
-			// TODO handle the FeeOnTransfer
-			//methodName = "swapExactETHForTokensSupportingFeeOnTransferTokens"
+			if pool.Stable() {
+				methodName = "swapExactETHForTokensSupportingFeeOnTransferTokens"
+			}
 		} else if amountOut.Currency.IsNative() {
-			// TODO handle the FeeOnTransfer
 			args = []any{amountIn.Quotient(), amountOut.Quotient(), path, swapConfig.Recipient, deadline}
 			methodName = "swapExactTokensForETH"
-			//methodName = "swapExactTokensForETHSupportingFeeOnTransferTokens"
+			if pool.Stable() {
+				methodName = "swapExactTokensForETHSupportingFeeOnTransferTokens"
+			}
 		} else {
 			args = []any{amountIn.Quotient(), amountOut.Quotient(), path, swapConfig.Recipient, deadline}
 			methodName = "swapExactTokensForTokens"
-			// TODO handle the FeeOnTransfer
-			//methodName = "swapExactTokensForTokensSupportingFeeOnTransferTokens"
+			if pool.Stable() {
+				methodName = "swapExactTokensForTokensSupportingFeeOnTransferTokens"
+			}
 		}
 	case entities.ExactOutput:
 		if amountIn.Currency.IsNative() {
 			methodName = "swapETHForExactTokens"
+			if pool.Stable() {
+				methodName = "swapExactETHForTokensSupportingFeeOnTransferTokens"
+			}
 			args = []any{amountOut.Quotient(), path, swapConfig.Recipient, deadline}
 		} else if amountOut.Currency.IsNative() {
 			methodName = "swapTokensForExactETH"
+			if pool.Stable() {
+				methodName = "swapExactTokensForETHSupportingFeeOnTransferTokens"
+			}
 			args = []any{amountOut.Quotient(), amountIn.Quotient(), path, swapConfig.Recipient, deadline}
 		} else {
 			methodName = "swapTokensForExactTokens"
+			if pool.Stable() {
+				methodName = "swapExactTokensForTokensSupportingFeeOnTransferTokens"
+			}
 			args = []any{amountOut.Quotient(), amountIn.Quotient(), path, swapConfig.Recipient, deadline}
 		}
 	default:

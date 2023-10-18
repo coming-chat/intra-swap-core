@@ -82,18 +82,21 @@ func (a Aerodrome) PackSwap(
 	if amountIn.Currency.IsNative() {
 		args = []any{amountOut.Quotient(), path, swapConfig.Recipient, deadline}
 		methodName = "swapExactETHForTokens"
-		// TODO handle the FeeOnTransfer
-		//methodName = "swapExactETHForTokensSupportingFeeOnTransferTokens"
+		if pool.Stable() {
+			methodName = "swapExactETHForTokensSupportingFeeOnTransferTokens"
+		}
 	} else if amountOut.Currency.IsNative() {
-		// TODO handle the FeeOnTransfer
 		args = []any{amountIn.Quotient(), amountOut.Quotient(), path, swapConfig.Recipient, deadline}
 		methodName = "swapExactTokensForETH"
-		//methodName = "swapExactTokensForETHSupportingFeeOnTransferTokens"
+		if pool.Stable() {
+			methodName = "swapExactTokensForETHSupportingFeeOnTransferTokens"
+		}
 	} else {
 		args = []any{amountIn.Quotient(), amountOut.Quotient(), path, swapConfig.Recipient, deadline}
 		methodName = "swapExactTokensForTokens"
-		// TODO handle the FeeOnTransfer
-		//methodName = "swapExactTokensForTokensSupportingFeeOnTransferTokens"
+		if pool.Stable() {
+			methodName = "swapExactTokensForTokensSupportingFeeOnTransferTokens"
+		}
 	}
 	callData, err = a.UniswapV2.RouterContract.Pack(methodName, args...)
 	return
