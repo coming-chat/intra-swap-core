@@ -675,6 +675,7 @@ func GetV2CandidatePools(params V2GetCandidatePoolsParams) (
 			Token0:         token0,
 			Token1:         token1,
 			PairAddress:    pool.Id,
+			Stable:         pool.Stable,
 			RouterAddress:  pool.RouterAddress,
 			FactoryAddress: pool.FactoryAddress,
 		})

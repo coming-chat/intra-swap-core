@@ -17,6 +17,7 @@ const cacheKeyFormat = "%d:%s-%s"
 type TokenPairs struct {
 	Token0         *entities.Token
 	Token1         *entities.Token
+	Stable         bool
 	PairAddress    string
 	FactoryAddress string
 	RouterAddress  string
@@ -180,7 +181,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 		if err != nil {
 			return nil, err
 		}
-		pool := base_entities.NewV2Pool(pair, tokenPairs[i].PairAddress, tokenPairs[i].RouterAddress, tokenPairs[i].RouterAddress, tokenPairs[i].FactoryAddress, false)
+		pool := base_entities.NewV2Pool(pair, tokenPairs[i].PairAddress, tokenPairs[i].RouterAddress, tokenPairs[i].RouterAddress, tokenPairs[i].FactoryAddress, tokenPairs[i].Stable)
 		poolAccessor.poolAddressToPool[poolAddress.String()] = pool
 		poolAccessor.subPoolMap[pool.Pair] = pool
 		b.PoolAddressCache[fmt.Sprintf(cacheKeyFormat, b.ChainId, sortedTokenPairs[i].Token0.Address.String(), sortedTokenPairs[i].Token1.Address.String())] = poolAddress.String()

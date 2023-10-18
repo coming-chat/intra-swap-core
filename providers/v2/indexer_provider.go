@@ -17,6 +17,7 @@ type IndexerPool struct {
 	RouterAddress  string
 	QuoteAddress   string
 	FactoryAddress string
+	Stable         bool
 	Token0         struct {
 		Id string
 	}
