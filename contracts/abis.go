@@ -34,11 +34,13 @@ var (
 	MuteIoFatoryAbi, _      = MuteIoFactoryMetaData.GetAbi()
 	AerodromeFactoryAbi, _  = AerodromeFactoryMetaData.GetAbi()
 	QuickSwapFactoryAbi, _  = QuickSwapFactoryMetaData.GetAbi()
+	IiZiSwapFactoryAbi, _   = IiZiSwapFactoryMetaData.GetAbi()
 
 	//Pool
 	IUniswapV3PoolAbi, _ = uniswap_v3.PoolMetaData.GetAbi()
 	IUniswapV2PoolAbi, _ = uniswap_v2.PoolMetaData.GetAbi()
 	IQuickSwapPoolAbi, _ = IQuickPoolMetaData.GetAbi()
+	IiZiSwapPoolAbi, _   = IiZiSwapPoolMetaData.GetAbi()
 
 	//Erc20
 	Erc20Abi, _ = Erc20MetaData.GetAbi()
