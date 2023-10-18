@@ -116,6 +116,7 @@ var RouterAddrDexMap = map[common.Address]Dex{
 	base_constant.BaseUniswapV3Router:   NewUniswapV3(nil, nil, nil, nil),
 	base_constant.BaseSwapBasedV2Router: NewSwapBasedV2(),
 	base_constant.BaseBaseswapV2Router:  NewBaseSwapV2(),
+	base_constant.BaseSushiswapV3Router: NewSuShiSwapV3(),
 
 	base_constant.OptimismVelodromeV2Router: NewVelodrome(),
 	base_constant.OptimismUniswapV3Router:   NewUniswapV3(nil, nil, nil, nil),
