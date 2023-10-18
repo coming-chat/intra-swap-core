@@ -114,11 +114,14 @@ func (u UniswapV3PoolInfo) GetSlot0(poolAddr common.Address) rpc.MultiCallSingle
 	}
 }
 
-func (u UniswapV3PoolInfo) GetLiquidity(poolAddr common.Address) rpc.MultiCallSingle[*big.Int] {
-	return rpc.MultiCallSingle[*big.Int]{
+func (u UniswapV3PoolInfo) GetLiquidity(poolAddr common.Address) rpc.MultiCallSingle[ILiquidity] {
+	return rpc.MultiCallSingle[ILiquidity]{
 		FunctionName:    "liquidity",
 		ContractAddress: poolAddr,
 		Contract:        u.PoolContract,
+		CallResult: rpc.MultiCallResult[ILiquidity]{
+			Data: &Liquidity{},
+		},
 	}
 }
 

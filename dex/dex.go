@@ -31,6 +31,14 @@ type ISlot0 struct {
 	Unlocked                   bool
 }
 
+type Liquidity struct {
+	Liquidity *big.Int
+}
+
+func (l Liquidity) GetLiquidity() *big.Int {
+	return l.Liquidity
+}
+
 func (I ISlot0) GetPrice() *big.Int {
 	return I.SqrtPriceX96
 }
@@ -41,12 +49,16 @@ func (I ISlot0) GetTick() *big.Int {
 
 type IPoolState interface {
 	GetPrice() *big.Int
-	GetTick() *big.Int
+	//GetTick() *big.Int
 }
 
 type PoolTick interface {
 	GetLiquidityNet() *big.Int
 	GetLiquidityGross() *big.Int
+}
+
+type ILiquidity interface {
+	GetLiquidity() *big.Int
 }
 
 type Tick struct {
@@ -93,8 +105,8 @@ type Dex interface {
 
 type PoolInfo interface {
 	GetSlot0(poolAddr common.Address) rpc.MultiCallSingle[IPoolState]
-	GetLiquidity(poolAddr common.Address) rpc.MultiCallSingle[*big.Int]
-	GetTicks(poolAddr common.Address, tick *big.Int) rpc.MultiCallSingle[PoolTick]
+	GetLiquidity(poolAddr common.Address) rpc.MultiCallSingle[ILiquidity]
+	// GetReserves GetTicks(poolAddr common.Address, tick *big.Int) rpc.MultiCallSingle[PoolTick]
 	GetReserves(poolAddr common.Address) rpc.MultiCallSingle[IReserves]
 }
 

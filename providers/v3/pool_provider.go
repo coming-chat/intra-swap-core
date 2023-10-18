@@ -12,6 +12,7 @@ import (
 	entitiesV3 "github.com/daoleno/uniswapv3-sdk/entities"
 	"github.com/daoleno/uniswapv3-sdk/utils"
 	"github.com/ethereum/go-ethereum/common"
+	"log/slog"
 	"math/big"
 	"sync"
 )
@@ -134,7 +135,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 		}
 		sortedPoolAddresses []string
 		slot0s              []rpc.MultiCallSingle[dex.IPoolState]
-		liquiditys          []rpc.MultiCallSingle[*big.Int]
+		liquiditys          []rpc.MultiCallSingle[dex.ILiquidity]
 	)
 
 	var err error
@@ -177,17 +178,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 		})
 		sortedPoolAddresses = append(sortedPoolAddresses, pair.PairAddress)
 		slot0s = append(slot0s, dex.RouterAddrDexMap[common.HexToAddress(pair.RouterAddress)].GetPoolInfo().GetSlot0(common.HexToAddress(pair.PairAddress)))
-		//slot0s = append(slot0s, rpc.MultiCallSingle[ISlot0]{
-		//	FunctionName:    "slot0",
-		//	Contract:        contracts.IUniswapV3PoolAbi,
-		//	ContractAddress: common.HexToAddress(pair.PairAddress),
-		//})
 		liquiditys = append(liquiditys, dex.RouterAddrDexMap[common.HexToAddress(pair.RouterAddress)].GetPoolInfo().GetLiquidity(common.HexToAddress(pair.PairAddress)))
-		//liquiditys = append(liquiditys, rpc.MultiCallSingle[*big.Int]{
-		//	FunctionName:    "liquidity",
-		//	ContractAddress: common.HexToAddress(pair.PairAddress),
-		//	Contract:        contracts.IUniswapV3PoolAbi,
-		//})
 	}
 	var (
 		syncGroup              = sync.WaitGroup{}
@@ -215,7 +206,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 	go func() {
 		defer syncGroup.Done()
 		for i := 0; i < b.RetryOptions.Retries; i++ {
-			_, _, errLiquidity = rpc.GetMultiCallProvider[*big.Int](b.MultiCallProvider).MultiCall(
+			_, _, errLiquidity = rpc.GetMultiCallProvider[dex.ILiquidity](b.MultiCallProvider).MultiCall(
 				b.ChainId,
 				liquiditys,
 				0,
@@ -245,68 +236,67 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 		getPoolAddress:    b.GetPoolAddress,
 	}
 
-	var (
-		tickInfoParams []rpc.MultiCallSingle[dex.PoolTick]
-		ticks          [][]entitiesV3.Tick
-	)
+	//var (
+	//	tickInfoParams []rpc.MultiCallSingle[dex.PoolTick]
+	//	ticks          [][]entitiesV3.Tick
+	//)
+	//
+	//for i, address := range sortedPoolAddresses {
+	//	if !slot0s[i].CallResult.Success ||
+	//		!liquiditys[i].CallResult.Success ||
+	//		slot0s[i].CallResult.Data.GetPrice().Cmp(big.NewInt(0)) == 0 {
+	//		continue
+	//	}
+	//
+	//	ticks = append(ticks, []entitiesV3.Tick{
+	//		{
+	//			Index: entitiesV3.NearestUsableTick(utils.MinTick, constants.TickSpacings[sortedPool[i].FeeAmount]),
+	//		},
+	//		{
+	//			Index: entitiesV3.NearestUsableTick(utils.MinTick, constants.TickSpacings[sortedPool[i].FeeAmount]),
+	//		},
+	//	})
+	//
+	//	tickInfoParams = append(tickInfoParams, dex.RouterAddrDexMap[common.HexToAddress(sortedPool[i].RouterAddress)].GetPoolInfo().GetTicks(common.HexToAddress(address), slot0s[i].CallResult.Data.GetTick()))
+	//}
 
+	//_, _, err = rpc.GetMultiCallProvider[dex.PoolTick](b.MultiCallProvider).MultiCall(
+	//	b.ChainId,
+	//	tickInfoParams,
+	//	0,
+	//	false,
+	//	providerConfig,
+	//)
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	//tickInfoResultIndex := 0
 	for i, address := range sortedPoolAddresses {
 		if !slot0s[i].CallResult.Success ||
 			!liquiditys[i].CallResult.Success ||
-			slot0s[i].CallResult.Data.GetPrice().Cmp(big.NewInt(0)) == 0 {
+			slot0s[i].CallResult.Data.GetPrice().Cmp(big.NewInt(0)) == 0 { // || !tickInfoParams[tickInfoResultIndex].CallResult.Success
 			continue
 		}
-
-		ticks = append(ticks, []entitiesV3.Tick{
+		//	// create tick data provider
+		//	ticks[tickInfoResultIndex][0].LiquidityNet = tickInfoParams[tickInfoResultIndex].CallResult.Data.GetLiquidityNet()
+		//	ticks[tickInfoResultIndex][1].LiquidityNet = new(big.Int).Neg(tickInfoParams[tickInfoResultIndex].CallResult.Data.GetLiquidityNet())
+		//	ticks[tickInfoResultIndex][0].LiquidityGross = tickInfoParams[tickInfoResultIndex].CallResult.Data.GetLiquidityGross()
+		//	ticks[tickInfoResultIndex][1].LiquidityGross = tickInfoParams[tickInfoResultIndex].CallResult.Data.GetLiquidityGross()
+		p, err := entitiesV3.NewTickListDataProvider([]entitiesV3.Tick{
 			{
 				Index: entitiesV3.NearestUsableTick(utils.MinTick, constants.TickSpacings[sortedPool[i].FeeAmount]),
 			},
 			{
-				Index: entitiesV3.NearestUsableTick(utils.MinTick, constants.TickSpacings[sortedPool[i].FeeAmount]),
+				Index: entitiesV3.NearestUsableTick(utils.MaxTick, constants.TickSpacings[sortedPool[i].FeeAmount]),
 			},
-		})
-
-		tickInfoParams = append(tickInfoParams, dex.RouterAddrDexMap[common.HexToAddress(sortedPool[i].RouterAddress)].GetPoolInfo().GetTicks(common.HexToAddress(address), slot0s[i].CallResult.Data.GetTick()))
-		//tickInfoParams = append(tickInfoParams, rpc.MultiCallSingle[Tick]{
-		//	FunctionName:    "ticks",
-		//	ContractAddress: common.HexToAddress(address),
-		//	Contract:        contracts.IUniswapV3PoolAbi,
-		//	FunctionParams: []any{
-		//		slot0Results.ReturnData[i].Data.Tick,
-		//	},
-		//})
-	}
-
-	_, _, err = rpc.GetMultiCallProvider[dex.PoolTick](b.MultiCallProvider).MultiCall(
-		b.ChainId,
-		tickInfoParams,
-		0,
-		false,
-		providerConfig,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	tickInfoResultIndex := 0
-	for i, address := range sortedPoolAddresses {
-		if !slot0s[i].CallResult.Success ||
-			!liquiditys[i].CallResult.Success ||
-			slot0s[i].CallResult.Data.GetPrice().Cmp(big.NewInt(0)) == 0 ||
-			!tickInfoParams[tickInfoResultIndex].CallResult.Success {
-			continue
-		}
-		// create tick data provider
-		ticks[tickInfoResultIndex][0].LiquidityNet = tickInfoParams[tickInfoResultIndex].CallResult.Data.GetLiquidityNet()
-		ticks[tickInfoResultIndex][1].LiquidityNet = new(big.Int).Neg(tickInfoParams[tickInfoResultIndex].CallResult.Data.GetLiquidityNet())
-		ticks[tickInfoResultIndex][0].LiquidityGross = tickInfoParams[tickInfoResultIndex].CallResult.Data.GetLiquidityGross()
-		ticks[tickInfoResultIndex][1].LiquidityGross = tickInfoParams[tickInfoResultIndex].CallResult.Data.GetLiquidityGross()
-		p, err := entitiesV3.NewTickListDataProvider(ticks[tickInfoResultIndex], constants.TickSpacings[sortedPool[i].FeeAmount])
+		}, constants.TickSpacings[sortedPool[i].FeeAmount])
 		if err != nil {
+			slog.Error("init v3 TickListDataProvider err: %v", err)
 			continue
 		}
 		sqrtPriceX96 := slot0s[i].CallResult.Data.GetPrice()
-		liquidity := liquiditys[i].CallResult.Data
+		liquidity := liquiditys[i].CallResult.Data.GetLiquidity()
 		if sqrtPriceX96 == nil {
 			sqrtPriceX96 = big.NewInt(0)
 		}
@@ -320,11 +310,11 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 			sortedPool[i].FeeAmount,
 			sqrtPriceX96,
 			liquidity,
-			int(slot0s[i].CallResult.Data.GetTick().Int64()),
+			0, //int(slot0s[i].CallResult.Data.GetTick().Int64())
 			p,
 		)
 		if err != nil {
-			//TODO log err
+			slog.Error("new v3Pool err: %v", err)
 			continue
 		}
 		pool := base_entities.NewV3Pool(v3pool, sortedPool[i].PairAddress, sortedPool[i].QuoteAddress, sortedPool[i].RouterAddress, sortedPool[i].FactoryAddress, false)
@@ -332,7 +322,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 		poolAccessor.subPoolMap[pool.Pool] = pool
 		b.PoolAddressCache[fmt.Sprintf(cacheKeyFormat, b.ChainId, sortedPool[i].Token0.Address.String(), sortedPool[i].Token1.Address.String(), sortedPool[i].FeeAmount)] = common.HexToAddress(address).String()
 		poolAccessor.pools = append(poolAccessor.pools, pool)
-		tickInfoResultIndex++
+		//tickInfoResultIndex++
 	}
 	return poolAccessor, nil
 }

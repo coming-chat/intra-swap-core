@@ -92,7 +92,7 @@ func (b UniswapV2PoolInfo) GetSlot0(poolAddr common.Address) rpc.MultiCallSingle
 	panic("v2 pool not support v3 info")
 }
 
-func (b UniswapV2PoolInfo) GetLiquidity(poolAddr common.Address) rpc.MultiCallSingle[*big.Int] {
+func (b UniswapV2PoolInfo) GetLiquidity(poolAddr common.Address) rpc.MultiCallSingle[ILiquidity] {
 	panic("v2 pool not support v3 info")
 }
 
