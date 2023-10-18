@@ -135,4 +135,6 @@ var RouterAddrDexMap = map[common.Address]Dex{
 
 	base_constant.BaseSwapBasedV3Router:    NewSwapBasedV3(),
 	base_constant.PolygonQuickSwapV3Router: NewQuickSwapV3(),
+
+	base_constant.ZkSynciZiSwapRouter: NewIZiSwap(),
 }
