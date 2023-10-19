@@ -45,7 +45,7 @@ func GetReq[ResultT any](url string, headers, params map[string]string) (ResultT
 	return result, err
 }
 
-func Request[TBody ~struct{} | ~map[string]interface{}, TResult any](method, url string, headers, params map[string]string, reqBody TBody) (TResult, error) {
+func Request[TBody any, TResult any](method, url string, headers, params map[string]string, reqBody TBody) (TResult, error) {
 	client := http.Client{
 		Timeout: 30 * time.Second,
 	}
