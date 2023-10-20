@@ -285,10 +285,14 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 		//	ticks[tickInfoResultIndex][1].LiquidityGross = tickInfoParams[tickInfoResultIndex].CallResult.Data.GetLiquidityGross()
 		p, err := entitiesV3.NewTickListDataProvider([]entitiesV3.Tick{
 			{
-				Index: entitiesV3.NearestUsableTick(utils.MinTick, constants.TickSpacings[sortedPool[i].FeeAmount]),
+				Index:          entitiesV3.NearestUsableTick(utils.MinTick, constants.TickSpacings[sortedPool[i].FeeAmount]),
+				LiquidityNet:   big.NewInt(0),
+				LiquidityGross: big.NewInt(0),
 			},
 			{
-				Index: entitiesV3.NearestUsableTick(utils.MaxTick, constants.TickSpacings[sortedPool[i].FeeAmount]),
+				Index:          entitiesV3.NearestUsableTick(utils.MaxTick, constants.TickSpacings[sortedPool[i].FeeAmount]),
+				LiquidityNet:   big.NewInt(0),
+				LiquidityGross: big.NewInt(0),
 			},
 		}, constants.TickSpacings[sortedPool[i].FeeAmount])
 		if err != nil {
