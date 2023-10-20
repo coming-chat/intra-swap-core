@@ -314,7 +314,7 @@ func (b *BasePoolProvider) GetPools(tokenPairs []TokenPairs, providerConfig *con
 			sortedPool[i].FeeAmount,
 			sqrtPriceX96,
 			liquidity,
-			0, //int(slot0s[i].CallResult.Data.GetTick().Int64())
+			int(slot0s[i].CallResult.Data.GetTick().Int64()),
 			p,
 		)
 		if err != nil {

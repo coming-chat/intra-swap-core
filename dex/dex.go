@@ -49,7 +49,7 @@ func (I ISlot0) GetTick() *big.Int {
 
 type IPoolState interface {
 	GetPrice() *big.Int
-	//GetTick() *big.Int
+	GetTick() *big.Int
 }
 
 type PoolTick interface {
