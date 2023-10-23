@@ -105,6 +105,27 @@ var WrappedNativeCurrency = map[base_entities.ChainId]*entities.Token{
 		"ETH",
 		"Ether",
 	),
+	BSC: entities.NewToken(
+		BSC,
+		common.HexToAddress("0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"),
+		18,
+		"WBNB",
+		"Wrapped BNB",
+	),
+	AVALANCHE: entities.NewToken(
+		AVALANCHE,
+		common.HexToAddress("0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"),
+		18,
+		"WAVAX",
+		"Wrapped AVAX",
+	),
+	POLYGON_ZKEVM: entities.NewToken(
+		POLYGON_ZKEVM,
+		common.HexToAddress("0x4F9A0e7FD2Bf6067db6994CF12E4495Df938E6e9"),
+		18,
+		"WETH",
+		"Wrapped Ether",
+	),
 }
 
 var UsdGasTokensByChain = map[base_entities.ChainId][]*entities.Token{
@@ -126,6 +147,9 @@ var UsdGasTokensByChain = map[base_entities.ChainId][]*entities.Token{
 	BASE:             {USDC_BASE_MAINNET},
 	ZKSYNC_ERA:       {USDC_ZKSYNC_MAINNET},
 	ZKSYNC_ERA_TEST:  {USDC_ZKSYNC_TEST},
+	BSC:              {USDC_BSC},
+	AVALANCHE:        {USDC_AVALANCHE},
+	POLYGON_ZKEVM:    {USDC_POLYGON_ZKEVM},
 }
 
 // Some well known tokens on each chain for seeding cache / testing.
@@ -527,6 +551,30 @@ var USDC_ZKSYNC_MAINNET = entities.NewToken(
 var USDC_ZKSYNC_TEST = entities.NewToken(
 	ZKSYNC_ERA_TEST,
 	common.HexToAddress("0x0faF6df7054946141266420b43783387A78d82A9"),
+	6,
+	"USDC",
+	"USD Coin",
+)
+
+var USDC_BSC = entities.NewToken(
+	BSC,
+	common.HexToAddress("0x8965349fb649A33a30cbFDa057D8eC2C48AbE2A2"),
+	18,
+	"anyUSDC",
+	"USDC",
+)
+
+var USDC_AVALANCHE = entities.NewToken(
+	AVALANCHE,
+	common.HexToAddress("0xa7d7079b0fead91f3e65f86e8915cb59c1a4c664"),
+	6,
+	"USDC.e",
+	"USD Coin",
+)
+
+var USDC_POLYGON_ZKEVM = entities.NewToken(
+	POLYGON_ZKEVM,
+	common.HexToAddress("0xA8CE8aee21bC2A48a5EF670afCc9274C7bbbC035"),
 	6,
 	"USDC",
 	"USD Coin",

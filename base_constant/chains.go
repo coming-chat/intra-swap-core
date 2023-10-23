@@ -18,6 +18,9 @@ const (
 	BASE_GOERLI      base_entities.ChainId = 84531
 	ZKSYNC_ERA       base_entities.ChainId = 324
 	ZKSYNC_ERA_TEST  base_entities.ChainId = 280
+	AVALANCHE        base_entities.ChainId = 43114
+	BSC              base_entities.ChainId = 56
+	POLYGON_ZKEVM    base_entities.ChainId = 1101
 )
 
 var (
