@@ -17,7 +17,7 @@ func GetReq[ResultT any](url string, headers, params map[string]string) (ResultT
 		url += "?"
 	}
 	for k, v := range params {
-		url = url + k + "=" + v + "&"
+		url = url + "&" + k + "=" + v
 	}
 	var result ResultT
 	req, err := http.NewRequest(http.MethodGet, url, nil)
